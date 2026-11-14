@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: reconstruccion
+---
+# Contraseñas de este entorno de pruebas. En un despliegue real se crean aparte y no se guardan en el repositorio.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: credenciales
+stringData:
+  postgres: postgres_local
+  replicador: replicador_local
+  cadena-reconstruccion: "Host=db;Port=5432;Database=reconstruccion;Username=reconstruccion_app;Password=reconstruccion_local"
+  cadena-programa: "Host=db;Port=5432;Database=programa;Username=programa_app;Password=programa_local"
+  minio-usuario: minioadmin
+  minio-clave: minioadmin

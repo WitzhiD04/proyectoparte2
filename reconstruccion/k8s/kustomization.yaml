@@ -1,0 +1,10 @@
+# Despliegue en Kubernetes:  kubectl apply -k k8s/
+# Antes hay que construir las dos imágenes (ver README).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: reconstruccion
+resources:
+  - 00-base.yaml
+  - 05-esquema.yaml
+  - 10-datos.yaml
+  - 20-servicios.yaml

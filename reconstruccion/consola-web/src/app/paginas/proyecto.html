@@ -1,0 +1,183 @@
+<p class="volver"><a routerLink="/proyectos">Volver a los proyectos</a></p>
+
+@if (error(); as e) {
+  <div class="aviso error" role="alert">
+    {{ e.mensaje }}
+    @if (e.detalles?.length) {
+      <ul>@for (d of e.detalles; track d) { <li>{{ d }}</li> }</ul>
+    }
+  </div>
+}
+@if (confirmacion()) { <p class="aviso ok" role="status">{{ confirmacion() }}</p> }
+
+@if (proyecto(); as p) {
+  <h1>{{ p.nombre }}</h1>
+  <p class="suave">Alcance {{ p.alcance.toLowerCase() }}. Lo aprueba la autoridad {{ p.alcance === 'Municipal' ? 'local' : 'regional' }}.</p>
+
+  <section class="recorrido" aria-label="Recorrido del proyecto">
+    <app-linea-estados [estado]="p.estado" />
+  </section>
+
+  <section class="panel">
+    <h2>Datos del proyecto</h2>
+    <dl class="datos">
+      <div><dt>Presupuesto</dt><dd>{{ p.presupuesto | pesos }}</dd></div>
+      <div><dt>Fuente de financiación</dt><dd>{{ p.fuenteFinanciacion ?? 'Sin asignar' }}</dd></div>
+      <div><dt>Responsable</dt><dd>{{ p.responsable ?? 'Sin asignar' }}</dd></div>
+      <div><dt>Contratista</dt><dd>{{ p.contratista ?? 'Sin registrar' }}</dd></div>
+      <div><dt>Cronograma</dt><dd>{{ p.inicio && p.fin ? p.inicio + ' a ' + p.fin : 'Sin asignar' }}</dd></div>
+      <div><dt>Avance</dt><dd>{{ p.avance }} %</dd></div>
+      <div>
+        <dt>Costo ejecutado</dt>
+        <dd [class.sobrecosto]="p.enSobrecosto">{{ p.costoEjecutado | pesos }}@if (p.enSobrecosto) { (en sobrecosto) }</dd>
+      </div>
+    </dl>
+  </section>
+
+  @if (sesion.esAutoridad() && abierto()) {
+    <section class="panel">
+      <h2>Asignar presupuesto, fuente y cronograma</h2>
+      <p class="ayuda">Llene solo lo que quiere cambiar. La justificación es obligatoria.</p>
+      <form (ngSubmit)="guardarPresupuesto()">
+        <div class="fila-campos">
+          <div class="campo"><label for="presupuesto">Presupuesto en pesos</label><input id="presupuesto" name="presupuesto" type="number" min="0" step="1" [(ngModel)]="presupuesto" /></div>
+          <div class="campo"><label for="fuente">Fuente de financiación</label><input id="fuente" name="fuente" [(ngModel)]="fuente" /></div>
+          <div class="campo"><label for="inicio">Inicio</label><input id="inicio" name="inicio" type="date" [(ngModel)]="inicio" /></div>
+          <div class="campo"><label for="fin">Fin</label><input id="fin" name="fin" type="date" [(ngModel)]="fin" /></div>
+        </div>
+        <div class="campo"><label for="jp">Justificación</label><input id="jp" name="jp" required [(ngModel)]="justificacionPresupuesto" /></div>
+        <button type="submit" [disabled]="ocupado()">Guardar presupuesto</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Asignar responsable</h2>
+      <form (ngSubmit)="guardarResponsable()">
+        <div class="fila-campos">
+          <div class="campo">
+            <label for="responsable">Usuario del responsable</label>
+            <input id="responsable" name="responsable" required [(ngModel)]="responsable" placeholder="ing.perez" />
+          </div>
+          <div class="campo"><label for="jr">Justificación</label><input id="jr" name="jr" required [(ngModel)]="justificacionResponsable" /></div>
+        </div>
+        <button type="submit" [disabled]="ocupado()">Guardar responsable</button>
+      </form>
+    </section>
+
+    @if (p.estado === 'Formulado') {
+      <section class="panel">
+        <h2>Aprobar proyecto</h2>
+        <p class="ayuda">Necesita presupuesto mayor que cero, fuente de financiación, responsable y cronograma.</p>
+        <button type="button" [disabled]="ocupado()" (click)="aprobar()">Aprobar proyecto</button>
+      </section>
+    }
+
+    <section class="panel peligro">
+      <h2>Cancelar proyecto</h2>
+      <p class="ayuda">La cancelación es definitiva. Las evaluaciones quedan libres para otro proyecto.</p>
+      <form (ngSubmit)="cancelar()">
+        <div class="campo"><label for="jc">Justificación</label><input id="jc" name="jc" required [(ngModel)]="justificacionCancelar" /></div>
+        <button type="submit" class="peligro" [disabled]="ocupado()">Cancelar proyecto</button>
+      </form>
+    </section>
+  }
+
+  @if (sesion.esResponsable() && !esMiProyecto()) {
+    <p class="aviso">Este proyecto tiene otro responsable. Solo el responsable asignado registra avances, costos y documentos.</p>
+  }
+
+  @if (esMiProyecto() && abierto()) {
+    @if (p.estado === 'Formulado') {
+      <p class="aviso">El proyecto todavía no está aprobado. Podrá iniciar la ejecución cuando la autoridad lo apruebe.</p>
+    }
+
+    @if (p.estado === 'Aprobado') {
+      <section class="panel">
+        <h2>Iniciar ejecución</h2>
+        <form (ngSubmit)="iniciar()">
+          <div class="campo">
+            <label for="contratista">Contratista</label>
+            <input id="contratista" name="contratista" [(ngModel)]="contratista" [placeholder]="p.contratista ?? ''" />
+          </div>
+          <button type="submit" [disabled]="ocupado()">Iniciar ejecución</button>
+        </form>
+      </section>
+    }
+
+    @if (p.estado === 'EnEjecucion') {
+      <section class="panel">
+        <h2>Registrar avance y costo</h2>
+        <p class="ayuda">Puede registrar un avance, un costo o ambos. Un avance menor que el actual ({{ p.avance }} %) exige justificación.</p>
+        <form (ngSubmit)="registrarAvance()">
+          <div class="fila-campos">
+            <div class="campo"><label for="avance">Avance en porcentaje</label><input id="avance" name="avance" type="number" min="0" max="100" step="0.01" [(ngModel)]="avance" /></div>
+            <div class="campo"><label for="costo">Costo en pesos</label><input id="costo" name="costo" type="number" min="0" step="1" [(ngModel)]="costo" /></div>
+            <div class="campo"><label for="concepto">Concepto del costo</label><input id="concepto" name="concepto" [(ngModel)]="concepto" /></div>
+          </div>
+          <div class="campo"><label for="ja">Justificación (solo para corregir un avance)</label><input id="ja" name="ja" [(ngModel)]="justificacionAvance" /></div>
+          <button type="submit" [disabled]="ocupado()">Registrar</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Finalizar proyecto</h2>
+        <p class="ayuda">Solo se puede finalizar con avance de 100 %.</p>
+        <button type="button" [disabled]="ocupado() || p.avance !== 100" (click)="finalizar()">Finalizar proyecto</button>
+      </section>
+    }
+
+    <section class="panel">
+      <h2>Adjuntar documento o evidencia</h2>
+      <div class="campo"><label for="archivo">Archivo (máximo 20 MB)</label><input #campoArchivo id="archivo" type="file" (change)="elegirArchivo($event)" /></div>
+      <button type="button" [disabled]="ocupado()" (click)="adjuntar(campoArchivo)">Adjuntar documento</button>
+    </section>
+  }
+
+  @if (veHistorial()) {
+    <section class="panel">
+      <h2>Historial</h2>
+      <form class="consulta-fecha" (ngSubmit)="consultarFecha()">
+        <div class="campo">
+          <label for="fecha">Ver el proyecto como estaba en una fecha</label>
+          <input id="fecha" name="fecha" type="datetime-local" [(ngModel)]="fechaConsulta" />
+        </div>
+        <button type="submit" class="secundario">Consultar fecha</button>
+        @if (historial()?.fecha) { <button type="button" class="secundario" (click)="quitarFecha()">Ver historial completo</button> }
+      </form>
+
+      @if (historial(); as h) {
+        @if (h.fecha) {
+          @if (h.estadoEnFecha; as e) {
+            <div class="aviso">
+              <strong>Así estaba el {{ h.fecha | fechaHora }}:</strong>
+              estado {{ e.estado }}, presupuesto {{ e.presupuesto | pesos }}, responsable {{ e.responsable ?? 'sin asignar' }},
+              avance {{ e.avance }} %, costo ejecutado {{ e.costoEjecutado | pesos }}.
+            </div>
+          } @else {
+            <p class="aviso">En esa fecha el proyecto todavía no existía.</p>
+          }
+        }
+        @if (h.entradas.length > 0) {
+          <div class="tabla-ancha">
+            <table>
+              <thead><tr><th class="numero">N.º</th><th>Fecha</th><th>Cambio</th><th>Antes</th><th>Después</th><th>Autor</th><th>Justificación</th></tr></thead>
+              <tbody>
+                @for (entrada of h.entradas; track entrada.version) {
+                  <tr>
+                    <td class="numero">{{ entrada.version }}</td>
+                    <td>{{ entrada.instante | fechaHora }}</td>
+                    <td>{{ cambios[entrada.tipoCambio] ?? entrada.tipoCambio }}</td>
+                    <td>{{ entrada.valorAnterior ?? '' }}</td>
+                    <td>{{ entrada.valorNuevo ?? '' }}</td>
+                    <td>{{ entrada.autor }}</td>
+                    <td>{{ entrada.justificacion }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </section>
+  }
+}

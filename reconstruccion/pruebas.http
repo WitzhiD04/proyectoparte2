@@ -1,0 +1,94 @@
+### Peticiones de ejemplo (extensión REST Client de VS Code o el cliente HTTP de IntelliJ)
+@base = http://localhost:8080/v1
+@desastre = 11111111-1111-1111-1111-111111111111
+@proyecto = PEGAR-AQUI-EL-ID-DEL-PROYECTO
+
+### CU-01 Candidatas (autoridad)
+GET {{base}}/reconstruccion/candidatas?desastre={{desastre}}
+X-Usuario: alcaldia.armenia
+X-Rol: Autoridad
+X-Ambito: Local
+
+### CU-02 Crear proyectos por lote
+POST {{base}}/proyectos/lote
+Content-Type: application/json
+X-Usuario: alcaldia.armenia
+X-Rol: Autoridad
+X-Ambito: Local
+
+{ "idDesastre": "{{desastre}}", "idsEvaluaciones": ["aaaaaaaa-0000-0000-0000-000000000001"], "claveIdempotencia": "lote-001" }
+
+### Proyectos del desastre
+GET {{base}}/proyectos?desastre={{desastre}}
+X-Usuario: contraloria
+X-Rol: Auditor
+
+### CU-03 Presupuesto, fuente y cronograma
+PATCH {{base}}/proyectos/{{proyecto}}/presupuesto
+Content-Type: application/json
+X-Usuario: alcaldia.armenia
+X-Rol: Autoridad
+X-Ambito: Local
+
+{ "presupuesto": 500000000, "fuenteFinanciacion": "Fondo de reconstrucción", "inicio": "2027-01-15", "fin": "2027-09-30", "justificacion": "Asignación inicial" }
+
+### CU-03 Responsable
+PATCH {{base}}/proyectos/{{proyecto}}/responsable
+Content-Type: application/json
+X-Usuario: alcaldia.armenia
+X-Rol: Autoridad
+X-Ambito: Local
+
+{ "responsable": "ing.perez", "justificacion": "Asignación inicial" }
+
+### CU-04 Aprobar
+POST {{base}}/proyectos/{{proyecto}}/transiciones
+Content-Type: application/json
+X-Usuario: alcaldia.armenia
+X-Rol: Autoridad
+X-Ambito: Local
+
+{ "accion": "APROBAR" }
+
+### CU-05 Iniciar ejecución (responsable asignado)
+POST {{base}}/proyectos/{{proyecto}}/transiciones
+Content-Type: application/json
+X-Usuario: ing.perez
+X-Rol: Responsable
+
+{ "accion": "INICIAR", "contratista": "Constructora Andina" }
+
+### CU-06 Avance y costo
+POST {{base}}/proyectos/{{proyecto}}/avances
+Content-Type: application/json
+X-Usuario: ing.perez
+X-Rol: Responsable
+
+{ "avance": 100, "costo": 480000000, "concepto": "Obra completa" }
+
+### CU-08 Finalizar
+POST {{base}}/proyectos/{{proyecto}}/transiciones
+Content-Type: application/json
+X-Usuario: ing.perez
+X-Rol: Responsable
+
+{ "accion": "FINALIZAR" }
+
+### CU-09 Cancelar
+POST {{base}}/proyectos/{{proyecto}}/transiciones
+Content-Type: application/json
+X-Usuario: alcaldia.armenia
+X-Rol: Autoridad
+X-Ambito: Local
+
+{ "accion": "CANCELAR", "justificacion": "El activo se reubicó" }
+
+### CU-10 Historial (agregue ?fecha=2026-11-20T00:00:00Z para ver el proyecto en una fecha)
+GET {{base}}/proyectos/{{proyecto}}/historial
+X-Usuario: contraloria
+X-Rol: Auditor
+
+### CU-11 Consolidado
+GET {{base}}/programa/consolidado?desastre={{desastre}}
+X-Usuario: contraloria
+X-Rol: Auditor

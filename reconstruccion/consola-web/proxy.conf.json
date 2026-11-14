@@ -1,0 +1,4 @@
+{
+  "/v1/programa": { "target": "http://localhost:5081", "secure": false },
+  "/v1": { "target": "http://localhost:5080", "secure": false }
+}

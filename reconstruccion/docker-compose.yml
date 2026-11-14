@@ -1,0 +1,111 @@
+# Módulo de Reconstrucción completo en un computador.
+#   docker compose up -d --build    -> consola en http://localhost:8080
+#   docker compose down             -> detiene; los datos quedan en los volúmenes
+#   docker compose down -v          -> detiene y borra bases, colas y documentos
+# Las contraseñas son solo para este entorno local de pruebas.
+services:
+  db:
+    image: postgres:18
+    command: ["postgres", "-c", "wal_level=replica", "-c", "max_wal_senders=5", "-c", "max_replication_slots=5", "-c", "hot_standby=on"]
+    environment:
+      POSTGRES_PASSWORD: postgres_local
+      POSTGRES_DB: reconstruccion
+    volumes:
+      - datos:/var/lib/postgresql
+      # Crea las dos bases, los usuarios con sus permisos y los datos de prueba (solo la primera vez).
+      - ./db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d reconstruccion"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  # Réplica continua de PostgreSQL (segunda ubicación del diagrama de despliegue).
+  db-replica:
+    image: postgres:18
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      PGPASSWORD: replicador_local
+    command:
+      - bash
+      - -c
+      - |
+        until pg_isready -h db -U replicador -d postgres; do sleep 2; done
+        if [ ! -s "$$PGDATA/PG_VERSION" ]; then
+          rm -rf "$$PGDATA"/*
+          pg_basebackup -h db -U replicador -D "$$PGDATA" -Fp -Xs -c fast -P -R
+        fi
+        # pg_basebackup corre como root y deja /var/lib/postgresql/18 sin acceso para postgres.
+        chown -R postgres:postgres /var/lib/postgresql
+        exec docker-entrypoint.sh postgres -c hot_standby=on
+    volumes:
+      - datos_replica:/var/lib/postgresql
+    restart: unless-stopped
+
+  bus:
+    image: rabbitmq:4-management
+    ports:
+      - "15672:15672"   # panel de RabbitMQ (guest / guest)
+    volumes:
+      - colas:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  archivos:
+    # minio/minio ya no se publica en Docker Hub; pgsty/minio es un fork comunitario que conserva la consola.
+    image: pgsty/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9001:9001"     # panel de MinIO (minioadmin / minioadmin)
+    volumes:
+      - documentos:/data
+
+  # Servicio de Reconstrucción: dos copias iguales, sin sesión.
+  reconstruccion:
+    build: .
+    deploy:
+      replicas: 2
+    depends_on:
+      db: { condition: service_healthy }
+      bus: { condition: service_healthy }
+      archivos: { condition: service_started }
+    environment:
+      Reconstruccion__Rol: escritura
+      ConnectionStrings__Reconstruccion: "Host=db;Port=5432;Database=reconstruccion;Username=reconstruccion_app;Password=reconstruccion_local"
+      RabbitMq__Host: bus
+      Minio__Endpoint: "archivos:9000"
+    restart: unless-stopped
+
+  # Servicio de Consulta del Programa: el único que se aumenta cuando suben las consultas.
+  consulta:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+      bus: { condition: service_healthy }
+    environment:
+      Reconstruccion__Rol: consulta
+      ConnectionStrings__Programa: "Host=db;Port=5432;Database=programa;Username=programa_app;Password=programa_local"
+      RabbitMq__Host: bus
+    restart: unless-stopped
+
+  web:
+    build: ./consola-web
+    depends_on:
+      - reconstruccion
+      - consulta
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+volumes:
+  datos:
+  datos_replica:
+  colas:
+  documentos:

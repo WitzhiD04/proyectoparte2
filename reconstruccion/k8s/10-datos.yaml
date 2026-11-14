@@ -1,0 +1,177 @@
+# Base de datos, bus de eventos y almacén de documentos.
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+spec:
+  clusterIP: None
+  selector: { app: db }
+  ports: [{ port: 5432 }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db
+spec:
+  serviceName: db
+  replicas: 1
+  selector:
+    matchLabels: { app: db }
+  template:
+    metadata:
+      labels: { app: db }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18
+          args: ["-c", "wal_level=replica", "-c", "max_wal_senders=5", "-c", "max_replication_slots=5", "-c", "hot_standby=on"]
+          env:
+            - { name: POSTGRES_DB, value: reconstruccion }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: credenciales, key: postgres } }
+          ports: [{ containerPort: 5432 }]
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "postgres", "-d", "reconstruccion"] }
+            periodSeconds: 5
+          volumeMounts:
+            - { name: datos, mountPath: /var/lib/postgresql }
+            - { name: esquema, mountPath: /docker-entrypoint-initdb.d }
+      volumes:
+        - name: esquema
+          configMap: { name: esquema-bd }
+  volumeClaimTemplates:
+    - metadata: { name: datos }
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources: { requests: { storage: 1Gi } }
+---
+# Réplica continua de PostgreSQL (segunda ubicación del diagrama de despliegue).
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-replica
+spec:
+  clusterIP: None
+  selector: { app: db-replica }
+  ports: [{ port: 5432 }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db-replica
+spec:
+  serviceName: db-replica
+  replicas: 1
+  selector:
+    matchLabels: { app: db-replica }
+  template:
+    metadata:
+      labels: { app: db-replica }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18
+          command:
+            - bash
+            - -c
+            - |
+              until pg_isready -h db -U postgres -d reconstruccion; do sleep 2; done
+              if [ ! -s "$PGDATA/PG_VERSION" ]; then
+                rm -rf "$PGDATA"/*
+                pg_basebackup -h db -U replicador -D "$PGDATA" -Fp -Xs -c fast -P -R
+              fi
+              # pg_basebackup corre como root y deja /var/lib/postgresql/18 sin acceso para postgres.
+              chown -R postgres:postgres /var/lib/postgresql
+              exec docker-entrypoint.sh postgres -c hot_standby=on
+          env:
+            - name: PGPASSWORD
+              valueFrom: { secretKeyRef: { name: credenciales, key: replicador } }
+          ports: [{ containerPort: 5432 }]
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "postgres", "-d", "reconstruccion"] }
+            periodSeconds: 5
+          volumeMounts:
+            - { name: datos-replica, mountPath: /var/lib/postgresql }
+  volumeClaimTemplates:
+    - metadata: { name: datos-replica }
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources: { requests: { storage: 1Gi } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bus
+spec:
+  clusterIP: None
+  selector: { app: bus }
+  ports: [{ port: 5672 }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: bus
+spec:
+  serviceName: bus
+  replicas: 1
+  selector:
+    matchLabels: { app: bus }
+  template:
+    metadata:
+      labels: { app: bus }
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:4-management
+          ports: [{ containerPort: 5672 }, { containerPort: 15672 }]
+          readinessProbe:
+            exec: { command: ["rabbitmq-diagnostics", "-q", "ping"] }
+            periodSeconds: 10
+            timeoutSeconds: 8
+          volumeMounts:
+            - { name: colas, mountPath: /var/lib/rabbitmq }
+  volumeClaimTemplates:
+    - metadata: { name: colas }
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources: { requests: { storage: 1Gi } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: archivos
+spec:
+  clusterIP: None
+  selector: { app: archivos }
+  ports: [{ port: 9000 }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: archivos
+spec:
+  serviceName: archivos
+  replicas: 1
+  selector:
+    matchLabels: { app: archivos }
+  template:
+    metadata:
+      labels: { app: archivos }
+    spec:
+      containers:
+        - name: minio
+          image: pgsty/minio   # minio/minio ya no se publica en Docker Hub
+          args: ["server", "/data"]
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom: { secretKeyRef: { name: credenciales, key: minio-usuario } }
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom: { secretKeyRef: { name: credenciales, key: minio-clave } }
+          ports: [{ containerPort: 9000 }]
+          volumeMounts:
+            - { name: documentos, mountPath: /data }
+  volumeClaimTemplates:
+    - metadata: { name: documentos }
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources: { requests: { storage: 1Gi } }

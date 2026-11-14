@@ -1,0 +1,29 @@
+.saltar { position: absolute; left: -999rem; }
+.saltar:focus { left: 1rem; top: 1rem; background: var(--senal); padding: 0.5rem; z-index: 10; }
+
+.cabecera {
+  background: var(--tinta);
+  color: var(--papel);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: end;
+  justify-content: space-between;
+  padding: 1.1rem clamp(1rem, 4vw, 3rem);
+}
+.marca { display: flex; gap: 0.9rem; align-items: stretch; }
+/* Franja de señalización de obra: el único adorno de la consola. */
+.franja { width: 1.1rem; background: repeating-linear-gradient(135deg, var(--senal) 0 0.55rem, var(--tinta) 0.55rem 1.1rem); border: 2px solid var(--senal); }
+.plataforma { margin: 0; font-size: 0.9rem; opacity: 0.8; }
+.modulo { margin: 0; font-family: var(--titulo); font-stretch: 62%; font-weight: 800; font-size: 2.6rem; line-height: 1; }
+
+.selectores { display: flex; flex-wrap: wrap; gap: 1rem; }
+.selectores label { color: var(--papel); opacity: 0.85; }
+.selectores select { min-width: 15rem; border-color: var(--papel); color: var(--tinta); }
+
+.navegacion { background: var(--papel); border-bottom: 2px solid var(--tinta); display: flex; flex-wrap: wrap; padding: 0 clamp(1rem, 4vw, 3rem); }
+.navegacion a { padding: 0.8rem 1.1rem; text-decoration: none; font-weight: 600; border-bottom: 5px solid transparent; margin-bottom: -2px; }
+.navegacion a:hover { border-bottom-color: var(--linea); }
+.navegacion a.activa { border-bottom-color: var(--senal); }
+
+main { max-width: 76rem; margin: 0 auto; padding: 2rem clamp(1rem, 4vw, 3rem) 4rem; }

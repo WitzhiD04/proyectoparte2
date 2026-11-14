@@ -1,0 +1,46 @@
+<a class="saltar" href="#contenido">Ir al contenido</a>
+<header class="cabecera">
+  <div class="marca">
+    <span class="franja" aria-hidden="true"></span>
+    <div>
+      <p class="plataforma">Plataforma de Gestión de Desastres</p>
+      <p class="modulo">Reconstrucción</p>
+    </div>
+  </div>
+
+  <div class="selectores">
+    <div>
+      <label for="desastre">Desastre</label>
+      <select id="desastre" #desastre [value]="sesion.idDesastre()" (change)="cambiarDesastre(desastre.value)">
+        @for (d of desastres(); track d.id) {
+          <option [value]="d.id" [selected]="d.id === sesion.idDesastre()">{{ d.nombre }}{{ d.enReconstruccion ? '' : ' (no está en reconstrucción)' }}</option>
+        }
+      </select>
+    </div>
+    <div>
+      <label for="perfil">Perfil de prueba</label>
+      <select id="perfil" #perfil (change)="cambiarPerfil(perfil.value)">
+        @for (p of sesion.perfiles; track p.usuario) {
+          <option [value]="p.usuario" [selected]="p.usuario === sesion.perfil().usuario">{{ p.nombre }}</option>
+        }
+      </select>
+    </div>
+  </div>
+</header>
+
+<nav class="navegacion" aria-label="Secciones">
+  @if (sesion.esAutoridad()) {
+    <a routerLink="/candidatas" routerLinkActive="activa">Evaluaciones candidatas</a>
+  }
+  <a routerLink="/proyectos" routerLinkActive="activa">Proyectos</a>
+  @if (!sesion.esResponsable()) {
+    <a routerLink="/consolidado" routerLinkActive="activa">Consolidado del programa</a>
+  }
+</nav>
+
+<main id="contenido">
+  @if (sinServicio()) {
+    <p class="aviso error">No hay conexión con el servicio de Reconstrucción. Levántelo y recargue la página.</p>
+  }
+  <router-outlet />
+</main>

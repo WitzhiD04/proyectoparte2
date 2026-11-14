@@ -1,0 +1,10 @@
+.volver { margin: 0 0 1rem; }
+h1 { max-width: 28ch; }
+.recorrido { margin: 2rem 0 2.2rem; }
+.datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1rem 2rem; margin: 0; }
+.datos dt { font-size: 0.9rem; color: var(--tinta-suave); }
+.datos dd { margin: 0; font-weight: 600; font-size: 1.1rem; }
+.ayuda { margin: -0.4rem 0 1rem; color: var(--tinta-suave); max-width: 65ch; }
+.panel.peligro { border-top-color: var(--oxido); }
+.consulta-fecha { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: end; margin-bottom: 1rem; }
+.consulta-fecha .campo { margin: 0; min-width: 16rem; }

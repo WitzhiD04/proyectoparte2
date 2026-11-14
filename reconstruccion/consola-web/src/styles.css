@@ -1,0 +1,94 @@
+@import '@fontsource-variable/archivo/wdth.css';
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+
+/* Identidad: obra pública. Tinta azul petróleo sobre gris de plano, y amarillo de señal de obra
+   reservado para lo que está en marcha. */
+:root {
+  --plano: #edf0f2;
+  --papel: #ffffff;
+  --tinta: #12313f;
+  --tinta-suave: #4d6470;
+  --linea: #c9d2d8;
+  --senal: #f2b705;
+  --via: #2e7d5b;
+  --oxido: #b3401e;
+  --titulo: 'Archivo Variable', 'Archivo', sans-serif;
+  --texto: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--plano);
+  color: var(--tinta);
+  font-family: var(--texto);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+h1, h2, h3 {
+  font-family: var(--titulo);
+  font-stretch: 75%;
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0;
+}
+h1 { font-size: 2.4rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.15rem; }
+
+a { color: inherit; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+button {
+  background: var(--tinta);
+  color: var(--papel);
+  border: 2px solid var(--tinta);
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+button.secundario { background: transparent; color: var(--tinta); }
+button.peligro { background: var(--oxido); border-color: var(--oxido); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+:focus-visible { outline: 3px solid var(--senal); outline-offset: 2px; }
+
+input, select, textarea {
+  width: 100%;
+  background: var(--papel);
+  border: 1px solid var(--tinta-suave);
+  padding: 0.45rem 0.6rem;
+}
+label { display: block; font-weight: 500; font-size: 0.9rem; margin-bottom: 0.2rem; }
+.campo { margin-bottom: 0.9rem; }
+.fila-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.9rem; }
+
+table { width: 100%; border-collapse: collapse; background: var(--papel); }
+th, td { text-align: left; padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--linea); vertical-align: top; }
+th { font-family: var(--titulo); font-stretch: 75%; font-size: 0.95rem; border-bottom: 2px solid var(--tinta); }
+td.numero, th.numero { text-align: right; font-variant-numeric: tabular-nums; }
+.tabla-ancha { overflow-x: auto; }
+
+.panel { background: var(--papel); border-top: 4px solid var(--tinta); padding: 1.25rem; margin-bottom: 1.5rem; }
+.panel > h2, .panel > h3 { margin-bottom: 0.9rem; }
+
+.aviso { padding: 0.7rem 0.9rem; margin: 0 0 1rem; border-left: 6px solid var(--tinta); background: var(--papel); }
+.aviso.error { border-color: var(--oxido); }
+.aviso.ok { border-color: var(--via); }
+.aviso ul { margin: 0.4rem 0 0; padding-left: 1.2rem; }
+
+.estado { display: inline-block; padding: 0.1rem 0.55rem; font-weight: 600; font-size: 0.85rem; border: 2px solid var(--tinta); white-space: nowrap; }
+.estado.EnEjecucion { background: var(--senal); }
+.estado.Finalizado { background: var(--via); border-color: var(--via); color: var(--papel); }
+.estado.Cancelado { background: var(--papel); border-color: var(--oxido); color: var(--oxido); text-decoration: line-through; }
+.estado.Aprobado { background: var(--tinta); color: var(--papel); }
+.sobrecosto { color: var(--oxido); font-weight: 600; }
+.suave { color: var(--tinta-suave); }
+.vacio { padding: 2rem 1rem; text-align: center; color: var(--tinta-suave); background: var(--papel); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
