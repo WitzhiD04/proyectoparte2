@@ -1,0 +1,5 @@
+# Fin de linea LF en todos los archivos de texto, tambien al clonar en Windows.
+# Sin esto, db/04-replicacion.sh llega con CRLF y PostgreSQL no arranca en Docker.
+* text=auto eol=lf
+*.pdf binary
+*.ico binary

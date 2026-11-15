@@ -11,7 +11,7 @@ Requiere Docker Desktop.
 docker compose up -d --build
 ```
 
-- Consola: http://localhost:8080
+- Consola: http://localhost:8080 (si el puerto 8080 está ocupado, use otro: en PowerShell `$env:PUERTO_WEB=8090; docker compose up -d --build`; en bash `PUERTO_WEB=8090 docker compose up -d --build`)
 - Panel de RabbitMQ: http://localhost:15672 (guest / guest)
 - Panel de MinIO: http://localhost:9001 (minioadmin / minioadmin)
 
