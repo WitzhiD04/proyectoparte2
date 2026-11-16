@@ -20,8 +20,4 @@
     <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Mensajeria\Plataforma.Comun.Mensajeria.csproj" />
     <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Migraciones\Plataforma.Comun.Migraciones.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <!-- Datos de prueba que el migrador carga con la opción de sembrar. -->
-    <EmbeddedResource Include="Persistencia\Migraciones\Sql\siembra-datos-prueba.sql" LogicalName="siembra-datos-prueba.sql" />
-  </ItemGroup>
 </Project>

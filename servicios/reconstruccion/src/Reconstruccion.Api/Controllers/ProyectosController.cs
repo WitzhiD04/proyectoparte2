@@ -11,7 +11,7 @@ namespace Reconstruccion.Api.Controllers;
 [Route("v1")]
 public sealed class ProyectosController : ControladorBase
 {
-    [HttpGet("desastres")]
+    [HttpGet("reconstruccion/desastres")]
     public async Task<IActionResult> Desastres([FromServices] IConsultarDesastresEntrada casoDeUso, CancellationToken ct)
     {
         if (!IntentarActor(out Actor actor, out IActionResult error)) return error;
@@ -31,7 +31,7 @@ public sealed class ProyectosController : ControladorBase
     }
 
     /// <summary>CU-02</summary>
-    [HttpPost("proyectos/lote")]
+    [HttpPost("proyectos:lote")]
     public async Task<IActionResult> CrearLote([FromBody] CuerpoLote cuerpo, [FromServices] ICrearProyectosPorLoteEntrada casoDeUso, CancellationToken ct)
     {
         if (!IntentarActor(out Actor actor, out IActionResult error)) return error;
@@ -113,7 +113,7 @@ public sealed class ProyectosController : ControladorBase
     }
 
     /// <summary>CU-06</summary>
-    [HttpPost("proyectos/{id:guid}/avances")]
+    [HttpPost("proyectos/{id:guid}/avance")]
     public async Task<IActionResult> RegistrarAvance(Guid id, [FromBody] CuerpoAvance cuerpo, [FromServices] IRegistrarAvanceYCostoEntrada casoDeUso, CancellationToken ct)
     {
         if (!IntentarActor(out Actor actor, out IActionResult error)) return error;

@@ -201,7 +201,7 @@ public sealed class CopiasLocalesEf : ICopiasLocales
 
     public async Task<IReadOnlyList<DesastreLocal>> DesastresAsync(CancellationToken ct = default)
     {
-        List<DesastreLocalFila> filas = await _db.Desastres.AsNoTracking().OrderBy(d => d.Nombre).ToListAsync(ct);
+        List<DesastreLocalFila> filas = await _db.Desastres.AsNoTracking().Where(d => d.Registrado).OrderBy(d => d.Nombre).ToListAsync(ct);
         List<DesastreLocal> desastres = new();
         foreach (DesastreLocalFila f in filas)
         {
@@ -212,7 +212,7 @@ public sealed class CopiasLocalesEf : ICopiasLocales
 
     public async Task<DesastreLocal?> DesastreAsync(Guid idDesastre, CancellationToken ct = default)
     {
-        DesastreLocalFila? f = await _db.Desastres.AsNoTracking().FirstOrDefaultAsync(d => d.Id == idDesastre, ct);
+        DesastreLocalFila? f = await _db.Desastres.AsNoTracking().FirstOrDefaultAsync(d => d.Id == idDesastre && d.Registrado, ct);
         return f is null ? null : new DesastreLocal(f.Id, f.Nombre, f.Estado);
     }
 

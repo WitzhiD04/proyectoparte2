@@ -1,4 +1,3 @@
-using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -30,7 +29,8 @@ public static class MigracionReconstruccion
         ];
         BaseDelServicio[] bases =
         [
-            new("reconstruccion", () => new ReconstruccionDbContext(Opciones<ReconstruccionDbContext>(dueno)), LeerSiembra),
+            // Sin siembra: las copias locales llegan por eventos (EV-03, EV-06, EV-08, EV-21) desde el paso 4.
+            new("reconstruccion", () => new ReconstruccionDbContext(Opciones<ReconstruccionDbContext>(dueno))),
             new("programa", () => new ProgramaDbContext(Opciones<ProgramaDbContext>(duenoPrograma))),
         ];
         return Migrador.EjecutarAsync(dueno, roles, bases, sembrar, log, ct);
@@ -39,13 +39,6 @@ public static class MigracionReconstruccion
     private static DbContextOptions<T> Opciones<T>(string cadena) where T : DbContext =>
         new DbContextOptionsBuilder<T>().UseNpgsql(cadena).Options;
 
-    private static string LeerSiembra()
-    {
-        using Stream flujo = Assembly.GetExecutingAssembly().GetManifestResourceStream("siembra-datos-prueba.sql")
-            ?? throw new FileNotFoundException("Falta la siembra de datos de prueba.");
-        using StreamReader lector = new(flujo);
-        return lector.ReadToEnd();
-    }
 
     private static string Exigir(IConfiguration configuracion, string clave) =>
         configuracion[clave] is { Length: > 0 } valor ? valor : throw new InvalidOperationException($"Falta {clave}.");

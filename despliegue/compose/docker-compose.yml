@@ -164,6 +164,7 @@ services:
       Bus__Usuario: reconstruccion
       Bus__Clave: ${BUS_CLAVE_RECONSTRUCCION:-reconstruccion_local}
       Bus__Productor: reconstruccion
+      Bus__Cola: q.reconstruccion
       Minio__Endpoint: "archivos:9000"
       Minio__Usuario: ${MINIO_USUARIO:-minioadmin}
       Minio__Clave: ${MINIO_CLAVE:-minioadmin}

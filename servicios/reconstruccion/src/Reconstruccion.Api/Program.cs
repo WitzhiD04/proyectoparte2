@@ -57,6 +57,9 @@ if (escritura)
     builder.Services.AddScoped<IFinalizarProyectoEntrada, FinalizarProyecto>();
     builder.Services.AddScoped<ICancelarProyectoEntrada, CancelarProyecto>();
     builder.Services.AddScoped<IConsultarHistorialEntrada, ConsultarHistorial>();
+    // Lo que llega por q.reconstruccion: copias locales (DA-01) y reportes de SE-7 (E-04).
+    builder.Services.AddScoped<ActualizarCopiasLocales>();
+    builder.Services.AddScoped<RegistrarReporteExterno>();
 }
 else
 {

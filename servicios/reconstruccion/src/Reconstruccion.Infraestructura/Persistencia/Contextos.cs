@@ -21,6 +21,7 @@ public sealed class ReconstruccionDbContext : DbContext
     public DbSet<LoteCreacionFila> Lotes => Set<LoteCreacionFila>();
     public DbSet<DesastreLocalFila> Desastres => Set<DesastreLocalFila>();
     public DbSet<EvaluacionValidadaFila> Evaluaciones => Set<EvaluacionValidadaFila>();
+    public DbSet<MunicipioLocalFila> Municipios => Set<MunicipioLocalFila>();
 
     protected override void OnModelCreating(ModelBuilder modelo)
     {
@@ -149,8 +150,22 @@ public sealed class ReconstruccionDbContext : DbContext
             e.ToTable("desastres_locales");
             e.HasKey(x => x.Id);
             e.Property(x => x.Id).HasColumnName("id").ValueGeneratedNever();
+            e.Property(x => x.Registrado).HasColumnName("registrado");
             e.Property(x => x.Nombre).HasColumnName("nombre").IsRequired();
+            e.Property(x => x.Tipo).HasColumnName("tipo");
             e.Property(x => x.Estado).HasColumnName("estado").IsRequired();
+            e.Property(x => x.Version).HasColumnName("version");
+            e.Property(x => x.ActualizadoEn).HasColumnName("actualizado_en");
+        });
+
+        modelo.Entity<MunicipioLocalFila>(e =>
+        {
+            e.ToTable("municipios_locales");
+            e.HasKey(x => x.Codigo);
+            e.Property(x => x.Codigo).HasColumnName("codigo");
+            e.Property(x => x.Nombre).HasColumnName("nombre").IsRequired();
+            e.Property(x => x.CodigoDepartamento).HasColumnName("codigo_departamento");
+            e.Property(x => x.VersionCapa).HasColumnName("version_capa");
         });
 
         modelo.Entity<EvaluacionValidadaFila>(e =>
@@ -167,12 +182,16 @@ public sealed class ReconstruccionDbContext : DbContext
             e.Property(x => x.Municipio).HasColumnName("municipio").IsRequired();
             e.Property(x => x.CodigoMunicipio).HasColumnName("codigo_municipio").IsRequired();
             e.Property(x => x.Estado).HasColumnName("estado").IsRequired();
-            e.HasOne<DesastreLocalFila>().WithMany().HasForeignKey(x => x.IdDesastre);
+            e.Property(x => x.Version).HasColumnName("version");
+            e.Property(x => x.ActualizadoEn).HasColumnName("actualizado_en");
+            // Sin llave foránea al desastre: las copias son eventuales y una evaluación puede llegar antes que su
+            // desastre (vienen de módulos distintos por colas distintas).
             e.HasIndex(x => x.IdDesastre).HasDatabaseName("ix_evaluaciones_desastre");
         });
 
-        // Bandeja de salida y contador del productor (AD-45, DA-04).
+        // Bandeja de salida y contador del productor (AD-45, DA-04), y registro de los eventos ya aplicados (DA-03).
         modelo.ConfigurarBandejaSalida();
+        modelo.ConfigurarMensajesProcesados();
     }
 }
 

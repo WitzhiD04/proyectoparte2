@@ -48,7 +48,7 @@ public class PruebasPersistencia : IClassFixture<BaseMigrada>
         new(new DbContextOptionsBuilder<ReconstruccionDbContext>().UseNpgsql(_base.App).Options);
 
     [Fact]
-    public async Task El_migrador_deja_las_dos_bases_al_dia_y_con_los_datos_de_prueba()
+    public async Task El_migrador_deja_las_dos_bases_al_dia_sin_sembrar_las_copias_locales()
     {
         // El historial de migraciones solo lo lee el dueño: el rol de la aplicación no tiene acceso a él.
         await using ReconstruccionDbContext dueno = new(new DbContextOptionsBuilder<ReconstruccionDbContext>().UseNpgsql(_base.Dueno).Options);
@@ -56,9 +56,11 @@ public class PruebasPersistencia : IClassFixture<BaseMigrada>
         await using ProgramaDbContext duenoPrograma = new(new DbContextOptionsBuilder<ProgramaDbContext>().UseNpgsql(_base.DuenoPrograma).Options);
         Assert.Empty(await duenoPrograma.Database.GetPendingMigrationsAsync());
 
-        await using ReconstruccionDbContext db = ComoApp();
-        Assert.Equal(9, await db.Evaluaciones.CountAsync());
-        Assert.Equal("63130", (await db.Evaluaciones.SingleAsync(e => e.Id == Guid.Parse("aaaaaaaa-0000-0000-0000-000000000006"))).CodigoMunicipio);
+        // Desde el paso 4 las copias locales llegan solo por eventos (DA-01): "--sembrar" ya no las llena.
+        await using NpgsqlConnection conexion = new(_base.Dueno);
+        await conexion.OpenAsync();
+        await using NpgsqlCommand cuenta = new("SELECT count(*) FROM evaluaciones_validadas WHERE id::text LIKE 'aaaaaaaa-%'", conexion);
+        Assert.Equal(0L, (long)(await cuenta.ExecuteScalarAsync())!);
     }
 
     [Fact]
@@ -74,8 +76,8 @@ public class PruebasPersistencia : IClassFixture<BaseMigrada>
         }).Build();
         await MigracionReconstruccion.EjecutarAsync(configuracion, sembrar: true, NullLogger.Instance);
 
-        await using ReconstruccionDbContext db = ComoApp();
-        Assert.Equal(9, await db.Evaluaciones.CountAsync());
+        await using ReconstruccionDbContext dueno = new(new DbContextOptionsBuilder<ReconstruccionDbContext>().UseNpgsql(_base.Dueno).Options);
+        Assert.Empty(await dueno.Database.GetPendingMigrationsAsync());
     }
 
     [Theory]

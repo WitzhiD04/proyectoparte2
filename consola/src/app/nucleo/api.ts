@@ -38,7 +38,7 @@ export class Api {
   private readonly base = '/v1';
 
   desastres(): Observable<Desastre[]> {
-    return this.http.get<Desastre[]>(`${this.base}/desastres`);
+    return this.http.get<Desastre[]>(`${this.base}/reconstruccion/desastres`);
   }
 
   candidatas(idDesastre: string): Observable<Candidata[]> {
@@ -46,7 +46,7 @@ export class Api {
   }
 
   crearLote(idDesastre: string, idsEvaluaciones: string[], claveIdempotencia: string): Observable<{ idsProyectos: string[]; reenvio: boolean }> {
-    return this.http.post<{ idsProyectos: string[]; reenvio: boolean }>(`${this.base}/proyectos/lote`, { idDesastre, idsEvaluaciones, claveIdempotencia });
+    return this.http.post<{ idsProyectos: string[]; reenvio: boolean }>(`${this.base}/proyectos:lote`, { idDesastre, idsEvaluaciones, claveIdempotencia });
   }
 
   proyectos(idDesastre: string): Observable<Proyecto[]> {
@@ -70,7 +70,7 @@ export class Api {
   }
 
   registrarAvance(id: string, cuerpo: { avance: number | null; costo: number | null; concepto: string | null; justificacion: string | null }): Observable<Proyecto> {
-    return this.http.post<Proyecto>(`${this.base}/proyectos/${id}/avances`, cuerpo);
+    return this.http.post<Proyecto>(`${this.base}/proyectos/${id}/avance`, cuerpo);
   }
 
   adjuntarDocumento(id: string, archivo: File): Observable<{ nombre: string; hash: string }> {

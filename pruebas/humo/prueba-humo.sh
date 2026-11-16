@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Recorre el ciclo completo de un proyecto contra el módulo en marcha (docker compose up).
+# Escenario E de punta a punta contra la plataforma en marcha (docker compose up): el desastre nace en Gestión de
+# Desastres, la evaluación entra por la sincronización de Evaluación de Daños y se valida, y Reconstrucción la recibe
+# por eventos (sin siembra); el proyecto recorre su ciclo y, al final, el desastre se puede cerrar (E-07).
 # Uso: bash pruebas/humo/prueba-humo.sh [http://localhost:8080]
 set -u
 B="${1:-http://localhost:8080}/v1"
@@ -10,12 +12,17 @@ for candidato in python3 python py; do
   if command -v "$candidato" >/dev/null 2>&1 && "$candidato" -c "import json" >/dev/null 2>&1; then PY="$candidato"; break; fi
 done
 [ -n "$PY" ] || { echo "Se necesita Python 3 para leer las respuestas JSON."; exit 2; }
-D=11111111-1111-1111-1111-111111111111
 AUT=(-H "X-Usuario: alcaldia.armenia" -H "X-Rol: Autoridad" -H "X-Ambito: Local")
 REG=(-H "X-Usuario: gobernacion.quindio" -H "X-Rol: Autoridad" -H "X-Ambito: Regional")
 RES=(-H "X-Usuario: ing.perez" -H "X-Rol: Responsable")
 AUD=(-H "X-Usuario: contraloria" -H "X-Rol: Auditor")
+# Gestión de Desastres y Evaluación de Daños leen la identidad con los encabezados de transición (hasta el gateway).
+GD=(-H "X-Usuario: ungrd.operador" -H "X-Roles: autoridad" -H "X-Organizacion: ungrd" -H "X-Ambito: NACIONAL")
+ORG=(-H "X-Usuario: bomberos.operador" -H "X-Roles: organismo" -H "X-Organizacion: bomberos")
+DISP="humo-$(date +%s)"
+EVA=(-H "X-Usuario: evaluador.armenia" -H "X-Organizacion: alcaldia-armenia" -H "X-Dispositivo: $DISP")
 J=(-H "Content-Type: application/json")
+SALIDA="${TMPDIR:-/tmp}/humo.json"
 fallas=0
 
 esperar() { # descripción, código esperado, argumentos de curl...
@@ -26,20 +33,48 @@ esperar() { # descripción, código esperado, argumentos de curl...
   while [ $# -gt 0 ]; do
     if [ "$1" = "-d" ]; then cuerpo="$2"; args+=(--data-binary @-); shift 2; else args+=("$1"); shift; fi
   done
-  local codigo; codigo=$(printf '%s' "$cuerpo" | curl -s -o /tmp/humo.json -w "%{http_code}" "${args[@]}")
-  if [ "$codigo" = "$esperado" ]; then echo "  ok   $descripcion ($codigo)"; else echo "  FALLA $descripcion: esperaba $esperado y llegó $codigo -> $(head -c 300 /tmp/humo.json)"; fallas=$((fallas+1)); fi
+  local codigo; codigo=$(printf '%s' "$cuerpo" | curl -s -o "$SALIDA" -w "%{http_code}" "${args[@]}")
+  if [ "$codigo" = "$esperado" ]; then echo "  ok   $descripcion ($codigo)"; else echo "  FALLA $descripcion: esperaba $esperado y llegó $codigo -> $(head -c 300 "$SALIDA")"; fallas=$((fallas+1)); fi
 }
+campo() { "$PY" -c "import json,sys;d=json.load(sys.stdin);print($1)" < "$SALIDA" | tr -d '\r'; }
+hasta() { # descripción, condición de Python sobre d, argumentos de curl...; reintenta 30 s (los módulos se enteran por eventos)
+  local descripcion="$1" condicion="$2"; shift 2
+  for _ in $(seq 1 60); do
+    curl -s -o "$SALIDA" "$@"
+    if "$PY" -c "import json,sys;d=json.load(sys.stdin);sys.exit(0 if ($condicion) else 1)" < "$SALIDA" 2>/dev/null; then echo "  ok   $descripcion"; return 0; fi
+    sleep 0.5
+  done
+  echo "  FALLA $descripcion -> $(head -c 300 "$SALIDA")"; fallas=$((fallas+1)); return 1
+}
+evaluar() { # id de la evaluación, nivel de daño, referencia: el dispositivo la sincroniza como lo hace la app
+  local ev="$1" nivel="$2" referencia="$3" activo; activo=$("$PY" -c "import uuid;print(uuid.uuid4())" | tr -d '\r')
+  local instante; instante=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  esperar "sincronizar la evaluación $referencia" 200 "${EVA[@]}" "${J[@]}" -d "{\"idDispositivo\":\"$DISP\",\"instanteEnvioDispositivo\":\"$instante\",\"operaciones\":[{\"idOperacion\":\"$("$PY" -c "import uuid;print(uuid.uuid4())" | tr -d '\r')\",\"tipo\":\"CREAR\",\"evaluacion\":{\"id\":\"$ev\",\"activoId\":\"$activo\",\"activoNuevo\":{\"id\":\"$activo\",\"tipoCodigo\":\"escuela\",\"lat\":4.5339,\"lon\":-75.6811,\"referencia\":\"$referencia\"},\"desastreId\":\"$D\",\"instanteCampo\":\"$instante\",\"evaluador\":\"evaluador.armenia\",\"organizacion\":\"alcaldia-armenia\",\"lat\":4.5339,\"lon\":-75.6811,\"precisionM\":5,\"tipoActivoCodigo\":\"escuela\",\"nivelDano\":\"$nivel\",\"descripcion\":\"Prueba de humo\",\"evidencias\":[]}}]}" "$B/sincronizacion/evaluaciones"
+  hasta "la validación de $referencia la acepta un organismo participante" "d.get('estado')=='VALIDADA'" "${ORG[@]}" "${J[@]}" -X POST --data-binary '{"estado":"VALIDADA","motivo":"Verificada en campo"}' "$B/evaluaciones/$ev/validacion"
+}
+
+echo "0. El desastre y las evaluaciones llegan por eventos (escenario E: DA-01, sin siembra)"
+esperar "sin identidad se rechaza" 401 "$B/reconstruccion/desastres"
+esperar "Gestión de Desastres registra el desastre" 201 "${GD[@]}" "${J[@]}" -d '{"tipo":"TERREMOTO","nombre":"Sismo de prueba de humo","descripcion":"Escenario E","instanteInicio":"2026-11-16T08:00:00Z","lat":4.5339,"lon":-75.6811,"severidad":"NIVEL_3","responsable":"ungrd","participantes":[{"organismo":"bomberos","responsabilidad":"Evaluación de daños"}],"zona":{"geometria":{"type":"Polygon","coordinates":[[[-75.72,4.50],[-75.64,4.50],[-75.64,4.58],[-75.72,4.58],[-75.72,4.50]]]},"fuente":"DECISION_AUTORIDAD"}}' "$B/desastres"
+D=$(campo "d['id']")
+echo "       desastre $D"
+hasta "Evaluación de Daños lo ofrece en la descarga (EV-03)" "any(x['id']=='$D' for x in d['desastres'])" "${EVA[@]}" "$B/descarga?desastreId=$D"
+EV=$("$PY" -c "import uuid;print(uuid.uuid4())" | tr -d '\r'); EVL=$("$PY" -c "import uuid;print(uuid.uuid4())" | tr -d '\r')
+evaluar "$EV" GRAVE "Escuela La Esperanza"
+evaluar "$EVL" LEVE "Escuela El Caimo"
+for estado in EN_ATENCION EN_RECUPERACION EN_RECONSTRUCCION; do
+  esperar "el desastre pasa a $estado" 200 "${GD[@]}" "${J[@]}" -d "{\"estado\":\"$estado\"}" "$B/desastres/$D/transiciones"
+done
+hasta "Reconstrucción lo ve en reconstrucción (EV-03 y EV-06)" "any(x['id']=='$D' and x['estado']=='EN_RECONSTRUCCION' for x in d)" "${AUT[@]}" "$B/reconstruccion/desastres"
 
 CLAVE="humo-$(date +%s)"
 echo "1. Creación por lote"
-esperar "sin identidad se rechaza" 401 "$B/desastres"
-esperar "candidatas" 200 "${AUT[@]}" "$B/reconstruccion/candidatas?desastre=$D"
-EV=$("$PY" -c "import json,sys;print(json.load(sys.stdin)[0]['idEvaluacion'])" < /tmp/humo.json | tr -d '\r')
-esperar "lote con una evaluación de daño leve se rechaza completo" 422 "${AUT[@]}" "${J[@]}" -d "{\"idDesastre\":\"$D\",\"idsEvaluaciones\":[\"$EV\",\"aaaaaaaa-0000-0000-0000-000000000005\"],\"claveIdempotencia\":\"$CLAVE-x\"}" "$B/proyectos/lote"
-esperar "crear lote" 201 "${AUT[@]}" "${J[@]}" -d "{\"idDesastre\":\"$D\",\"idsEvaluaciones\":[\"$EV\"],\"claveIdempotencia\":\"$CLAVE\"}" "$B/proyectos/lote"
-P=$("$PY" -c "import json,sys;print(json.load(sys.stdin)['idsProyectos'][0])" < /tmp/humo.json | tr -d '\r')
-esperar "reenviar el mismo lote no duplica" 201 "${AUT[@]}" "${J[@]}" -d "{\"idDesastre\":\"$D\",\"idsEvaluaciones\":[\"$EV\"],\"claveIdempotencia\":\"$CLAVE\"}" "$B/proyectos/lote"
-"$PY" -c "import json,sys;d=json.load(sys.stdin);sys.exit(0 if d['reenvio'] and d['idsProyectos'][0]=='$P' else 1)" < /tmp/humo.json && echo "  ok   el reenvío devolvió el mismo proyecto" || { echo "  FALLA el reenvío no devolvió el resultado original"; fallas=$((fallas+1)); }
+hasta "las dos evaluaciones validadas son candidatas (EV-08)" "{x['idEvaluacion'] for x in d}=={'$EV','$EVL'}" "${AUT[@]}" "$B/reconstruccion/candidatas?desastre=$D"
+esperar "lote con una evaluación de daño leve se rechaza completo" 422 "${AUT[@]}" "${J[@]}" -d "{\"idDesastre\":\"$D\",\"idsEvaluaciones\":[\"$EV\",\"$EVL\"],\"claveIdempotencia\":\"$CLAVE-x\"}" "$B/proyectos:lote"
+esperar "crear lote" 201 "${AUT[@]}" "${J[@]}" -d "{\"idDesastre\":\"$D\",\"idsEvaluaciones\":[\"$EV\"],\"claveIdempotencia\":\"$CLAVE\"}" "$B/proyectos:lote"
+P=$("$PY" -c "import json,sys;print(json.load(sys.stdin)['idsProyectos'][0])" < $SALIDA | tr -d '\r')
+esperar "reenviar el mismo lote no duplica" 201 "${AUT[@]}" "${J[@]}" -d "{\"idDesastre\":\"$D\",\"idsEvaluaciones\":[\"$EV\"],\"claveIdempotencia\":\"$CLAVE\"}" "$B/proyectos:lote"
+"$PY" -c "import json,sys;d=json.load(sys.stdin);sys.exit(0 if d['reenvio'] and d['idsProyectos'][0]=='$P' else 1)" < $SALIDA && echo "  ok   el reenvío devolvió el mismo proyecto" || { echo "  FALLA el reenvío no devolvió el resultado original"; fallas=$((fallas+1)); }
 
 echo "2. Asignar y aprobar"
 esperar "aprobar con datos incompletos" 422 "${AUT[@]}" "${J[@]}" -d '{"accion":"APROBAR"}' "$B/proyectos/$P/transiciones"
@@ -51,7 +86,7 @@ esperar "aprobar" 200 "${AUT[@]}" "${J[@]}" -d '{"accion":"APROBAR"}' "$B/proyec
 echo "3. Ejecutar"
 esperar "finalizar sin haber iniciado" 409 "${RES[@]}" "${J[@]}" -d '{"accion":"FINALIZAR"}' "$B/proyectos/$P/transiciones"
 esperar "iniciar ejecución" 200 "${RES[@]}" "${J[@]}" -d '{"accion":"INICIAR","contratista":"Constructora Andina"}' "$B/proyectos/$P/transiciones"
-esperar "avance y costo (queda en sobrecosto)" 200 "${RES[@]}" "${J[@]}" -d '{"avance":100,"costo":520000000,"concepto":"Obra completa"}' "$B/proyectos/$P/avances"
+esperar "avance y costo (queda en sobrecosto)" 200 "${RES[@]}" "${J[@]}" -d '{"avance":100,"costo":520000000,"concepto":"Obra completa"}' "$B/proyectos/$P/avance"
 echo "Acta de entrega" > /tmp/humo-acta.txt
 esperar "adjuntar documento (MinIO)" 201 "${RES[@]}" -F "archivo=@/tmp/humo-acta.txt" "$B/proyectos/$P/documentos"
 esperar "finalizar" 200 "${RES[@]}" "${J[@]}" -d '{"accion":"FINALIZAR"}' "$B/proyectos/$P/transiciones"
@@ -60,10 +95,15 @@ esperar "un proyecto finalizado no admite cambios" 409 "${AUT[@]}" "${J[@]}" -d 
 echo "4. Auditoría y consolidado"
 esperar "el responsable no ve el historial" 403 "${RES[@]}" "$B/proyectos/$P/historial"
 esperar "historial" 200 "${AUD[@]}" "$B/proyectos/$P/historial"
-"$PY" -c "import json,sys;d=json.load(sys.stdin);print('       entradas de historial:',len(d['entradas']))" < /tmp/humo.json
+"$PY" -c "import json,sys;d=json.load(sys.stdin);print('       entradas de historial:',len(d['entradas']))" < $SALIDA
 sleep 5   # el relevo publica los eventos y la consulta actualiza su modelo de lectura
 esperar "consolidado (servicio de consulta)" 200 "${AUD[@]}" "$B/programa/consolidado?desastre=$D"
-"$PY" -c "import json,sys;d=json.load(sys.stdin);print('       finalizados:',d['proyectosPorEstado']['Finalizado'],' en sobrecosto:',len(d['proyectosEnSobrecosto']),' dato al:',d['datoAl']); sys.exit(0 if d['datoAl'] else 1)" < /tmp/humo.json
+"$PY" -c "import json,sys;d=json.load(sys.stdin);print('       finalizados:',d['proyectosPorEstado']['Finalizado'],' en sobrecosto:',len(d['proyectosEnSobrecosto']),' dato al:',d['datoAl']); sys.exit(0 if d['datoAl'] else 1)" < $SALIDA
+
+echo "5. Cierre del desastre (E-07): Gestión de Desastres sabe por EV-18 y EV-20 que el proyecto terminó"
+cerrar() { curl -s -o "$SALIDA" -w "%{http_code}" "${GD[@]}" "${J[@]}" --data-binary '{"estado":"CERRADO","justificacion":"Reconstrucción terminada"}' "$B/desastres/$D/transiciones"; }
+for _ in $(seq 1 60); do codigo=$(cerrar); [ "$codigo" = 200 ] && break; sleep 0.5; done
+[ "$codigo" = 200 ] && echo "  ok   el desastre se cierra cuando su único proyecto está finalizado (200)" || { echo "  FALLA cierre del desastre: $codigo -> $(head -c 300 "$SALIDA")"; fallas=$((fallas+1)); }
 
 echo; [ "$fallas" = 0 ] && echo "Todo pasó." || echo "Fallaron $fallas verificaciones."
 exit $fallas

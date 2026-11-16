@@ -253,6 +253,48 @@ public sealed class ProyectoReconstruccion
         Avance = porcentaje;
     }
 
+    /// <summary>
+    /// Avance reportado por el sistema de proyectos externo (EV-24, E-04). Guarda su procedencia, y un valor menor que el
+    /// vigente se registra como corrección con la justificación "reportado por" el sistema (regla del Diseño RC). No lo
+    /// hace un usuario: no exige el responsable. Fuera de ejecución no aplica y lo dice con una regla incumplida.
+    /// </summary>
+    public void RegistrarAvanceExterno(string sistema, decimal porcentaje, DateTimeOffset instante)
+    {
+        MaquinaEstadosProyecto.Destino(Estado, AccionProyecto.RegistrarAvance);
+        if (porcentaje < 0 || porcentaje > 100)
+        {
+            throw new ReglaDeNegocioException("AVANCE_FUERA_DE_RANGO", "El avance va de 0 a 100 %.");
+        }
+        if (porcentaje == Avance)
+        {
+            return;
+        }
+        string justificacion = porcentaje < Avance ? $"Corrección reportada por {sistema}" : $"Avance reportado por {sistema}";
+        Anotar(TipoCambio.Avance, Texto(Avance), Texto(porcentaje), sistema, justificacion, instante, sistema);
+        _avancesNuevos.Add(new RegistroAvance(Guid.NewGuid(), Id, porcentaje, sistema, instante, sistema));
+        Avance = porcentaje;
+    }
+
+    /// <summary>Contratista asignado en el sistema de proyectos externo (EV-24, E-04), con su procedencia.</summary>
+    public void RegistrarContratistaExterno(string sistema, string contratista, DateTimeOffset instante)
+    {
+        if (MaquinaEstadosProyecto.EsFinal(Estado))
+        {
+            throw new ReglaDeNegocioException("ESTADO_FINAL", "Un proyecto en estado final no cambia de contratista.");
+        }
+        if (string.IsNullOrWhiteSpace(contratista))
+        {
+            throw new ReglaDeNegocioException("SIN_CONTRATISTA", "El reporte no trae el contratista.");
+        }
+        string nuevo = contratista.Trim();
+        if (nuevo == Contratista)
+        {
+            return;
+        }
+        Anotar(TipoCambio.Contratista, Contratista, nuevo, sistema, $"Contratista reportado por {sistema}", instante, sistema);
+        Contratista = nuevo;
+    }
+
     public void RegistrarCosto(Actor actor, Dinero monto, string concepto, DateTimeOffset instante)
     {
         ExigirResponsableAsignado(actor);
@@ -321,10 +363,11 @@ public sealed class ProyectoReconstruccion
         Estado = destino;
     }
 
-    private void Anotar(TipoCambio tipo, string? anterior, string? nuevo, string autor, string justificacion, DateTimeOffset instante)
+    private void Anotar(TipoCambio tipo, string? anterior, string? nuevo, string autor, string justificacion, DateTimeOffset instante,
+        string procedencia = ProcedenciaPlataforma)
     {
         Version++;
-        _entradasNuevas.Add(new EntradaHistorial(Guid.NewGuid(), Id, Version, tipo, anterior, nuevo, autor, justificacion, instante, ProcedenciaPlataforma));
+        _entradasNuevas.Add(new EntradaHistorial(Guid.NewGuid(), Id, Version, tipo, anterior, nuevo, autor, justificacion, instante, procedencia));
     }
 
     private void ExigirResponsableAsignado(Actor actor)

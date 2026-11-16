@@ -107,11 +107,39 @@ namespace Reconstruccion.Infraestructura.Persistencia.Migraciones.Reconstruccion
                     b.ToTable("contador_productor", (string)null);
                 });
 
+            modelBuilder.Entity("Plataforma.Comun.Mensajeria.FilaMensajeProcesado", b =>
+                {
+                    b.Property<string>("ClaveIdempotencia")
+                        .HasColumnType("text")
+                        .HasColumnName("clave_idempotencia");
+
+                    b.Property<Guid>("IdEvento")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_evento");
+
+                    b.Property<DateTimeOffset>("ProcesadoEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("procesado_en");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tipo");
+
+                    b.HasKey("ClaveIdempotencia");
+
+                    b.ToTable("mensajes_procesados", (string)null);
+                });
+
             modelBuilder.Entity("Reconstruccion.Infraestructura.Persistencia.DesastreLocalFila", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("ActualizadoEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("actualizado_en");
 
                     b.Property<string>("Estado")
                         .IsRequired()
@@ -122,6 +150,18 @@ namespace Reconstruccion.Infraestructura.Persistencia.Migraciones.Reconstruccion
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("nombre");
+
+                    b.Property<bool>("Registrado")
+                        .HasColumnType("boolean")
+                        .HasColumnName("registrado");
+
+                    b.Property<string>("Tipo")
+                        .HasColumnType("text")
+                        .HasColumnName("tipo");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
 
                     b.HasKey("Id");
 
@@ -280,6 +320,10 @@ namespace Reconstruccion.Infraestructura.Persistencia.Migraciones.Reconstruccion
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<DateTimeOffset>("ActualizadoEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("actualizado_en");
+
                     b.Property<string>("CodigoMunicipio")
                         .IsRequired()
                         .HasColumnType("text")
@@ -317,6 +361,10 @@ namespace Reconstruccion.Infraestructura.Persistencia.Migraciones.Reconstruccion
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("tipo_activo");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
 
                     b.HasKey("Id");
 
@@ -356,6 +404,30 @@ namespace Reconstruccion.Infraestructura.Persistencia.Migraciones.Reconstruccion
                     b.HasKey("ClaveIdempotencia");
 
                     b.ToTable("lotes_creacion", (string)null);
+                });
+
+            modelBuilder.Entity("Reconstruccion.Infraestructura.Persistencia.MunicipioLocalFila", b =>
+                {
+                    b.Property<string>("Codigo")
+                        .HasColumnType("text")
+                        .HasColumnName("codigo");
+
+                    b.Property<string>("CodigoDepartamento")
+                        .HasColumnType("text")
+                        .HasColumnName("codigo_departamento");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("nombre");
+
+                    b.Property<int>("VersionCapa")
+                        .HasColumnType("integer")
+                        .HasColumnName("version_capa");
+
+                    b.HasKey("Codigo");
+
+                    b.ToTable("municipios_locales", (string)null);
                 });
 
             modelBuilder.Entity("Reconstruccion.Infraestructura.Persistencia.ProyectoFila", b =>
@@ -549,15 +621,6 @@ namespace Reconstruccion.Infraestructura.Persistencia.Migraciones.Reconstruccion
                     b.HasOne("Reconstruccion.Infraestructura.Persistencia.ProyectoFila", null)
                         .WithMany("Evaluaciones")
                         .HasForeignKey("IdProyecto")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Reconstruccion.Infraestructura.Persistencia.EvaluacionValidadaFila", b =>
-                {
-                    b.HasOne("Reconstruccion.Infraestructura.Persistencia.DesastreLocalFila", null)
-                        .WithMany()
-                        .HasForeignKey("IdDesastre")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

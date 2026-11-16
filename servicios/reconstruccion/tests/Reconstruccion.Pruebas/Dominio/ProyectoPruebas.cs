@@ -108,6 +108,36 @@ public class ProyectoPruebas
     }
 
     [Fact]
+    public void El_avance_de_SE7_guarda_su_procedencia_y_uno_menor_queda_como_correccion_E04()
+    {
+        ProyectoReconstruccion p = Datos.ProyectoEnEjecucion();
+        p.LimpiarPendientes();
+
+        p.RegistrarAvanceExterno("SE-7", 60, Datos.Ahora);
+        p.RegistrarAvanceExterno("SE-7", 55, Datos.Ahora);
+        p.RegistrarAvanceExterno("SE-7", 55, Datos.Ahora); // repetido: no cambia nada
+
+        Assert.Equal(55m, p.Avance);
+        Assert.Equal(["Avance reportado por SE-7", "Corrección reportada por SE-7"], p.EntradasNuevas.Select(e => e.Justificacion));
+        Assert.All(p.EntradasNuevas, e => { Assert.Equal("SE-7", e.Procedencia); Assert.Equal("SE-7", e.Autor); });
+        Assert.Throws<ReglaDeNegocioException>(() => p.RegistrarAvanceExterno("SE-7", 101, Datos.Ahora));
+        Assert.Throws<ReglaDeNegocioException>(() => Datos.ProyectoAprobado().RegistrarAvanceExterno("SE-7", 10, Datos.Ahora));
+    }
+
+    [Fact]
+    public void El_contratista_de_SE7_se_registra_salvo_en_un_proyecto_en_estado_final()
+    {
+        ProyectoReconstruccion p = Datos.ProyectoAprobado();
+        p.RegistrarContratistaExterno("SE-7", "Obras del Quindío", Datos.Ahora);
+        Assert.Equal("Obras del Quindío", p.Contratista);
+        Assert.Equal("SE-7", p.EntradasNuevas[^1].Procedencia);
+
+        ProyectoReconstruccion cancelado = Datos.ProyectoAprobado();
+        cancelado.Cancelar(Datos.AutoridadLocal, "Sin recursos", Datos.Ahora);
+        Assert.Throws<ReglaDeNegocioException>(() => cancelado.RegistrarContratistaExterno("SE-7", "Otro", Datos.Ahora));
+    }
+
+    [Fact]
     public void El_avance_va_de_0_a_100_y_bajar_exige_justificacion()
     {
         ProyectoReconstruccion p = Datos.ProyectoEnEjecucion();

@@ -22,7 +22,7 @@ DLX = "plataforma.dlx"
 
 # Cola por consumidor y los eventos que recibe (ENMIENDAS_DOCUMENTOS.md, catálogo después de las enmiendas, y E-29).
 COLAS = {
-    "q.reconstruccion": ["ev03", "ev06", "ev08", "ev24"],
+    "q.reconstruccion": ["ev03", "ev06", "ev08", "ev21", "ev24"],
     "q.consulta-programa": ["ev18", "ev19", "ev20", "ev23"],
     "q.consulta-danos": ["ev08", "ev09", "ev10", "ev21", "ev22", "ev23", "ev25", "ev26"],
     "q.consulta": ["ev03", "ev04", "ev05", "ev06", "ev21", "ev23", "ev27"],

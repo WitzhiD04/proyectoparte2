@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Plataforma.Comun.Mensajeria;
 using Reconstruccion.Aplicacion.Puertos;
+using Aplicacion = Reconstruccion.Aplicacion;
 using Reconstruccion.Infraestructura.Archivos;
 using Reconstruccion.Infraestructura.Mensajeria;
 using Reconstruccion.Infraestructura.Persistencia;
@@ -31,8 +32,11 @@ public static class Registro
             servicios.AddScoped<IUnidadDeTrabajo, UnidadDeTrabajoEf>();
             servicios.AddScoped<IPublicadorHechos, PublicadorHechosBandeja>();
             servicios.AddSingleton<IAlmacenDocumentos, AlmacenDocumentosMinio>();
+            servicios.AddScoped<Aplicacion.CasosDeUso.IEscrituraCopiasLocales, EscrituraCopiasLocalesEf>();
             // Bandeja de salida y relevo hacia el bus (AD-45, DA-04).
             servicios.AgregarPublicacion<ReconstruccionDbContext>();
+            // Consumidor idempotente de q.reconstruccion: copias locales por eventos y reportes de SE-7 (DA-01, DA-03).
+            servicios.AgregarConsumo<ReconstruccionDbContext, ManejadorEventosReconstruccion>();
         }
         else if (rol == RolConsulta)
         {

@@ -48,6 +48,7 @@ spec:
             - { name: Bus__Nodos__0, value: bus }
             - { name: Bus__Usuario, value: reconstruccion }
             - { name: Bus__Productor, value: reconstruccion }
+            - { name: Bus__Cola, value: q.reconstruccion }
             - name: Bus__Clave
               valueFrom: { secretKeyRef: { name: credenciales, key: bus-reconstruccion } }
             - { name: Minio__Endpoint, value: "archivos:9000" }
