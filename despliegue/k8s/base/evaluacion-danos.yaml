@@ -1,0 +1,84 @@
+# Evaluación de Daños (AD-01). Migrador del esquema (DT-19): corre una vez con el rol dueño, crea la base con PostGIS,
+# el rol de mínimo privilegio y el catálogo inicial de tipos de activo.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: evaluacion-danos-migrador
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrador
+          image: plataforma/evaluacion-danos:local
+          imagePullPolicy: IfNotPresent
+          args: ["migrar", "--sembrar"]
+          env:
+            - name: ConnectionStrings__EvaluacionDanosDueno
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-evaluacion-danos-dueno } }
+            - name: Migracion__ClaveEvaluacionDanosApp
+              valueFrom: { secretKeyRef: { name: credenciales, key: evaluacion-danos-app } }
+---
+# Dos réplicas activas o más, sin sesión (AD-24): comparten la base y el bucket de evidencias (DA-06).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: evaluacion-danos
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: evaluacion-danos }
+  template:
+    metadata:
+      labels: { app: evaluacion-danos }
+    spec:
+      containers:
+        - name: api
+          image: plataforma/evaluacion-danos:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: Bus__Nodos__0, value: bus }
+            - { name: Bus__Usuario, value: evaluacion-danos }
+            - { name: Bus__Productor, value: evaluacion-danos }
+            - { name: Bus__Cola, value: q.evaluacion-danos }
+            - name: Bus__Clave
+              valueFrom: { secretKeyRef: { name: credenciales, key: bus-evaluacion-danos } }
+            - name: ConnectionStrings__EvaluacionDanos
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-evaluacion-danos } }
+            - { name: Minio__Endpoint, value: "archivos:9000" }
+            - { name: Minio__Bucket, value: evaluacion-danos-evidencias }
+            - name: Minio__Usuario
+              valueFrom: { secretKeyRef: { name: credenciales, key: minio-usuario } }
+            - name: Minio__Clave
+              valueFrom: { secretKeyRef: { name: credenciales, key: minio-clave } }
+          ports: [{ containerPort: 8080 }]
+          # Lista: base y bus disponibles y capa de municipios cargada (EV-21); sin la capa no recibe tráfico, porque
+          # no podría asignar el municipio que exige EV-09. Viva: el proceso responde.
+          readinessProbe:
+            httpGet: { path: /salud/listo, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /salud/vivo, port: 8080 }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 192Mi }
+            limits: { memory: 448Mi }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: evaluacion-danos
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: evaluacion-danos }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evaluacion-danos
+spec:
+  selector: { app: evaluacion-danos }
+  ports: [{ port: 8080 }]

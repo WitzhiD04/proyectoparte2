@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Simulador de QA-14 (migrado de danos/api/src/Danos.Simulador). Solo usa HTTP: no referencia al servicio.
+    La prueba de integración de Evaluación de Daños lo ejecuta contra dos réplicas sobre la misma base.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>SimuladorQa14</RootNamespace>
+  </PropertyGroup>
+</Project>

@@ -33,6 +33,18 @@ x-reconstruccion: &reconstruccion
     context: ../..
     dockerfile: servicios/reconstruccion/Dockerfile
 
+x-evaluacion-danos: &evaluacion-danos
+  image: plataforma/evaluacion-danos:local
+  build:
+    context: ../..
+    dockerfile: servicios/evaluacion-danos/Dockerfile
+
+x-adaptador-se2: &adaptador-se2
+  image: plataforma/adaptador-se2:local
+  build:
+    context: ../..
+    dockerfile: adaptadores/adaptador-se2/Dockerfile
+
 services:
   db:
     image: postgis/postgis:18-3.6   # PostgreSQL 18 con PostGIS (DT-03); la réplica usa la misma imagen
@@ -176,6 +188,84 @@ services:
       Bus__Clave: ${BUS_CLAVE_CONSULTA_PROGRAMA:-consulta_programa_local}
       Bus__Productor: consulta-programa
       Bus__Cola: q.consulta-programa
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  # Evaluación de Daños. Migrador (DT-19): crea la base evaluacion_danos con PostGIS, el rol de mínimo privilegio y
+  # el catálogo inicial de tipos de activo. Corre una vez.
+  evaluacion-danos-migrador:
+    <<: *evaluacion-danos
+    command: ["migrar", "--sembrar"]
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      ConnectionStrings__EvaluacionDanosDueno: "Host=db;Port=5432;Database=evaluacion_danos;Username=postgres;Password=${POSTGRES_CLAVE:-postgres_local}"
+      Migracion__ClaveEvaluacionDanosApp: ${EVALUACION_DANOS_APP_CLAVE:-evaluacion_danos_local}
+    restart: "no"
+
+  # Dos réplicas activas sin sesión (AD-24): comparten la base y el bucket de evidencias. Una réplica está lista
+  # cuando responden su base y el bus y ya llegó la capa de municipios (EV-21 del adaptador de SE-2).
+  # Sin puertos publicados: se llega por el gateway (o por la red de compose).
+  evaluacion-danos:
+    <<: *evaluacion-danos
+    deploy:
+      replicas: 2
+    depends_on:
+      evaluacion-danos-migrador: { condition: service_completed_successfully }
+      bus1: { condition: service_healthy }
+      bus2: { condition: service_healthy }
+      bus3: { condition: service_healthy }
+      archivos: { condition: service_started }
+    environment:
+      ConnectionStrings__EvaluacionDanos: "Host=db;Port=5432;Database=evaluacion_danos;Username=evaluacion_danos_app;Password=${EVALUACION_DANOS_APP_CLAVE:-evaluacion_danos_local}"
+      Bus__Nodos__0: bus1
+      Bus__Nodos__1: bus2
+      Bus__Nodos__2: bus3
+      Bus__Usuario: evaluacion-danos
+      Bus__Clave: ${BUS_CLAVE_EVALUACION_DANOS:-evaluacion_danos_local}
+      Bus__Productor: evaluacion-danos
+      Bus__Cola: q.evaluacion-danos
+      Minio__Endpoint: "archivos:9000"
+      Minio__Usuario: ${MINIO_USUARIO:-minioadmin}
+      Minio__Clave: ${MINIO_CLAVE:-minioadmin}
+      Minio__Bucket: evaluacion-danos-evidencias
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+    restart: unless-stopped
+
+  # Adaptador de SE-2 (DA-07): publica la capa de municipios en EV-21 por su bandeja de salida. Tiene su propia base.
+  adaptador-se2-migrador:
+    <<: *adaptador-se2
+    command: ["migrar"]
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      ConnectionStrings__AdaptadorSe2Dueno: "Host=db;Port=5432;Database=adaptador_se2;Username=postgres;Password=${POSTGRES_CLAVE:-postgres_local}"
+      Migracion__ClaveAdaptadorSe2App: ${ADAPTADOR_SE2_APP_CLAVE:-adaptador_se2_local}
+    restart: "no"
+
+  adaptador-se2:
+    <<: *adaptador-se2
+    depends_on:
+      adaptador-se2-migrador: { condition: service_completed_successfully }
+      bus1: { condition: service_healthy }
+      bus2: { condition: service_healthy }
+      bus3: { condition: service_healthy }
+    environment:
+      ConnectionStrings__AdaptadorSe2: "Host=db;Port=5432;Database=adaptador_se2;Username=adaptador_se2_app;Password=${ADAPTADOR_SE2_APP_CLAVE:-adaptador_se2_local}"
+      Bus__Nodos__0: bus1
+      Bus__Nodos__1: bus2
+      Bus__Nodos__2: bus3
+      Bus__Usuario: adaptador-se2
+      Bus__Clave: ${BUS_CLAVE_ADAPTADOR_SE2:-adaptador_se2_local}
+      Bus__Productor: adaptador-se2
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
       interval: 5s

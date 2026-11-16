@@ -32,6 +32,8 @@ fi
 
 echo "1. Imágenes, construidas dentro de Minikube (no hace falta un registro)"
 minikube image build -t plataforma/reconstruccion:local -f servicios/reconstruccion/Dockerfile "$raiz"
+minikube image build -t plataforma/evaluacion-danos:local -f servicios/evaluacion-danos/Dockerfile "$raiz"
+minikube image build -t plataforma/adaptador-se2:local -f adaptadores/adaptador-se2/Dockerfile "$raiz"
 minikube image build -t plataforma/consola:local "$raiz/consola"
 # Las imágenes de los demás servicios se agregan aquí a medida que existen (ver despliegue/k8s/base/20-servicios.yaml).
 

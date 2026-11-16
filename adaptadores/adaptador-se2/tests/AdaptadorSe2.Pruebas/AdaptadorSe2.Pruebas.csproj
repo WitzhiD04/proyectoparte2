@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Pruebas del adaptador de SE-2: la capa real se parte en EV-21 que cumplen el contrato, y contra un PostgreSQL real
+    (Testcontainers) la misma versión no se publica dos veces y el rol del adaptador tiene mínimo privilegio.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AdaptadorSe2\AdaptadorSe2.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!--
+    Adaptador de SE-2 (AD-03, DA-07): lee la capa de municipios y la publica en EV-21 con el contrato de comun.
+    Es un trabajador pequeño en un solo proyecto: Capas.cs no depende de la base ni del bus (se prueba sin ellos).
+    No tiene appsettings.json: toda su configuración llega por variables de entorno (ver README).
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Eventos\Plataforma.Comun.Eventos.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Mensajeria\Plataforma.Comun.Mensajeria.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Migraciones\Plataforma.Comun.Migraciones.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Salud\Plataforma.Comun.Salud.csproj" />
+  </ItemGroup>
+</Project>

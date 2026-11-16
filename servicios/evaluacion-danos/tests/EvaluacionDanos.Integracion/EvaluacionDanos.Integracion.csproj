@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Pruebas del servicio completo contra PostgreSQL 18 con PostGIS y MinIO reales (Testcontainers), con dos réplicas
+    en memoria sobre la misma base: las pruebas de integración del prototipo, QA-14 con el simulador, eventos contra
+    el contrato, permisos de mínimo privilegio, revisión humana, catálogo y copias locales. Requieren Docker.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\EvaluacionDanos.Api\EvaluacionDanos.Api.csproj" />
+    <ProjectReference Include="..\..\..\..\adaptadores\adaptador-se2\src\AdaptadorSe2\AdaptadorSe2.csproj" />
+    <ProjectReference Include="..\..\..\..\simuladores\simulador-qa14\SimuladorQa14.csproj" />
+  </ItemGroup>
+</Project>

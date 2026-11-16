@@ -13,6 +13,14 @@ stringData:
   cadena-programa-dueno: "Host=db;Port=5432;Database=programa;Username=postgres;Password=postgres_local"
   cadena-reconstruccion: "Host=db;Port=5432;Database=reconstruccion;Username=reconstruccion_app;Password=reconstruccion_local"
   cadena-programa: "Host=db;Port=5432;Database=programa;Username=programa_app;Password=programa_local"
+  evaluacion-danos-app: evaluacion_danos_local
+  adaptador-se2-app: adaptador_se2_local
+  cadena-evaluacion-danos-dueno: "Host=db;Port=5432;Database=evaluacion_danos;Username=postgres;Password=postgres_local"
+  cadena-evaluacion-danos: "Host=db;Port=5432;Database=evaluacion_danos;Username=evaluacion_danos_app;Password=evaluacion_danos_local"
+  cadena-adaptador-se2-dueno: "Host=db;Port=5432;Database=adaptador_se2;Username=postgres;Password=postgres_local"
+  cadena-adaptador-se2: "Host=db;Port=5432;Database=adaptador_se2;Username=adaptador_se2_app;Password=adaptador_se2_local"
+  bus-evaluacion-danos: evaluacion_danos_local
+  bus-adaptador-se2: adaptador_se2_local
   bus-reconstruccion: reconstruccion_local
   bus-consulta-programa: consulta_programa_local
   minio-usuario: minioadmin

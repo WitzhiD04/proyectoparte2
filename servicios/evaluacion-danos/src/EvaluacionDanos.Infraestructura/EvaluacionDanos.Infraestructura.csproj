@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Adaptadores de salida y de entrada asíncrona (AD-08): persistencia con EF Core y PostGIS (y sus migraciones),
+    MinIO, la bandeja de salida hacia el bus y el consumidor de la cola del servicio. La mensajería y el contrato de
+    eventos vienen de comun: el formato del bus solo existe aquí.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.NetTopologySuite" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Minio" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EvaluacionDanos.Aplicacion\EvaluacionDanos.Aplicacion.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Eventos\Plataforma.Comun.Eventos.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Mensajeria\Plataforma.Comun.Mensajeria.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Migraciones\Plataforma.Comun.Migraciones.csproj" />
+  </ItemGroup>
+</Project>

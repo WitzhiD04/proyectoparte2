@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Anillo de entidades y reglas (AD-08): sin referencias a otros proyectos ni a paquetes. -->
+
+</Project>

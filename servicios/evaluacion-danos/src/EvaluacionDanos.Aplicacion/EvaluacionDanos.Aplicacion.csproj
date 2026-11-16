@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Anillo de casos de uso (AD-08): solo conoce al dominio. Sin paquetes y sin conocer el bus ni la base. -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\EvaluacionDanos.Dominio\EvaluacionDanos.Dominio.csproj" />
+  </ItemGroup>
+</Project>

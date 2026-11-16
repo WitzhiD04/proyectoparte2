@@ -13,6 +13,10 @@ La app móvil de evaluación de daños vive en su propio repositorio (`danos`) y
 | `comun/Plataforma.Comun.Salud` | Sondeos `/salud/vivo` y `/salud/listo` (AD-24) |
 | `comun/Plataforma.Comun.Migraciones` | Migrador: roles de mínimo privilegio, migraciones de EF Core y siembra (DT-19) |
 | `servicios/reconstruccion` | Reconstrucción y Consulta del Programa ([README](servicios/reconstruccion/README.md)) |
+| `servicios/evaluacion-danos` | Evaluación de Daños: sincronización sin conexión, revisión y catálogo ([README](servicios/evaluacion-danos/README.md)) |
+| `adaptadores/adaptador-se2` | Adaptador de SE-2: publica la capa de municipios en EV-21 ([README](adaptadores/adaptador-se2/README.md)) |
+| `simuladores/simulador-qa14` | Simulador de QA-14 (120 evaluaciones, 5 conflictos, lote enviado dos veces) |
+| `datos/geo` | Capa de municipios que entrega SE-2 |
 | `consola/` | Consola de coordinación (Angular) |
 | `despliegue/bus` | Topología del bus declarada al desplegar: exchange, colas por consumidor, políticas y usuarios (DA-03) |
 | `despliegue/compose` | Plataforma en un computador |

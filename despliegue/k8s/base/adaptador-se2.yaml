@@ -1,0 +1,75 @@
+# Adaptador de SE-2 (AD-03, DA-07): publica la capa de municipios en EV-21. Migrador de su base (DT-19).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: adaptador-se2-migrador
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrador
+          image: plataforma/adaptador-se2:local
+          imagePullPolicy: IfNotPresent
+          args: ["migrar"]
+          env:
+            - name: ConnectionStrings__AdaptadorSe2Dueno
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-adaptador-se2-dueno } }
+            - name: Migracion__ClaveAdaptadorSe2App
+              valueFrom: { secretKeyRef: { name: credenciales, key: adaptador-se2-app } }
+---
+# Dos réplicas: el registro de capas publicadas y las claves de idempotencia impiden publicar dos veces la misma
+# versión, y el relevo de la bandeja numera bajo un contador compartido.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: adaptador-se2
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: adaptador-se2 }
+  template:
+    metadata:
+      labels: { app: adaptador-se2 }
+    spec:
+      containers:
+        - name: adaptador
+          image: plataforma/adaptador-se2:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: Bus__Nodos__0, value: bus }
+            - { name: Bus__Usuario, value: adaptador-se2 }
+            - { name: Bus__Productor, value: adaptador-se2 }
+            - name: Bus__Clave
+              valueFrom: { secretKeyRef: { name: credenciales, key: bus-adaptador-se2 } }
+            - name: ConnectionStrings__AdaptadorSe2
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-adaptador-se2 } }
+          ports: [{ containerPort: 8080 }]
+          readinessProbe:
+            httpGet: { path: /salud/listo, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /salud/vivo, port: 8080 }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 320Mi }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: adaptador-se2
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: adaptador-se2 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: adaptador-se2
+spec:
+  selector: { app: adaptador-se2 }
+  ports: [{ port: 8080 }]
