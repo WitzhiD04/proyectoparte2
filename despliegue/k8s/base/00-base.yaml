@@ -15,5 +15,9 @@ stringData:
   cadena-programa: "Host=db;Port=5432;Database=programa;Username=programa_app;Password=programa_local"
   bus-reconstruccion: reconstruccion_local
   bus-consulta-programa: consulta_programa_local
+  auditoria-app: auditoria_local
+  cadena-auditoria-dueno: "Host=db;Port=5432;Database=auditoria;Username=postgres;Password=postgres_local"
+  cadena-auditoria: "Host=db;Port=5432;Database=auditoria;Username=auditoria_app;Password=auditoria_local"
+  bus-auditoria: auditoria_local
   minio-usuario: minioadmin
   minio-clave: minioadmin

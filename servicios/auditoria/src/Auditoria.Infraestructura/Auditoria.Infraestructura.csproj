@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Adaptadores: persistencia con EF Core (y sus migraciones), el adaptador de entrada de los eventos del bus, los
+    procesos periódicos (detección de huecos y particiones) y la alerta de huecos. La mensajería y el contrato vienen
+    de comun.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Auditoria.Aplicacion\Auditoria.Aplicacion.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Eventos\Plataforma.Comun.Eventos.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Mensajeria\Plataforma.Comun.Mensajeria.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Migraciones\Plataforma.Comun.Migraciones.csproj" />
+  </ItemGroup>
+</Project>

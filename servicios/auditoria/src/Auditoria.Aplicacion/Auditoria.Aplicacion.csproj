@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Anillo de casos de uso: solo conoce al dominio. No sabe del bus, de la base de datos ni del framework web. -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Auditoria.Dominio\Auditoria.Dominio.csproj" />
+  </ItemGroup>
+</Project>

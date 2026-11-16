@@ -33,6 +33,12 @@ x-reconstruccion: &reconstruccion
     context: ../..
     dockerfile: servicios/reconstruccion/Dockerfile
 
+x-auditoria: &auditoria
+  image: plataforma/auditoria:local
+  build:
+    context: ../..
+    dockerfile: servicios/auditoria/Dockerfile
+
 services:
   db:
     image: postgis/postgis:18-3.6   # PostgreSQL 18 con PostGIS (DT-03); la réplica usa la misma imagen
@@ -176,6 +182,46 @@ services:
       Bus__Clave: ${BUS_CLAVE_CONSULTA_PROGRAMA:-consulta_programa_local}
       Bus__Productor: consulta-programa
       Bus__Cola: q.consulta-programa
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  # Migrador de Auditoría (DT-19): crea el rol auditoria_app, la base auditoria, la tabla particionada por mes con las
+  # particiones del año en curso y del siguiente, y los permisos de solo inserción. Corre una vez.
+  auditoria-migrador:
+    <<: *auditoria
+    command: ["migrar"]
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      ConnectionStrings__AuditoriaDueno: "Host=db;Port=5432;Database=auditoria;Username=postgres;Password=${POSTGRES_CLAVE:-postgres_local}"
+      Migracion__ClaveAuditoriaApp: ${AUDITORIA_APP_CLAVE:-auditoria_local}
+    restart: "no"
+
+  # Servicio de Auditoría (AD-21, DA-17): dos réplicas que consumen q.auditoria. La cola existe desde el despliegue del
+  # bus, así que al arrancar procesa todo lo que se acumuló. Sin puertos publicados: se consulta por el gateway.
+  auditoria:
+    <<: *auditoria
+    deploy:
+      replicas: 2
+    depends_on:
+      auditoria-migrador: { condition: service_completed_successfully }
+      bus1: { condition: service_healthy }
+      bus2: { condition: service_healthy }
+      bus3: { condition: service_healthy }
+    environment:
+      ConnectionStrings__Auditoria: "Host=db;Port=5432;Database=auditoria;Username=auditoria_app;Password=${AUDITORIA_APP_CLAVE:-auditoria_local}"
+      Bus__Nodos__0: bus1
+      Bus__Nodos__1: bus2
+      Bus__Nodos__2: bus3
+      Bus__Usuario: auditoria
+      Bus__Clave: ${BUS_CLAVE_AUDITORIA:-auditoria_local}
+      Bus__Productor: auditoria
+      Bus__Cola: q.auditoria
+      Auditoria__PlazoHuecoSegundos: ${AUDITORIA_PLAZO_HUECO_SEGUNDOS:-60}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
       interval: 5s

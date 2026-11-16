@@ -5,3 +5,4 @@ resources:
   - 00-base.yaml
   - 10-datos.yaml
   - 20-servicios.yaml
+  - auditoria.yaml

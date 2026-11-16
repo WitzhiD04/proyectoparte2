@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!-- Adaptadores de entrada (controller de solo lectura, presenter) y el punto donde se conecta cada puerto con su implementación. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Auditoria.Aplicacion\Auditoria.Aplicacion.csproj" />
+    <ProjectReference Include="..\Auditoria.Infraestructura\Auditoria.Infraestructura.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Salud\Plataforma.Comun.Salud.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Seguridad\Plataforma.Comun.Seguridad.csproj" />
+  </ItemGroup>
+</Project>

@@ -13,6 +13,7 @@ La app móvil de evaluación de daños vive en su propio repositorio (`danos`) y
 | `comun/Plataforma.Comun.Salud` | Sondeos `/salud/vivo` y `/salud/listo` (AD-24) |
 | `comun/Plataforma.Comun.Migraciones` | Migrador: roles de mínimo privilegio, migraciones de EF Core y siembra (DT-19) |
 | `servicios/reconstruccion` | Reconstrucción y Consulta del Programa ([README](servicios/reconstruccion/README.md)) |
+| `servicios/auditoria` | Auditoría: registro inmutable de todos los eventos y detección de huecos (AD-21, DA-17) ([README](servicios/auditoria/README.md)) |
 | `consola/` | Consola de coordinación (Angular) |
 | `despliegue/bus` | Topología del bus declarada al desplegar: exchange, colas por consumidor, políticas y usuarios (DA-03) |
 | `despliegue/compose` | Plataforma en un computador |
