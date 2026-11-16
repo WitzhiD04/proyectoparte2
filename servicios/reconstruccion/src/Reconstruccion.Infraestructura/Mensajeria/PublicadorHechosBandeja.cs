@@ -54,7 +54,7 @@ public sealed class PublicadorHechosBandeja : IPublicadorHechos
             case Dominio.TipoCambio.Creacion:
                 ProyectoCreadoV1 creado = new(p.IdProyecto, p.IdsEvaluacionesOrigen, p.IdDesastre, p.Presupuesto,
                     p.FuenteFinanciacion, p.Responsable, Cronograma(p.Cronograma), p.CodigosMunicipio,
-                    MapeoCanonico.AlContrato(p.Alcance), p.Nombre, resumen);
+                    MapeoCanonico.AlContrato(p.Alcance), p.Nombre, resumen, entrada.Autor);
                 return Sobre.Crear(CatalogoEventos.ProyectoCreado, CatalogoEventos.Reconstruccion, clave, creado,
                     entrada.Instante, idCorrelacion: correlacion, idEvento: entrada.Id);
 

@@ -88,7 +88,15 @@ public sealed class ConsumidorIdempotente<TContexto> : BackgroundService where T
         try
         {
             sobre = Sobre.Leer(entrega.Body.Span);
-            _validador.Validar(sobre);
+            if (!_opciones.AceptarTiposDesconocidos)
+            {
+                _validador.Validar(sobre);
+            }
+            else if (!_validador.ValidarConocidos(sobre))
+            {
+                _log.LogWarning("El evento {Tipo} v{Version} no está en el contrato desplegado; se entrega sin validar sus datos (E-34).",
+                    sobre.Tipo, sobre.Version);
+            }
         }
         catch (Exception e) when (e is JsonException or EventoInvalidoException or NotSupportedException)
         {

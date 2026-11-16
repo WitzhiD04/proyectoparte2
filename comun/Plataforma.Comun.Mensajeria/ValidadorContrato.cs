@@ -68,6 +68,22 @@ public sealed class ValidadorContrato
         Exigir(esquemaDatos, sobre.Datos, "datos");
     }
 
+    /// <summary>
+    /// Como <see cref="Validar"/>, pero un tipo o una versión que el contrato desplegado no conoce no es un error: se valida
+    /// solo el sobre y devuelve falso (E-34). Un tipo conocido se valida completo, con su nombre y sus datos.
+    /// </summary>
+    public bool ValidarConocidos(Sobre sobre)
+    {
+        DefinicionEvento? definicion = CatalogoEventos.Todos.FirstOrDefault(e => e.Tipo == sobre.Tipo);
+        if (definicion is null || !definicion.EnAlcance || !_esquemas.ContainsKey($"{sobre.Tipo}.v{sobre.Version}.json"))
+        {
+            Exigir(EsquemasEmbebidos.Sobre, JsonSerializer.SerializeToElement(sobre, JsonContrato.Opciones), "sobre");
+            return false;
+        }
+        Validar(sobre);
+        return true;
+    }
+
     /// <summary>Valida un JSON cualquiera contra un esquema del contrato. Útil en las pruebas.</summary>
     public IReadOnlyList<string> Errores(string nombreEsquema, JsonElement instancia)
     {

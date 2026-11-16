@@ -27,6 +27,13 @@ public sealed class OpcionesBus
     /// <summary>Intentos antes de apartar un mensaje a la cola de mensajes muertos. Igual que el delivery-limit de la política.</summary>
     public int LimiteEntregas { get; set; } = 5;
 
+    /// <summary>
+    /// Modo tolerante (E-34), para Auditoría: el sobre se valida siempre, y los datos solo si el tipo y su versión están en
+    /// el contrato desplegado. Un tipo nuevo se entrega al manejador en lugar de apartarse, para que no quede un cambio
+    /// sin registro (QA-15 b) mientras el consumidor no se actualiza (R-03).
+    /// </summary>
+    public bool AceptarTiposDesconocidos { get; set; }
+
     public static OpcionesBus Leer(IConfiguration configuracion)
     {
         OpcionesBus opciones = new();

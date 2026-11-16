@@ -125,6 +125,31 @@ public class PruebasContrato
     }
 
     [Fact]
+    public void En_modo_tolerante_un_tipo_nuevo_pasa_con_el_sobre_valido_y_uno_conocido_se_valida_completo_E34()
+    {
+        Sobre sobre = EjemplosContrato.Sobre("EV-18");
+        Assert.False(_validador.ValidarConocidos(sobre with { Tipo = "EV-99", Nombre = "algo.nuevo" }));
+        Assert.False(_validador.ValidarConocidos(sobre with { Version = 2 }));
+        Assert.True(_validador.ValidarConocidos(sobre));
+        // El sobre se exige siempre, y un tipo conocido con otro nombre sigue sin cumplir.
+        Assert.Throws<EventoInvalidoException>(() => _validador.ValidarConocidos(sobre with { Tipo = "EV-99", Productor = "" }));
+        Assert.Throws<EventoInvalidoException>(() => _validador.ValidarConocidos(sobre with { Nombre = "proyecto.borrado" }));
+    }
+
+    [Fact]
+    public void EV_18_lleva_el_autor_y_sigue_aceptando_mensajes_sin_el_E33()
+    {
+        Sobre sobre = EjemplosContrato.Sobre("EV-18");
+        JsonObject datos = JsonNode.Parse(sobre.Datos.GetRawText())!.AsObject();
+        datos["autor"] = "ing.perez";
+        _validador.Validar(sobre with { Datos = JsonSerializer.SerializeToElement(datos) });
+        datos.Remove("autor");
+        _validador.Validar(sobre with { Datos = JsonSerializer.SerializeToElement(datos) });
+        datos["autor"] = "";
+        Assert.Throws<EventoInvalidoException>(() => _validador.Validar(sobre with { Datos = JsonSerializer.SerializeToElement(datos) }));
+    }
+
+    [Fact]
     public void El_sobre_se_lee_igual_que_se_escribe()
     {
         Sobre original = EjemplosContrato.Sobre("EV-09") with { SecuenciaProductor = 42 };

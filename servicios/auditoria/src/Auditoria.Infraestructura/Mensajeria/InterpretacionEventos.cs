@@ -72,9 +72,9 @@ public static class InterpretacionEventos
                     d.Evaluacion.EstadoEvaluacion.ToString())),
             "EV-25" => De(sobre.LeerDatos<TipoActivoActualizadoV1>(), d =>
                 new Interpretacion(sistema, TipoActivo, d.Codigo, "ACTUALIZACION_CATALOGO", Exitoso, null, "v" + d.Version)),
-            // EV-18 no trae el autor de la creación (pregunta abierta al orquestador): el actor queda nulo.
+            // EV-18 trae el autor desde E-33; un mensaje anterior a E-33 queda con el actor nulo.
             "EV-18" => De(sobre.LeerDatos<ProyectoCreadoV1>(), d =>
-                new Interpretacion(null, Proyecto, Texto(d.IdProyecto), "CREACION", Exitoso, null, d.Proyecto.Estado.ToString())),
+                new Interpretacion(d.Autor, Proyecto, Texto(d.IdProyecto), "CREACION", Exitoso, null, d.Proyecto.Estado.ToString())),
             "EV-19" => De(sobre.LeerDatos<PresupuestoCambiadoV1>(), d => d.TipoCambio == TipoCambioProyecto.FUENTE
                 ? new Interpretacion(d.Autor, Proyecto, Texto(d.IdProyecto), "CAMBIO_FUENTE", Exitoso, d.FuenteAnterior, d.FuenteNueva)
                 : new Interpretacion(d.Autor, Proyecto, Texto(d.IdProyecto), "CAMBIO_" + d.TipoCambio, Exitoso,

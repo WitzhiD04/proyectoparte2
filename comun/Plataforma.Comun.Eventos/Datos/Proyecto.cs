@@ -15,7 +15,7 @@ public sealed record ResumenProyecto(
     decimal Avance,
     int Version);
 
-/// <summary>EV-18, proyecto creado. Extensiones de E-10: CodigosMunicipio, Alcance, Nombre y Proyecto.</summary>
+/// <summary>EV-18, proyecto creado. Extensiones de E-10: CodigosMunicipio, Alcance, Nombre y Proyecto. E-33: Autor.</summary>
 public sealed record ProyectoCreadoV1(
     Guid IdProyecto,
     IReadOnlyList<Guid> IdsEvaluacionesOrigen,
@@ -27,7 +27,8 @@ public sealed record ProyectoCreadoV1(
     IReadOnlyList<string> CodigosMunicipio,
     AlcanceProyecto Alcance,
     string Nombre,
-    ResumenProyecto Proyecto);
+    ResumenProyecto Proyecto,
+    string? Autor = null);
 
 /// <summary>
 /// EV-19, presupuesto cambiado. Cubre el presupuesto y la fuente de financiación, que es lo que recibe SE-6 (E-10).

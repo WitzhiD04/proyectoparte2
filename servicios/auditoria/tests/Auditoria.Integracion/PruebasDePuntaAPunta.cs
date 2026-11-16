@@ -262,6 +262,34 @@ public class PruebasDePuntaAPunta
     }
 
     [Fact]
+    public async Task Un_tipo_de_evento_que_el_contrato_desplegado_no_conoce_se_registra_sin_interpretar_E34()
+    {
+        await using WebApplicationFactory<Program> servicio = _entorno.Servicio();
+        using HttpClient cliente = EntornoAuditoria.Cliente(servicio);
+        // Un productor ya actualizado publica un tipo nuevo antes de que Auditoría lo conozca (evolución aditiva, R-03).
+        Sobre nuevo = EjemplosContrato.Sobre("EV-18", $"nuevo:{Guid.NewGuid()}") with
+        {
+            Tipo = "EV-98", Nombre = "proyecto.algo-nuevo", Productor = "productor-futuro", SecuenciaProductor = 1,
+            InstanteEmision = DateTimeOffset.UtcNow,
+        };
+        long antesDlq = await _entorno.MensajesEnColaAsync("dlq.auditoria");
+        await _entorno.PublicarCrudoAsync("ev98.proyecto.algo-nuevo", nuevo.Serializar());
+
+        JsonElement? entrada = null;
+        await EntornoAuditoria.EsperarAsync(async () =>
+        {
+            JsonElement pagina = await cliente.GetFromJsonAsync<JsonElement>("/v1/auditoria?tipo=EV-98");
+            entrada = pagina.GetProperty("entradas").EnumerateArray().Cast<JsonElement?>()
+                .FirstOrDefault(e => e!.Value.GetProperty("idEvento").GetGuid() == nuevo.IdEvento);
+            return entrada is not null;
+        }, "el tipo nuevo queda en el registro", segundos: 30);
+
+        Assert.Equal(JsonValueKind.Null, entrada!.Value.GetProperty("actor").ValueKind);
+        Assert.Equal("EV-98", entrada.Value.GetProperty("sobre").GetProperty("tipo").GetString());
+        Assert.Equal(antesDlq, await _entorno.MensajesEnColaAsync("dlq.auditoria"));
+    }
+
+    [Fact]
     public async Task R02_con_1_2_4_y_el_plazo_vencido_se_reporta_el_3_y_si_el_3_llega_a_tiempo_no()
     {
         const int plazo = 3;
