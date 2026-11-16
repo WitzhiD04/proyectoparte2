@@ -10,3 +10,6 @@ dist/
 # Claves locales de compose: nunca al repositorio (se documentan en .env.ejemplo).
 .env
 **/TestResults/
+
+# Worktrees de los agentes y configuración local de Claude Code: no son parte del repositorio.
+.claude/
