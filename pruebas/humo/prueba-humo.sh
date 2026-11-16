@@ -46,10 +46,10 @@ hasta() { # descripción, condición de Python sobre d, argumentos de curl...; r
   done
   echo "  FALLA $descripcion -> $(head -c 300 "$SALIDA")"; fallas=$((fallas+1)); return 1
 }
-evaluar() { # id de la evaluación, nivel de daño, referencia: el dispositivo la sincroniza como lo hace la app
-  local ev="$1" nivel="$2" referencia="$3" activo; activo=$("$PY" -c "import uuid;print(uuid.uuid4())" | tr -d '\r')
+evaluar() { # id, nivel de daño, referencia, latitud: el dispositivo la sincroniza como lo hace la app
+  local ev="$1" nivel="$2" referencia="$3" lat="$4" activo; activo=$("$PY" -c "import uuid;print(uuid.uuid4())" | tr -d '\r')
   local instante; instante=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-  esperar "sincronizar la evaluación $referencia" 200 "${EVA[@]}" "${J[@]}" -d "{\"idDispositivo\":\"$DISP\",\"instanteEnvioDispositivo\":\"$instante\",\"operaciones\":[{\"idOperacion\":\"$("$PY" -c "import uuid;print(uuid.uuid4())" | tr -d '\r')\",\"tipo\":\"CREAR\",\"evaluacion\":{\"id\":\"$ev\",\"activoId\":\"$activo\",\"activoNuevo\":{\"id\":\"$activo\",\"tipoCodigo\":\"escuela\",\"lat\":4.5339,\"lon\":-75.6811,\"referencia\":\"$referencia\"},\"desastreId\":\"$D\",\"instanteCampo\":\"$instante\",\"evaluador\":\"evaluador.armenia\",\"organizacion\":\"alcaldia-armenia\",\"lat\":4.5339,\"lon\":-75.6811,\"precisionM\":5,\"tipoActivoCodigo\":\"escuela\",\"nivelDano\":\"$nivel\",\"descripcion\":\"Prueba de humo\",\"evidencias\":[]}}]}" "$B/sincronizacion/evaluaciones"
+  esperar "sincronizar la evaluación $referencia" 200 "${EVA[@]}" "${J[@]}" -d "{\"idDispositivo\":\"$DISP\",\"instanteEnvioDispositivo\":\"$instante\",\"operaciones\":[{\"idOperacion\":\"$("$PY" -c "import uuid;print(uuid.uuid4())" | tr -d '\r')\",\"tipo\":\"CREAR\",\"evaluacion\":{\"id\":\"$ev\",\"activoId\":\"$activo\",\"activoNuevo\":{\"id\":\"$activo\",\"tipoCodigo\":\"escuela\",\"lat\":$lat,\"lon\":$LON,\"referencia\":\"$referencia\"},\"desastreId\":\"$D\",\"instanteCampo\":\"$instante\",\"evaluador\":\"evaluador.armenia\",\"organizacion\":\"alcaldia-armenia\",\"lat\":$lat,\"lon\":$LON,\"precisionM\":5,\"tipoActivoCodigo\":\"escuela\",\"nivelDano\":\"$nivel\",\"descripcion\":\"Prueba de humo\",\"evidencias\":[]}}]}" "$B/sincronizacion/evaluaciones"
   hasta "la validación de $referencia la acepta un organismo participante" "d.get('estado')=='VALIDADA'" "${ORG[@]}" "${J[@]}" -X POST --data-binary '{"estado":"VALIDADA","motivo":"Verificada en campo"}' "$B/evaluaciones/$ev/validacion"
 }
 
@@ -60,8 +60,16 @@ D=$(campo "d['id']")
 echo "       desastre $D"
 hasta "Evaluación de Daños lo ofrece en la descarga (EV-03)" "any(x['id']=='$D' for x in d['desastres'])" "${EVA[@]}" "$B/descarga?desastreId=$D"
 EV=$("$PY" -c "import uuid;print(uuid.uuid4())" | tr -d '\r'); EVL=$("$PY" -c "import uuid;print(uuid.uuid4())" | tr -d '\r')
-evaluar "$EV" GRAVE "Escuela La Esperanza"
-evaluar "$EVL" LEVE "Escuela El Caimo"
+# Puntos distintos en cada corrida, dentro de Armenia y a ~1 km entre sí: dos escuelas a pocos metros serían un posible
+# duplicado (AD-33), también con las de corridas anteriores.
+LAT=$("$PY" -c "import random;print(round(4.515+random.random()*0.02,6))" | tr -d '
+')
+LON=$("$PY" -c "import random;print(round(-75.70+random.random()*0.03,6))" | tr -d '
+')
+LAT2=$("$PY" -c "print(round($LAT+0.009,6))" | tr -d '
+')
+evaluar "$EV" GRAVE "Escuela La Esperanza" "$LAT"
+evaluar "$EVL" LEVE "Escuela El Caimo" "$LAT2"
 for estado in EN_ATENCION EN_RECUPERACION EN_RECONSTRUCCION; do
   esperar "el desastre pasa a $estado" 200 "${GD[@]}" "${J[@]}" -d "{\"estado\":\"$estado\"}" "$B/desastres/$D/transiciones"
 done
@@ -69,7 +77,7 @@ hasta "Reconstrucción lo ve en reconstrucción (EV-03 y EV-06)" "any(x['id']=='
 
 CLAVE="humo-$(date +%s)"
 echo "1. Creación por lote"
-hasta "las dos evaluaciones validadas son candidatas (EV-08)" "{x['idEvaluacion'] for x in d}=={'$EV','$EVL'}" "${AUT[@]}" "$B/reconstruccion/candidatas?desastre=$D"
+hasta "la evaluación grave validada es candidata y la leve no (EV-08, regla de creación)" "{x['idEvaluacion'] for x in d}=={'$EV'}" "${AUT[@]}" "$B/reconstruccion/candidatas?desastre=$D"
 esperar "lote con una evaluación de daño leve se rechaza completo" 422 "${AUT[@]}" "${J[@]}" -d "{\"idDesastre\":\"$D\",\"idsEvaluaciones\":[\"$EV\",\"$EVL\"],\"claveIdempotencia\":\"$CLAVE-x\"}" "$B/proyectos:lote"
 esperar "crear lote" 201 "${AUT[@]}" "${J[@]}" -d "{\"idDesastre\":\"$D\",\"idsEvaluaciones\":[\"$EV\"],\"claveIdempotencia\":\"$CLAVE\"}" "$B/proyectos:lote"
 P=$("$PY" -c "import json,sys;print(json.load(sys.stdin)['idsProyectos'][0])" < $SALIDA | tr -d '\r')
@@ -101,7 +109,7 @@ esperar "consolidado (servicio de consulta)" 200 "${AUD[@]}" "$B/programa/consol
 "$PY" -c "import json,sys;d=json.load(sys.stdin);print('       finalizados:',d['proyectosPorEstado']['Finalizado'],' en sobrecosto:',len(d['proyectosEnSobrecosto']),' dato al:',d['datoAl']); sys.exit(0 if d['datoAl'] else 1)" < $SALIDA
 
 echo "5. Cierre del desastre (E-07): Gestión de Desastres sabe por EV-18 y EV-20 que el proyecto terminó"
-cerrar() { curl -s -o "$SALIDA" -w "%{http_code}" "${GD[@]}" "${J[@]}" --data-binary '{"estado":"CERRADO","justificacion":"Reconstrucción terminada"}' "$B/desastres/$D/transiciones"; }
+cerrar() { printf '%s' '{"estado":"CERRADO","justificacion":"Reconstrucción terminada"}' | curl -s -o "$SALIDA" -w "%{http_code}" "${GD[@]}" "${J[@]}" --data-binary @- "$B/desastres/$D/transiciones"; }
 for _ in $(seq 1 60); do codigo=$(cerrar); [ "$codigo" = 200 ] && break; sleep 0.5; done
 [ "$codigo" = 200 ] && echo "  ok   el desastre se cierra cuando su único proyecto está finalizado (200)" || { echo "  FALLA cierre del desastre: $codigo -> $(head -c 300 "$SALIDA")"; fallas=$((fallas+1)); }
 
