@@ -15,7 +15,10 @@ La app móvil de evaluación de daños vive en su propio repositorio (`danos`) y
 | `servicios/reconstruccion` | Reconstrucción y Consulta del Programa ([README](servicios/reconstruccion/README.md)) |
 | `servicios/evaluacion-danos` | Evaluación de Daños: sincronización sin conexión, revisión y catálogo ([README](servicios/evaluacion-danos/README.md)) |
 | `adaptadores/adaptador-se2` | Adaptador de SE-2: publica la capa de municipios en EV-21 ([README](adaptadores/adaptador-se2/README.md)) |
+| `comun/Plataforma.Comun.Adaptadores` | Piezas de los adaptadores de sistemas externos (DA-11): `IContratoAdaptador`, marca de avance, resiliencia con Polly (DT-09) y EV-23 |
+| `adaptadores/adaptador-se7` | Adaptador de SE-7: EV-18 y EV-20 hacia SE-7 desde `q.salida.se7`, EV-24 desde su marca de avance ([README](adaptadores/adaptador-se7/README.md)) |
 | `simuladores/simulador-qa14` | Simulador de QA-14 (120 evaluaciones, 5 conflictos, lote enviado dos veces) |
+| `simuladores/sim-se7` | Simulador de SE-7 con estado y caída simulada para QA-01 ([README](simuladores/sim-se7/README.md)) |
 | `datos/geo` | Capa de municipios que entrega SE-2 |
 | `servicios/auditoria` | Auditoría: registro inmutable de todos los eventos y detección de huecos (AD-21, DA-17) ([README](servicios/auditoria/README.md)) |
 | `consola/` | Consola de coordinación (Angular) |
@@ -81,5 +84,5 @@ bash despliegue/k8s/aplicar.sh
 ```
 
 Solo trabaja contra el contexto `minikube` y lo pasa explícito en cada comando, para no desplegar por error en
-otro clúster. Se ejecuta dentro de WSL, donde corre Minikube; ver las instrucciones al inicio del script. Instala el Cluster Operator de RabbitMQ (v2.23.2),
+otro clúster. Se ejecuta dentro de WSL, donde corre Minikube; ver las instrucciones al inicio del script. Instala el Cluster Operator de RabbitMQ (v2.23.2) y KEDA (v2.17.0, escala los adaptadores de 0 a N),
 crea el namespace `plataforma` y deja la consola en `http://<minikube ip>:30080`.

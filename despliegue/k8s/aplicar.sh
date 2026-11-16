@@ -13,6 +13,8 @@ set -euo pipefail
 
 CONTEXTO="minikube"
 OPERADOR_RABBIT="https://github.com/rabbitmq/cluster-operator/releases/download/v2.23.2/cluster-operator.yml"
+# KEDA (DT-10): escala los adaptadores de 0 a N (AD-25). Manifiesto oficial con versión fija.
+KEDA="https://github.com/kedacore/keda/releases/download/v2.17.0/keda-2.17.0.yaml"
 raiz="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 k() { kubectl --context "$CONTEXTO" "$@"; }
 
@@ -34,6 +36,8 @@ echo "1. Imágenes, construidas dentro de Minikube (no hace falta un registro)"
 minikube image build -t plataforma/reconstruccion:local -f servicios/reconstruccion/Dockerfile "$raiz"
 minikube image build -t plataforma/evaluacion-danos:local -f servicios/evaluacion-danos/Dockerfile "$raiz"
 minikube image build -t plataforma/adaptador-se2:local -f adaptadores/adaptador-se2/Dockerfile "$raiz"
+minikube image build -t plataforma/adaptador-se7:local -f adaptadores/adaptador-se7/Dockerfile "$raiz"
+minikube image build -t plataforma/sim-se7:local -f simuladores/sim-se7/Dockerfile "$raiz"
 minikube image build -t plataforma/auditoria:local -f servicios/auditoria/Dockerfile "$raiz"
 minikube image build -t plataforma/consola:local "$raiz/consola"
 minikube image build -t plataforma/gestion-desastres:local -f servicios/gestion-desastres/Dockerfile "$raiz"
@@ -45,6 +49,13 @@ k apply -f "$OPERADOR_RABBIT"
 k -n rabbitmq-system rollout status deployment/rabbitmq-cluster-operator --timeout=180s
 k wait --for=condition=Established crd/rabbitmqclusters.rabbitmq.com --timeout=120s
 
+echo "2b. Operadores: KEDA (v2.17.0)"
+# Server-side: los CRD de KEDA superan el tamaño de la anotación que usa el apply del lado del cliente.
+k apply --server-side -f "$KEDA"
+k -n keda rollout status deployment/keda-operator --timeout=180s
+k -n keda rollout status deployment/keda-operator-metrics-apiserver --timeout=180s
+k wait --for=condition=Established crd/scaledobjects.keda.sh crd/triggerauthentications.keda.sh --timeout=120s
+
 echo "3. Plataforma (namespace plataforma)"
 k kustomize --load-restrictor=LoadRestrictionsNone "$raiz/despliegue/k8s/local" | k apply -f -
 k -n plataforma wait --for=condition=complete job/reconstruccion-migrador --timeout=600s
@@ -52,6 +63,10 @@ k -n plataforma rollout status deployment/reconstruccion --timeout=300s
 k -n plataforma rollout status deployment/consulta-programa --timeout=300s
 k -n plataforma wait --for=condition=complete job/adaptador-se2-migrador --timeout=600s
 k -n plataforma rollout status deployment/adaptador-se2 --timeout=300s
+k -n plataforma rollout status deployment/sim-se7 --timeout=300s
+k -n plataforma wait --for=condition=complete job/adaptador-se7-migrador --timeout=600s
+# Los adaptadores de SE-7 los escala KEDA (pueden estar en cero): se comprueba que sus ScaledObject estén listos.
+k -n plataforma wait --for=condition=Ready scaledobject/adaptador-se7-salida scaledobject/adaptador-se7-entrada --timeout=180s
 k -n plataforma wait --for=condition=complete job/evaluacion-danos-migrador --timeout=600s
 k -n plataforma rollout status deployment/evaluacion-danos --timeout=300s
 k -n plataforma wait --for=condition=complete job/gestion-desastres-migrador --timeout=600s
