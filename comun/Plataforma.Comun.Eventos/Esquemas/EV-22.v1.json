@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-22.v1.json",
+  "title": "EV-22 Conflicto o duplicado resuelto",
+  "description": "Extensión aditiva (E-05). Productor: Evaluación de Daños. Ninguna versión se elimina (AD-32).",
+  "type": "object",
+  "required": ["idConflicto", "decision", "idEvaluacionVigente", "versionVigente", "decididoPor", "justificacion", "evaluacion"],
+  "properties": {
+    "idConflicto": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "decision": { "$ref": "comun.v1.json#/$defs/decisionConflicto" },
+    "idEvaluacionVigente": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "versionVigente": { "$ref": "comun.v1.json#/$defs/version" },
+    "decididoPor": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "justificacion": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "evaluacion": { "$ref": "comun.v1.json#/$defs/instantaneaEvaluacion" }
+  }
+}

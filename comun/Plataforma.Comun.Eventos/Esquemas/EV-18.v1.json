@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-18.v1.json",
+  "title": "EV-18 Proyecto creado",
+  "description": "Productor: Reconstrucción. Consumidores: Consulta del Programa, adaptador de SE-7, Gestión de Desastres (E-07) y Auditoría. Campos del SAD más codigosMunicipio, alcance, nombre y proyecto (E-10).",
+  "type": "object",
+  "required": ["idProyecto", "idsEvaluacionesOrigen", "idDesastre", "presupuesto", "fuenteFinanciacion", "responsable", "cronograma", "codigosMunicipio", "alcance", "nombre", "proyecto"],
+  "properties": {
+    "idProyecto": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "idsEvaluacionesOrigen": { "type": "array", "minItems": 1, "items": { "$ref": "comun.v1.json#/$defs/uuid" } },
+    "idDesastre": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "presupuesto": { "anyOf": [{ "$ref": "comun.v1.json#/$defs/monto" }, { "type": "null" }] },
+    "fuenteFinanciacion": { "type": ["string", "null"] },
+    "responsable": { "type": ["string", "null"] },
+    "cronograma": { "anyOf": [{ "$ref": "comun.v1.json#/$defs/cronograma" }, { "type": "null" }] },
+    "codigosMunicipio": { "type": "array", "minItems": 1, "items": { "$ref": "comun.v1.json#/$defs/codigoMunicipio" } },
+    "alcance": { "$ref": "comun.v1.json#/$defs/alcanceProyecto" },
+    "nombre": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "proyecto": { "$ref": "comun.v1.json#/$defs/resumenProyecto" }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-26.v1.json",
+  "title": "EV-26 Evaluación actualizada en el servidor",
+  "description": "Extensión aditiva (E-06). Productor: Evaluación de Daños. Actualización con conexión (RF-ED-07) o asociación a un desastre (AD-29).",
+  "type": "object",
+  "required": ["idEvaluacion", "motivo", "autor", "evaluacion"],
+  "properties": {
+    "idEvaluacion": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "motivo": { "$ref": "comun.v1.json#/$defs/motivoActualizacion" },
+    "autor": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "evaluacion": { "$ref": "comun.v1.json#/$defs/instantaneaEvaluacion" }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-23.v1.json",
+  "title": "EV-23 Estado de integración cambiado",
+  "description": "Extensión aditiva (E-15), mitigación de ATAM R-10. Productor: cada adaptador, al abrirse o cerrarse su cortacircuitos.",
+  "type": "object",
+  "required": ["sistemaExterno", "estadoAnterior", "estadoNuevo", "instante", "mensajesEnCola"],
+  "properties": {
+    "sistemaExterno": { "type": "string", "pattern": "^SE-[0-9]+$" },
+    "estadoAnterior": { "$ref": "comun.v1.json#/$defs/estadoIntegracion" },
+    "estadoNuevo": { "$ref": "comun.v1.json#/$defs/estadoIntegracion" },
+    "instante": { "$ref": "comun.v1.json#/$defs/instante" },
+    "mensajesEnCola": { "type": "integer", "minimum": 0 }
+  }
+}

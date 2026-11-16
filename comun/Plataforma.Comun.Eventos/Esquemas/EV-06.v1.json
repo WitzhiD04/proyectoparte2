@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-06.v1.json",
+  "title": "EV-06 Estado de desastre cambiado",
+  "description": "Productor: Gestión de Desastres. Dispara FP-08 cuando el estado nuevo es EN_RECONSTRUCCION (AD-40). Campos del SAD más versionDesastre.",
+  "type": "object",
+  "required": ["idDesastre", "estadoAnterior", "estadoNuevo", "autor", "versionDesastre"],
+  "properties": {
+    "idDesastre": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "estadoAnterior": { "$ref": "comun.v1.json#/$defs/estadoDesastre" },
+    "estadoNuevo": { "$ref": "comun.v1.json#/$defs/estadoDesastre" },
+    "autor": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "versionDesastre": { "$ref": "comun.v1.json#/$defs/version" }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-27.v1.json",
+  "title": "EV-27 Organismos del desastre cambiados",
+  "description": "Extensión aditiva (E-25). Productor: Gestión de Desastres. Base de la autorización de nivel 2 en la validación de evaluaciones (AD-22).",
+  "type": "object",
+  "required": ["idDesastre", "organismoResponsable", "participantes", "version", "autor"],
+  "properties": {
+    "idDesastre": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "organismoResponsable": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "participantes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["organismo", "responsabilidad"],
+        "properties": {
+          "organismo": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+          "responsabilidad": { "$ref": "comun.v1.json#/$defs/textoNoVacio" }
+        }
+      }
+    },
+    "version": { "$ref": "comun.v1.json#/$defs/version" },
+    "autor": { "$ref": "comun.v1.json#/$defs/textoNoVacio" }
+  }
+}

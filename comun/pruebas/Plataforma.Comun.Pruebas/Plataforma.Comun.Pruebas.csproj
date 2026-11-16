@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Pruebas del contrato (esquemas y sobre) y de la mensajería contra un PostgreSQL y un RabbitMQ reales
+    (Testcontainers), con la topología de despliegue/bus. Las de integración requieren Docker.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Plataforma.Comun.Eventos\Plataforma.Comun.Eventos.csproj" />
+    <ProjectReference Include="..\..\Plataforma.Comun.Mensajeria\Plataforma.Comun.Mensajeria.csproj" />
+  </ItemGroup>
+</Project>

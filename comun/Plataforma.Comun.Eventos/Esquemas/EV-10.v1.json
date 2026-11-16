@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-10.v1.json",
+  "title": "EV-10 Conflicto o duplicado detectado",
+  "description": "Productor: Evaluación de Daños, por la bandeja de salida (AD-45). Ninguna versión se descarta. Campos del SAD más idActivo y tipoConflicto.",
+  "type": "object",
+  "required": ["idConflicto", "idsEvaluaciones", "reglaDeteccion", "versiones", "estadoRevision", "idActivo", "tipoConflicto"],
+  "properties": {
+    "idConflicto": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "idsEvaluaciones": { "type": "array", "minItems": 1, "items": { "$ref": "comun.v1.json#/$defs/uuid" } },
+    "reglaDeteccion": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "versiones": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["idEvaluacion", "numeroVersion", "vigente"],
+        "properties": {
+          "idEvaluacion": { "$ref": "comun.v1.json#/$defs/uuid" },
+          "numeroVersion": { "$ref": "comun.v1.json#/$defs/version" },
+          "vigente": { "type": "boolean" }
+        }
+      }
+    },
+    "estadoRevision": { "$ref": "comun.v1.json#/$defs/estadoRevision" },
+    "idActivo": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "tipoConflicto": { "$ref": "comun.v1.json#/$defs/tipoConflicto" }
+  }
+}

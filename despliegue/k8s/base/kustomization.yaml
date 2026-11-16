@@ -1,0 +1,7 @@
+# Manifiestos comunes de la plataforma. No fija el namespace: lo fija cada overlay (local; más adelante, regiones).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - 00-base.yaml
+  - 10-datos.yaml
+  - 20-servicios.yaml

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Contrato de eventos de la plataforma (AD-09, SAD §5.2): sobre canónico, enumeraciones canónicas,
+    catálogo de eventos, tipos de datos de cada evento y sus esquemas JSON.
+    Es un contrato puro: solo depende de la biblioteca base (System.Text.Json). No tiene E/S.
+    Regla de evolución (ATAM R-03): solo cambios aditivos; un cambio de significado es una versión nueva.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="Esquemas\**\*.json" LogicalName="Esquemas/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

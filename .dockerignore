@@ -1,0 +1,13 @@
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/.angular
+**/TestResults
+.git
+docs
+despliegue
+pruebas
+herramientas
+**/tests
+**/pruebas

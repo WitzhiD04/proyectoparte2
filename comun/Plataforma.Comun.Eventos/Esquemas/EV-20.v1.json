@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-20.v1.json",
+  "title": "EV-20 Estado, avance o datos del proyecto cambiados",
+  "description": "Productor: Reconstrucción. Responsable, cronograma, contratista, estado, avance, costo y documento (E-10). Campos del SAD más tipoCambio, costoRegistrado, valorAnterior, valorNuevo, justificacion y proyecto.",
+  "type": "object",
+  "required": ["idProyecto", "tipoCambio", "estadoAnterior", "estadoNuevo", "avance", "costoEjecutado", "costoRegistrado", "valorAnterior", "valorNuevo", "versionHistorial", "autor", "justificacion", "proyecto"],
+  "properties": {
+    "idProyecto": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "tipoCambio": { "enum": ["RESPONSABLE", "CRONOGRAMA", "CONTRATISTA", "ESTADO", "AVANCE", "COSTO", "DOCUMENTO"] },
+    "estadoAnterior": { "$ref": "comun.v1.json#/$defs/estadoProyecto" },
+    "estadoNuevo": { "$ref": "comun.v1.json#/$defs/estadoProyecto" },
+    "avance": { "$ref": "comun.v1.json#/$defs/porcentaje" },
+    "costoEjecutado": { "$ref": "comun.v1.json#/$defs/monto" },
+    "costoRegistrado": { "anyOf": [{ "type": "number", "exclusiveMinimum": 0 }, { "type": "null" }] },
+    "valorAnterior": { "type": ["string", "null"] },
+    "valorNuevo": { "type": ["string", "null"] },
+    "versionHistorial": { "$ref": "comun.v1.json#/$defs/version" },
+    "autor": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "justificacion": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "proyecto": { "$ref": "comun.v1.json#/$defs/resumenProyecto" }
+  },
+  "if": { "properties": { "tipoCambio": { "const": "COSTO" } } },
+  "then": { "properties": { "costoRegistrado": { "type": "number", "exclusiveMinimum": 0 } } },
+  "else": { "properties": { "costoRegistrado": { "type": "null" } } }
+}

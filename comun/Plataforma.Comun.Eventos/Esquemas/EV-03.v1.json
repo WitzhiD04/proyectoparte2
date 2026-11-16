@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-03.v1.json",
+  "title": "EV-03 Desastre creado",
+  "description": "Productor: Gestión de Desastres. Campos del SAD (Cuadro 16) más nombre, descripcion, instanteInicio, ubicacion y versionDesastre (extensiones aditivas).",
+  "type": "object",
+  "required": ["idDesastre", "tipo", "severidad", "zonaVersion", "estado", "organismoRegistra", "responsable", "origen", "nombre", "descripcion", "instanteInicio", "ubicacion", "versionDesastre"],
+  "properties": {
+    "idDesastre": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "tipo": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "severidad": { "$ref": "comun.v1.json#/$defs/severidad" },
+    "zonaVersion": { "type": "integer", "minimum": 0 },
+    "estado": { "$ref": "comun.v1.json#/$defs/estadoDesastre" },
+    "organismoRegistra": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "responsable": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "origen": { "$ref": "comun.v1.json#/$defs/origenDesastre" },
+    "nombre": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "descripcion": { "type": "string" },
+    "instanteInicio": { "$ref": "comun.v1.json#/$defs/instante" },
+    "ubicacion": { "$ref": "comun.v1.json#/$defs/ubicacion" },
+    "versionDesastre": { "$ref": "comun.v1.json#/$defs/version" }
+  }
+}

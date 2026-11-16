@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-19.v1.json",
+  "title": "EV-19 Presupuesto cambiado",
+  "description": "Productor: Reconstrucción. Cubre el presupuesto y la fuente de financiación (E-10). Campos del SAD más tipoCambio, fuenteAnterior, fuenteNueva y proyecto.",
+  "type": "object",
+  "required": ["idProyecto", "tipoCambio", "presupuestoAnterior", "presupuestoNuevo", "fuenteAnterior", "fuenteNueva", "versionHistorial", "autor", "justificacion", "proyecto"],
+  "properties": {
+    "idProyecto": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "tipoCambio": { "enum": ["PRESUPUESTO", "FUENTE"] },
+    "presupuestoAnterior": { "anyOf": [{ "$ref": "comun.v1.json#/$defs/monto" }, { "type": "null" }] },
+    "presupuestoNuevo": { "anyOf": [{ "$ref": "comun.v1.json#/$defs/monto" }, { "type": "null" }] },
+    "fuenteAnterior": { "type": ["string", "null"] },
+    "fuenteNueva": { "type": ["string", "null"] },
+    "versionHistorial": { "$ref": "comun.v1.json#/$defs/version" },
+    "autor": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "justificacion": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "proyecto": { "$ref": "comun.v1.json#/$defs/resumenProyecto" }
+  }
+}

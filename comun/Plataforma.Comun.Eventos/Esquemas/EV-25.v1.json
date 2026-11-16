@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-25.v1.json",
+  "title": "EV-25 Catálogo de tipos de activo actualizado",
+  "description": "Extensión aditiva (E-16). Productor: Evaluación de Daños. Permite incorporar un tipo sin redespliegue (QA-10).",
+  "type": "object",
+  "required": ["codigo", "nombre", "criterios", "version"],
+  "properties": {
+    "codigo": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+    "nombre": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "criterios": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["nivel", "criterio"],
+        "properties": {
+          "nivel": { "$ref": "comun.v1.json#/$defs/nivelDano" },
+          "criterio": { "$ref": "comun.v1.json#/$defs/textoNoVacio" }
+        }
+      }
+    },
+    "version": { "$ref": "comun.v1.json#/$defs/version" }
+  }
+}

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Pruebas de los adaptadores de Reconstrucción contra un PostgreSQL real (Testcontainers): migraciones, permisos de
+    mínimo privilegio, traducción de los hechos al contrato y proyección del programa. Requieren Docker.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Reconstruccion.Infraestructura\Reconstruccion.Infraestructura.csproj" />
+  </ItemGroup>
+</Project>

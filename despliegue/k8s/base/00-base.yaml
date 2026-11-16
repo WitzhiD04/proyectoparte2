@@ -1,0 +1,19 @@
+# Claves de este entorno local de pruebas (aviso A-15). En un despliegue real se crean aparte, por ejemplo con un
+# gestor de secretos, y no se guardan en el repositorio. Las del bus deben coincidir con despliegue/bus/definiciones.json.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: credenciales
+stringData:
+  postgres: postgres_local
+  replicador: replicador_local
+  reconstruccion-app: reconstruccion_local
+  programa-app: programa_local
+  cadena-reconstruccion-dueno: "Host=db;Port=5432;Database=reconstruccion;Username=postgres;Password=postgres_local"
+  cadena-programa-dueno: "Host=db;Port=5432;Database=programa;Username=postgres;Password=postgres_local"
+  cadena-reconstruccion: "Host=db;Port=5432;Database=reconstruccion;Username=reconstruccion_app;Password=reconstruccion_local"
+  cadena-programa: "Host=db;Port=5432;Database=programa;Username=programa_app;Password=programa_local"
+  bus-reconstruccion: reconstruccion_local
+  bus-consulta-programa: consulta_programa_local
+  minio-usuario: minioadmin
+  minio-clave: minioadmin

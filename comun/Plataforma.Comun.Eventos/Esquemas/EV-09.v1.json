@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-09.v1.json",
+  "title": "EV-09 Evaluación sincronizada",
+  "description": "Productor: Evaluación de Daños, por la bandeja de salida (AD-45). Los seis primeros campos son los del SAD; el resto son de la enmienda E-03.",
+  "type": "object",
+  "required": ["idEvaluacion", "idDispositivo", "instanteLocal", "instanteServidor", "enConflicto", "versionesConservadas", "idActivo", "idDesastre", "tipoActivo", "nivelDano", "ubicacion", "precisionM", "codigoMunicipio", "estadoEvaluacion", "versionEvaluacion", "versionActivo"],
+  "properties": {
+    "idEvaluacion": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "idDispositivo": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "instanteLocal": { "$ref": "comun.v1.json#/$defs/instante" },
+    "instanteServidor": { "$ref": "comun.v1.json#/$defs/instante" },
+    "enConflicto": { "type": "boolean" },
+    "versionesConservadas": { "type": "integer", "minimum": 1 },
+    "idActivo": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "idDesastre": { "anyOf": [{ "$ref": "comun.v1.json#/$defs/uuid" }, { "type": "null" }] },
+    "tipoActivo": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "nivelDano": { "$ref": "comun.v1.json#/$defs/nivelDano" },
+    "ubicacion": { "$ref": "comun.v1.json#/$defs/ubicacion" },
+    "precisionM": { "type": "number", "minimum": 0 },
+    "codigoMunicipio": { "$ref": "comun.v1.json#/$defs/codigoMunicipio" },
+    "estadoEvaluacion": { "$ref": "comun.v1.json#/$defs/estadoEvaluacion" },
+    "versionEvaluacion": { "$ref": "comun.v1.json#/$defs/version" },
+    "versionActivo": { "$ref": "comun.v1.json#/$defs/version" }
+  }
+}

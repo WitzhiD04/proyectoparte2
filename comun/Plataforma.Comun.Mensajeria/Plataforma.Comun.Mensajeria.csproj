@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Adaptadores de mensajería compartidos (AD-02, AD-45, DA-03, DA-04): bandeja de salida transaccional,
+    relevo hacia RabbitMQ con secuencia sin huecos por productor, consumidor idempotente con cola de mensajes
+    muertos y validación del contrato. Lo usa solo la capa de infraestructura de cada servicio.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="RabbitMQ.Client" />
+    <PackageReference Include="JsonSchema.Net" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Plataforma.Comun.Eventos\Plataforma.Comun.Eventos.csproj" />
+  </ItemGroup>
+</Project>

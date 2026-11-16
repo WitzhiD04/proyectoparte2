@@ -1,0 +1,182 @@
+# Base de datos con su réplica, bus de eventos de 3 nodos y almacén de documentos.
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+spec:
+  clusterIP: None
+  selector: { app: db }
+  ports: [{ port: 5432 }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db
+spec:
+  serviceName: db
+  replicas: 1
+  selector:
+    matchLabels: { app: db }
+  template:
+    metadata:
+      labels: { app: db }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18.4
+          args: ["-c", "wal_level=replica", "-c", "max_wal_senders=5", "-c", "max_replication_slots=5", "-c", "hot_standby=on"]
+          env:
+            - { name: POSTGRES_DB, value: reconstruccion }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: credenciales, key: postgres } }
+          ports: [{ containerPort: 5432 }]
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "postgres", "-d", "reconstruccion"] }
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 512Mi }
+          volumeMounts:
+            - { name: datos, mountPath: /var/lib/postgresql }
+            # Solo la regla de pg_hba para la réplica: el esquema lo crea el Job del migrador (DT-19).
+            - { name: replicacion, mountPath: /docker-entrypoint-initdb.d }
+      volumes:
+        - name: replicacion
+          configMap: { name: postgres-replicacion }
+  volumeClaimTemplates:
+    - metadata: { name: datos }
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources: { requests: { storage: 1Gi } }
+---
+# Réplica continua de PostgreSQL (segunda ubicación simulada). El rol replicador lo crea el migrador.
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-replica
+spec:
+  clusterIP: None
+  selector: { app: db-replica }
+  ports: [{ port: 5432 }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db-replica
+spec:
+  serviceName: db-replica
+  replicas: 1
+  selector:
+    matchLabels: { app: db-replica }
+  template:
+    metadata:
+      labels: { app: db-replica }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18.4
+          command:
+            - bash
+            - -c
+            - |
+              until pg_isready -h db -U replicador -d postgres; do sleep 2; done
+              if [ ! -s "$PGDATA/PG_VERSION" ]; then
+                rm -rf "$PGDATA"/*
+                until pg_basebackup -h db -U replicador -D "$PGDATA" -Fp -Xs -c fast -P -R; do rm -rf "$PGDATA"/*; sleep 3; done
+              fi
+              # pg_basebackup corre como root y deja los archivos sin acceso para postgres.
+              chown -R postgres:postgres /var/lib/postgresql
+              exec docker-entrypoint.sh postgres -c hot_standby=on
+          env:
+            - name: PGPASSWORD
+              valueFrom: { secretKeyRef: { name: credenciales, key: replicador } }
+          ports: [{ containerPort: 5432 }]
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "postgres", "-d", "reconstruccion"] }
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 384Mi }
+          volumeMounts:
+            - { name: datos-replica, mountPath: /var/lib/postgresql }
+  volumeClaimTemplates:
+    - metadata: { name: datos-replica }
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources: { requests: { storage: 1Gi } }
+---
+# Bus de eventos: 3 nodos (AD-02, Figura 2) con el Cluster Operator de RabbitMQ (DT-14). La topología, las políticas
+# y los usuarios se cargan del ConfigMap bus-definiciones, el mismo archivo que usa compose (DA-03).
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: bus
+spec:
+  replicas: 3
+  image: rabbitmq:4.4.0-management
+  resources:
+    requests: { cpu: 100m, memory: 400Mi }
+    limits: { memory: 600Mi }
+  rabbitmq:
+    additionalConfig: |
+      definitions.import_backend = local_filesystem
+      definitions.local.path = /etc/rabbitmq/definiciones/definiciones.json
+      quorum_queue.continuous_membership_reconciliation.enabled = true
+      quorum_queue.continuous_membership_reconciliation.target_group_size = 3
+  persistence:
+    storage: 1Gi
+  override:
+    statefulSet:
+      spec:
+        template:
+          spec:
+            containers:
+              - name: rabbitmq
+                volumeMounts:
+                  - { name: definiciones, mountPath: /etc/rabbitmq/definiciones }
+            volumes:
+              - name: definiciones
+                configMap: { name: bus-definiciones }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: archivos
+spec:
+  clusterIP: None
+  selector: { app: archivos }
+  ports: [{ port: 9000 }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: archivos
+spec:
+  serviceName: archivos
+  replicas: 1
+  selector:
+    matchLabels: { app: archivos }
+  template:
+    metadata:
+      labels: { app: archivos }
+    spec:
+      containers:
+        - name: minio
+          image: pgsty/minio   # minio/minio ya no se publica en Docker Hub (DT-11)
+          args: ["server", "/data"]
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom: { secretKeyRef: { name: credenciales, key: minio-usuario } }
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom: { secretKeyRef: { name: credenciales, key: minio-clave } }
+          ports: [{ containerPort: 9000 }]
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 512Mi }
+          volumeMounts:
+            - { name: documentos, mountPath: /data }
+  volumeClaimTemplates:
+    - metadata: { name: documentos }
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources: { requests: { storage: 1Gi } }

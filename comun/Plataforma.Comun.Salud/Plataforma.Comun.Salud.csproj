@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Sondeos de salud comunes (AD-24, DT-15): /salud/vivo indica que el proceso responde y /salud/listo que sus
+    dependencias (base de datos y bus) están disponibles. El orquestador retira de la rotación una réplica que no
+    está lista.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+</Project>

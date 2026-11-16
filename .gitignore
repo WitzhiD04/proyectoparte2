@@ -1,0 +1,12 @@
+bin/
+obj/
+node_modules/
+dist/
+.angular/
+.vs/
+.idea/
+*.user
+
+# Claves locales de compose: nunca al repositorio (se documentan en .env.ejemplo).
+.env
+**/TestResults/

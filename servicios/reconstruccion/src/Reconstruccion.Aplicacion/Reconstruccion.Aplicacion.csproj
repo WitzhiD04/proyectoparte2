@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Anillo de casos de uso: solo conoce al dominio. -->
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Reconstruccion.Dominio\Reconstruccion.Dominio.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,201 @@
+# Plataforma en un computador (desarrollo y demostración).
+#   docker compose -f despliegue/compose/docker-compose.yml up -d --build    -> consola en http://localhost:8080
+#   docker compose -f despliegue/compose/docker-compose.yml down             -> detiene; los datos quedan en los volúmenes
+#   docker compose -f despliegue/compose/docker-compose.yml down -v          -> detiene y borra bases, colas y documentos
+#
+# Las claves tienen valores de desarrollo por omisión (aviso A-15). Para cambiarlas, copie .env.ejemplo a .env en
+# esta carpeta. Las del bus deben coincidir con las que usó despliegue/bus/generar_definiciones.py.
+name: plataforma
+
+x-bus-nodo: &bus-nodo
+  image: rabbitmq:4.4.0-management
+  environment:
+    COOKIE: ${BUS_COOKIE:-cookie-local-plataforma}
+  # La cookie de Erlang se escribe con permisos 400 antes de arrancar; los 3 nodos la comparten para formar el clúster.
+  entrypoint:
+    - bash
+    - -c
+    - |
+      printf '%s' "$$COOKIE" > /var/lib/rabbitmq/.erlang.cookie
+      chown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie
+      chmod 400 /var/lib/rabbitmq/.erlang.cookie
+      exec docker-entrypoint.sh rabbitmq-server
+  healthcheck:
+    test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+    interval: 5s
+    timeout: 10s
+    retries: 40
+  restart: unless-stopped
+
+x-reconstruccion: &reconstruccion
+  image: plataforma/reconstruccion:local
+  build:
+    context: ../..
+    dockerfile: servicios/reconstruccion/Dockerfile
+
+services:
+  db:
+    image: postgres:18.4
+    command: ["postgres", "-c", "wal_level=replica", "-c", "max_wal_senders=5", "-c", "max_replication_slots=5", "-c", "hot_standby=on"]
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_CLAVE:-postgres_local}
+      POSTGRES_DB: reconstruccion
+    volumes:
+      - datos:/var/lib/postgresql
+      # Solo la regla de pg_hba para la réplica. El esquema lo crea el migrador (DT-19), no initdb.
+      - ./postgres/04-replicacion.sh:/docker-entrypoint-initdb.d/04-replicacion.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d reconstruccion"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  # Réplica continua de PostgreSQL (segunda ubicación simulada). El rol replicador lo crea el migrador.
+  db-replica:
+    image: postgres:18.4
+    depends_on:
+      reconstruccion-migrador: { condition: service_completed_successfully }
+    environment:
+      PGPASSWORD: ${REPLICADOR_CLAVE:-replicador_local}
+    command:
+      - bash
+      - -c
+      - |
+        until pg_isready -h db -U replicador -d postgres; do sleep 2; done
+        if [ ! -s "$$PGDATA/PG_VERSION" ]; then
+          rm -rf "$$PGDATA"/*
+          until pg_basebackup -h db -U replicador -D "$$PGDATA" -Fp -Xs -c fast -P -R; do rm -rf "$$PGDATA"/*; sleep 3; done
+        fi
+        # pg_basebackup corre como root y deja los archivos sin acceso para postgres.
+        chown -R postgres:postgres /var/lib/postgresql
+        exec docker-entrypoint.sh postgres -c hot_standby=on
+    volumes:
+      - datos_replica:/var/lib/postgresql
+    restart: unless-stopped
+
+  # Bus de eventos: 3 nodos en clúster (AD-02, Figura 2) con la topología declarada al desplegar (DA-03).
+  bus1:
+    <<: *bus-nodo
+    hostname: bus1
+    ports:
+      - "${PUERTO_RABBIT:-15672}:15672"   # panel de RabbitMQ (admin / admin_local)
+    volumes:
+      - ../bus/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ../bus/definiciones.json:/etc/rabbitmq/definiciones.json:ro
+      - bus1:/var/lib/rabbitmq
+  bus2:
+    <<: *bus-nodo
+    hostname: bus2
+    volumes:
+      - ../bus/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ../bus/definiciones.json:/etc/rabbitmq/definiciones.json:ro
+      - bus2:/var/lib/rabbitmq
+  bus3:
+    <<: *bus-nodo
+    hostname: bus3
+    volumes:
+      - ../bus/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ../bus/definiciones.json:/etc/rabbitmq/definiciones.json:ro
+      - bus3:/var/lib/rabbitmq
+
+  archivos:
+    # minio/minio ya no se publica en Docker Hub; pgsty/minio es un fork comunitario que conserva la consola (DT-11).
+    image: pgsty/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USUARIO:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_CLAVE:-minioadmin}
+    ports:
+      - "${PUERTO_MINIO:-9001}:9001"     # panel de MinIO
+    volumes:
+      - documentos:/data
+    restart: unless-stopped
+
+  # Migrador (DT-19): crea los roles, aplica las migraciones con el rol dueño y carga los datos de prueba. Corre una vez.
+  reconstruccion-migrador:
+    <<: *reconstruccion
+    command: ["migrar", "--sembrar"]
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      ConnectionStrings__ReconstruccionDueno: "Host=db;Port=5432;Database=reconstruccion;Username=postgres;Password=${POSTGRES_CLAVE:-postgres_local}"
+      ConnectionStrings__ProgramaDueno: "Host=db;Port=5432;Database=programa;Username=postgres;Password=${POSTGRES_CLAVE:-postgres_local}"
+      Migracion__ClaveReconstruccionApp: ${RECONSTRUCCION_APP_CLAVE:-reconstruccion_local}
+      Migracion__ClaveProgramaApp: ${PROGRAMA_APP_CLAVE:-programa_local}
+      Migracion__ClaveReplicador: ${REPLICADOR_CLAVE:-replicador_local}
+    restart: "no"
+
+  # Servicio de Reconstrucción: dos réplicas activas sin sesión (AD-24).
+  reconstruccion:
+    <<: *reconstruccion
+    deploy:
+      replicas: 2
+    depends_on:
+      reconstruccion-migrador: { condition: service_completed_successfully }
+      bus1: { condition: service_healthy }
+      bus2: { condition: service_healthy }
+      bus3: { condition: service_healthy }
+      archivos: { condition: service_started }
+    environment:
+      Reconstruccion__Rol: escritura
+      ConnectionStrings__Reconstruccion: "Host=db;Port=5432;Database=reconstruccion;Username=reconstruccion_app;Password=${RECONSTRUCCION_APP_CLAVE:-reconstruccion_local}"
+      Bus__Nodos__0: bus1
+      Bus__Nodos__1: bus2
+      Bus__Nodos__2: bus3
+      Bus__Usuario: reconstruccion
+      Bus__Clave: ${BUS_CLAVE_RECONSTRUCCION:-reconstruccion_local}
+      Bus__Productor: reconstruccion
+      Minio__Endpoint: "archivos:9000"
+      Minio__Usuario: ${MINIO_USUARIO:-minioadmin}
+      Minio__Clave: ${MINIO_CLAVE:-minioadmin}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  # Servicio de Consulta del Programa (AD-42): al menos dos réplicas (AD-18); es el que se aumenta con la carga.
+  consulta:
+    <<: *reconstruccion
+    deploy:
+      replicas: 2
+    depends_on:
+      reconstruccion-migrador: { condition: service_completed_successfully }
+      bus1: { condition: service_healthy }
+      bus2: { condition: service_healthy }
+      bus3: { condition: service_healthy }
+    environment:
+      Reconstruccion__Rol: consulta
+      ConnectionStrings__Programa: "Host=db;Port=5432;Database=programa;Username=programa_app;Password=${PROGRAMA_APP_CLAVE:-programa_local}"
+      Bus__Nodos__0: bus1
+      Bus__Nodos__1: bus2
+      Bus__Nodos__2: bus3
+      Bus__Usuario: consulta-programa
+      Bus__Clave: ${BUS_CLAVE_CONSULTA_PROGRAMA:-consulta_programa_local}
+      Bus__Productor: consulta-programa
+      Bus__Cola: q.consulta-programa
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  web:
+    build: ../../consola
+    depends_on:
+      reconstruccion: { condition: service_healthy }
+      consulta: { condition: service_healthy }
+    ports:
+      - "${PUERTO_WEB:-8080}:80"
+    restart: unless-stopped
+
+volumes:
+  datos:
+  datos_replica:
+  bus1:
+  bus2:
+  bus3:
+  documentos:

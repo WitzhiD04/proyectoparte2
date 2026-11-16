@@ -1,0 +1,190 @@
+# Migrador del esquema (DT-19): corre una vez con el rol dueño, crea los roles de aplicación, aplica las migraciones
+# y carga los datos de prueba. Los servicios no están listos hasta que su rol existe y la base responde.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: reconstruccion-migrador
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrador
+          image: plataforma/reconstruccion:local
+          imagePullPolicy: IfNotPresent
+          args: ["migrar", "--sembrar"]
+          env:
+            - name: ConnectionStrings__ReconstruccionDueno
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-reconstruccion-dueno } }
+            - name: ConnectionStrings__ProgramaDueno
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-programa-dueno } }
+            - name: Migracion__ClaveReconstruccionApp
+              valueFrom: { secretKeyRef: { name: credenciales, key: reconstruccion-app } }
+            - name: Migracion__ClaveProgramaApp
+              valueFrom: { secretKeyRef: { name: credenciales, key: programa-app } }
+            - name: Migracion__ClaveReplicador
+              valueFrom: { secretKeyRef: { name: credenciales, key: replicador } }
+---
+# Servicio de Reconstrucción: dos réplicas activas o más, sin sesión (AD-24).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reconstruccion
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: reconstruccion }
+  template:
+    metadata:
+      labels: { app: reconstruccion }
+    spec:
+      containers:
+        - name: api
+          image: plataforma/reconstruccion:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: Reconstruccion__Rol, value: escritura }
+            - { name: Bus__Nodos__0, value: bus }
+            - { name: Bus__Usuario, value: reconstruccion }
+            - { name: Bus__Productor, value: reconstruccion }
+            - name: Bus__Clave
+              valueFrom: { secretKeyRef: { name: credenciales, key: bus-reconstruccion } }
+            - { name: Minio__Endpoint, value: "archivos:9000" }
+            - name: ConnectionStrings__Reconstruccion
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-reconstruccion } }
+            - name: Minio__Usuario
+              valueFrom: { secretKeyRef: { name: credenciales, key: minio-usuario } }
+            - name: Minio__Clave
+              valueFrom: { secretKeyRef: { name: credenciales, key: minio-clave } }
+          ports: [{ containerPort: 8080 }]
+          # Lista: base y bus disponibles. Viva: el proceso responde (no se reinicia por una caída del bus).
+          readinessProbe:
+            httpGet: { path: /salud/listo, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /salud/vivo, port: 8080 }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 160Mi }
+            limits: { memory: 384Mi }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: reconstruccion
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: reconstruccion }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reconstruccion
+spec:
+  selector: { app: reconstruccion }
+  ports: [{ port: 8080 }]
+---
+# Servicio de Consulta del Programa (AD-42): entre 2 y N réplicas; es el que crece con la carga (AD-18).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consulta
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: consulta }
+  template:
+    metadata:
+      labels: { app: consulta }
+    spec:
+      containers:
+        - name: api
+          image: plataforma/reconstruccion:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: Reconstruccion__Rol, value: consulta }
+            - { name: Bus__Nodos__0, value: bus }
+            - { name: Bus__Usuario, value: consulta-programa }
+            - { name: Bus__Productor, value: consulta-programa }
+            - { name: Bus__Cola, value: q.consulta-programa }
+            - name: Bus__Clave
+              valueFrom: { secretKeyRef: { name: credenciales, key: bus-consulta-programa } }
+            - name: ConnectionStrings__Programa
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-programa } }
+          ports: [{ containerPort: 8080 }]
+          readinessProbe:
+            httpGet: { path: /salud/listo, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /salud/vivo, port: 8080 }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 160Mi }
+            limits: { memory: 384Mi }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: consulta
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: consulta }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: consulta
+spec:
+  selector: { app: consulta }
+  ports: [{ port: 8080 }]
+---
+# Necesita el servidor de métricas del clúster (metrics-server) para medir el uso de CPU.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: consulta
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: consulta }
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 70 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: web }
+  template:
+    metadata:
+      labels: { app: web }
+    spec:
+      containers:
+        - name: nginx
+          image: plataforma/consola:local
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 80 }]
+          resources:
+            requests: { cpu: 20m, memory: 32Mi }
+            limits: { memory: 128Mi }
+---
+# La consola queda en http://localhost:30080
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  type: NodePort
+  selector: { app: web }
+  ports: [{ port: 80, nodePort: 30080 }]

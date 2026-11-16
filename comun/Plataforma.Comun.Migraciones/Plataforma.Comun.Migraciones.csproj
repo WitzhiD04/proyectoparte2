@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Migrador común (DT-19). Corre como un paso de despliegue separado y con el rol dueño de la base: crea los roles
+    de aplicación, aplica las migraciones de EF Core (que incluyen los GRANT de mínimo privilegio) y, si se pide,
+    carga datos de prueba. El servicio corre después con un rol sin permisos de DDL.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+</Project>

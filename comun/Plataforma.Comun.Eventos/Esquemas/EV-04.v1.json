@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-04.v1.json",
+  "title": "EV-04 Severidad cambiada",
+  "description": "Productor: Gestión de Desastres. Campos del SAD (Cuadro 16).",
+  "type": "object",
+  "required": ["idDesastre", "severidadAnterior", "severidadNueva", "version", "autor", "motivo"],
+  "properties": {
+    "idDesastre": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "severidadAnterior": { "$ref": "comun.v1.json#/$defs/severidad" },
+    "severidadNueva": { "$ref": "comun.v1.json#/$defs/severidad" },
+    "version": { "$ref": "comun.v1.json#/$defs/version" },
+    "autor": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "motivo": { "$ref": "comun.v1.json#/$defs/textoNoVacio" }
+  }
+}

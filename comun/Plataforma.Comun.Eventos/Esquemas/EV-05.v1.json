@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-05.v1.json",
+  "title": "EV-05 Zona actualizada",
+  "description": "Productor: Gestión de Desastres. Invalida la caché de geometrías (AD-17). Campos del SAD más codigosMunicipio (DA-07).",
+  "type": "object",
+  "required": ["idDesastre", "zonaVersion", "geometria", "codigosMunicipio", "fuenteGeometria", "autor"],
+  "properties": {
+    "idDesastre": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "zonaVersion": { "$ref": "comun.v1.json#/$defs/version" },
+    "geometria": { "anyOf": [{ "$ref": "comun.v1.json#/$defs/geometria" }, { "type": "null" }] },
+    "codigosMunicipio": { "type": "array", "items": { "$ref": "comun.v1.json#/$defs/codigoMunicipio" } },
+    "fuenteGeometria": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "autor": { "$ref": "comun.v1.json#/$defs/textoNoVacio" }
+  }
+}

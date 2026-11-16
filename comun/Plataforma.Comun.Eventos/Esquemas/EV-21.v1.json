@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-21.v1.json",
+  "title": "EV-21 Capa geográfica actualizada",
+  "description": "Extensión aditiva (E-11). Productor: adaptador de SE-2. Una capa grande se publica por partes (parte/total).",
+  "type": "object",
+  "required": ["capa", "versionCapa", "divisiones", "fuente", "parte", "total"],
+  "properties": {
+    "capa": { "$ref": "comun.v1.json#/$defs/capaGeografica" },
+    "versionCapa": { "$ref": "comun.v1.json#/$defs/version" },
+    "divisiones": { "type": "array", "items": { "$ref": "comun.v1.json#/$defs/division" } },
+    "fuente": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "parte": { "type": "integer", "minimum": 1 },
+    "total": { "type": "integer", "minimum": 1 }
+  }
+}

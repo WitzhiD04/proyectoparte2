@@ -1,0 +1,750 @@
+{
+  "rabbitmq_version": "4",
+  "users": [
+    {
+      "name": "admin",
+      "password_hash": "j8xAF3AxQADak6MYBi5grY8A0a5PxRnnUpkUmhoSQvG4ttDC",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": [
+        "administrator"
+      ],
+      "limits": {}
+    },
+    {
+      "name": "reconstruccion",
+      "password_hash": "yIdMVjcypvNXtdtJyB/L3sgIm4kXi4d0HZBgpm9uAI1MENZ3",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": [],
+      "limits": {}
+    },
+    {
+      "name": "consulta-programa",
+      "password_hash": "jcB5eQIrnuzSlvfXV4/GGEC7nUa4kxc60aKfrRAK5aHr7ctg",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": [],
+      "limits": {}
+    },
+    {
+      "name": "evaluacion-danos",
+      "password_hash": "LktP9ArbN49/0wLa/EK1rlEFfepNQcHMjocHZGOeWO5NGOyD",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": [],
+      "limits": {}
+    },
+    {
+      "name": "consulta-danos",
+      "password_hash": "zKPYFSmrtFWCdBxONU+/OoNqlUinKJuUnfOBBy90S9LCDIbW",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": [],
+      "limits": {}
+    },
+    {
+      "name": "gestion-desastres",
+      "password_hash": "SwatkGBPhxXd5sIyp54rb76svLTf+2W1Bx9gkeQipeltnPpY",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": [],
+      "limits": {}
+    },
+    {
+      "name": "consulta",
+      "password_hash": "AMBdmxxdCztMxGxsDocylMPP3tyFjGH6e3Zh3TgnGOxB5PZ5",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": [],
+      "limits": {}
+    },
+    {
+      "name": "auditoria",
+      "password_hash": "WFR2dvx0UIoZIsutYKP4DS04rz3cPyPWVHKiSsC0WwHpdcZf",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": [],
+      "limits": {}
+    },
+    {
+      "name": "adaptador-se7",
+      "password_hash": "R9dTzgs0DdaIF2l+ycerv2JXoHtjCz4QPeGIIySwDFkwBMrf",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": [],
+      "limits": {}
+    },
+    {
+      "name": "adaptador-se2",
+      "password_hash": "cLOHqnD3wNRmzVyvMDsKQOrqfpMB84BUkl3WnkWhCVQMlEMC",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": [],
+      "limits": {}
+    }
+  ],
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "admin",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    },
+    {
+      "user": "reconstruccion",
+      "vhost": "/",
+      "configure": "^$",
+      "write": "^(plataforma\\.eventos)$",
+      "read": "^(q\\.reconstruccion)$"
+    },
+    {
+      "user": "consulta-programa",
+      "vhost": "/",
+      "configure": "^$",
+      "write": "^$",
+      "read": "^(q\\.consulta-programa)$"
+    },
+    {
+      "user": "evaluacion-danos",
+      "vhost": "/",
+      "configure": "^$",
+      "write": "^(plataforma\\.eventos)$",
+      "read": "^(q\\.evaluacion-danos)$"
+    },
+    {
+      "user": "consulta-danos",
+      "vhost": "/",
+      "configure": "^$",
+      "write": "^$",
+      "read": "^(q\\.consulta-danos)$"
+    },
+    {
+      "user": "gestion-desastres",
+      "vhost": "/",
+      "configure": "^$",
+      "write": "^(plataforma\\.eventos)$",
+      "read": "^(q\\.gestion-desastres)$"
+    },
+    {
+      "user": "consulta",
+      "vhost": "/",
+      "configure": "^$",
+      "write": "^$",
+      "read": "^(q\\.consulta)$"
+    },
+    {
+      "user": "auditoria",
+      "vhost": "/",
+      "configure": "^$",
+      "write": "^$",
+      "read": "^(q\\.auditoria)$"
+    },
+    {
+      "user": "adaptador-se7",
+      "vhost": "/",
+      "configure": "^$",
+      "write": "^(plataforma\\.eventos)$",
+      "read": "^(q\\.salida\\.se7)$"
+    },
+    {
+      "user": "adaptador-se2",
+      "vhost": "/",
+      "configure": "^$",
+      "write": "^(plataforma\\.eventos)$",
+      "read": "^$"
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "plataforma.eventos",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {
+        "alternate-exchange": "plataforma.sin-ruta"
+      }
+    },
+    {
+      "name": "plataforma.sin-ruta",
+      "vhost": "/",
+      "type": "fanout",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "plataforma.dlx",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "q.reconstruccion",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "plataforma.dlx",
+        "x-dead-letter-routing-key": "q.reconstruccion"
+      }
+    },
+    {
+      "name": "dlq.reconstruccion",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "q.consulta-programa",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "plataforma.dlx",
+        "x-dead-letter-routing-key": "q.consulta-programa"
+      }
+    },
+    {
+      "name": "dlq.consulta-programa",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "q.consulta-danos",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "plataforma.dlx",
+        "x-dead-letter-routing-key": "q.consulta-danos"
+      }
+    },
+    {
+      "name": "dlq.consulta-danos",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "q.consulta",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "plataforma.dlx",
+        "x-dead-letter-routing-key": "q.consulta"
+      }
+    },
+    {
+      "name": "dlq.consulta",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "q.gestion-desastres",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "plataforma.dlx",
+        "x-dead-letter-routing-key": "q.gestion-desastres"
+      }
+    },
+    {
+      "name": "dlq.gestion-desastres",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "q.evaluacion-danos",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "plataforma.dlx",
+        "x-dead-letter-routing-key": "q.evaluacion-danos"
+      }
+    },
+    {
+      "name": "dlq.evaluacion-danos",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "q.auditoria",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "plataforma.dlx",
+        "x-dead-letter-routing-key": "q.auditoria"
+      }
+    },
+    {
+      "name": "dlq.auditoria",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "q.salida.se7",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "plataforma.dlx",
+        "x-dead-letter-routing-key": "q.salida.se7"
+      }
+    },
+    {
+      "name": "dlq.salida.se7",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "q.sin-ruta",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "plataforma.dlx",
+        "x-dead-letter-routing-key": "q.sin-ruta"
+      }
+    },
+    {
+      "name": "dlq.sin-ruta",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "source": "plataforma.dlx",
+      "vhost": "/",
+      "destination": "dlq.reconstruccion",
+      "destination_type": "queue",
+      "routing_key": "q.reconstruccion",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.reconstruccion",
+      "destination_type": "queue",
+      "routing_key": "ev03.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.reconstruccion",
+      "destination_type": "queue",
+      "routing_key": "ev06.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.reconstruccion",
+      "destination_type": "queue",
+      "routing_key": "ev08.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.reconstruccion",
+      "destination_type": "queue",
+      "routing_key": "ev24.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.dlx",
+      "vhost": "/",
+      "destination": "dlq.consulta-programa",
+      "destination_type": "queue",
+      "routing_key": "q.consulta-programa",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta-programa",
+      "destination_type": "queue",
+      "routing_key": "ev18.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta-programa",
+      "destination_type": "queue",
+      "routing_key": "ev19.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta-programa",
+      "destination_type": "queue",
+      "routing_key": "ev20.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta-programa",
+      "destination_type": "queue",
+      "routing_key": "ev23.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.dlx",
+      "vhost": "/",
+      "destination": "dlq.consulta-danos",
+      "destination_type": "queue",
+      "routing_key": "q.consulta-danos",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta-danos",
+      "destination_type": "queue",
+      "routing_key": "ev08.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta-danos",
+      "destination_type": "queue",
+      "routing_key": "ev09.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta-danos",
+      "destination_type": "queue",
+      "routing_key": "ev10.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta-danos",
+      "destination_type": "queue",
+      "routing_key": "ev21.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta-danos",
+      "destination_type": "queue",
+      "routing_key": "ev22.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta-danos",
+      "destination_type": "queue",
+      "routing_key": "ev23.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta-danos",
+      "destination_type": "queue",
+      "routing_key": "ev25.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta-danos",
+      "destination_type": "queue",
+      "routing_key": "ev26.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.dlx",
+      "vhost": "/",
+      "destination": "dlq.consulta",
+      "destination_type": "queue",
+      "routing_key": "q.consulta",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta",
+      "destination_type": "queue",
+      "routing_key": "ev03.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta",
+      "destination_type": "queue",
+      "routing_key": "ev04.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta",
+      "destination_type": "queue",
+      "routing_key": "ev05.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta",
+      "destination_type": "queue",
+      "routing_key": "ev06.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta",
+      "destination_type": "queue",
+      "routing_key": "ev21.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta",
+      "destination_type": "queue",
+      "routing_key": "ev23.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.consulta",
+      "destination_type": "queue",
+      "routing_key": "ev27.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.dlx",
+      "vhost": "/",
+      "destination": "dlq.gestion-desastres",
+      "destination_type": "queue",
+      "routing_key": "q.gestion-desastres",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.gestion-desastres",
+      "destination_type": "queue",
+      "routing_key": "ev18.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.gestion-desastres",
+      "destination_type": "queue",
+      "routing_key": "ev20.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.gestion-desastres",
+      "destination_type": "queue",
+      "routing_key": "ev21.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.dlx",
+      "vhost": "/",
+      "destination": "dlq.evaluacion-danos",
+      "destination_type": "queue",
+      "routing_key": "q.evaluacion-danos",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.evaluacion-danos",
+      "destination_type": "queue",
+      "routing_key": "ev03.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.evaluacion-danos",
+      "destination_type": "queue",
+      "routing_key": "ev05.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.evaluacion-danos",
+      "destination_type": "queue",
+      "routing_key": "ev06.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.evaluacion-danos",
+      "destination_type": "queue",
+      "routing_key": "ev21.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.evaluacion-danos",
+      "destination_type": "queue",
+      "routing_key": "ev27.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.dlx",
+      "vhost": "/",
+      "destination": "dlq.auditoria",
+      "destination_type": "queue",
+      "routing_key": "q.auditoria",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.auditoria",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.dlx",
+      "vhost": "/",
+      "destination": "dlq.salida.se7",
+      "destination_type": "queue",
+      "routing_key": "q.salida.se7",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.salida.se7",
+      "destination_type": "queue",
+      "routing_key": "ev18.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.salida.se7",
+      "destination_type": "queue",
+      "routing_key": "ev20.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.dlx",
+      "vhost": "/",
+      "destination": "dlq.sin-ruta",
+      "destination_type": "queue",
+      "routing_key": "q.sin-ruta",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.sin-ruta",
+      "vhost": "/",
+      "destination": "q.sin-ruta",
+      "destination_type": "queue",
+      "routing_key": "",
+      "arguments": {}
+    }
+  ],
+  "policies": [
+    {
+      "vhost": "/",
+      "name": "plataforma-colas",
+      "pattern": "^q\\.",
+      "apply-to": "queues",
+      "priority": 10,
+      "definition": {
+        "max-length": 100000,
+        "max-length-bytes": 268435456,
+        "overflow": "reject-publish",
+        "delivery-limit": 5,
+        "dead-letter-exchange": "plataforma.dlx",
+        "dead-letter-strategy": "at-least-once"
+      }
+    },
+    {
+      "vhost": "/",
+      "name": "plataforma-dlq",
+      "pattern": "^dlq\\.",
+      "apply-to": "queues",
+      "priority": 10,
+      "definition": {
+        "max-length": 100000,
+        "max-length-bytes": 268435456,
+        "overflow": "reject-publish"
+      }
+    }
+  ]
+}

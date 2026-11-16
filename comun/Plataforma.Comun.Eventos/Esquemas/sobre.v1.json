@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/sobre.v1.json",
+  "title": "Sobre canónico",
+  "description": "Sobre de todos los eventos del bus (SAD §5.2): los ocho campos del SAD, secuenciaProductor (mitigación de ATAM R-02) y los datos del evento, que se validan con el esquema de su tipo y versión.",
+  "type": "object",
+  "required": ["idEvento", "tipo", "nombre", "version", "instanteEmision", "productor", "secuenciaProductor", "idCorrelacion", "claveIdempotencia", "procedencia", "datos"],
+  "properties": {
+    "idEvento": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "tipo": { "type": "string", "pattern": "^EV-[0-9]{2}$" },
+    "nombre": { "type": "string", "pattern": "^[a-z]+\\.[a-z-]+$" },
+    "version": { "$ref": "comun.v1.json#/$defs/version" },
+    "instanteEmision": { "$ref": "comun.v1.json#/$defs/instante" },
+    "productor": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "secuenciaProductor": {
+      "description": "Consecutivo sin huecos por productor. Es nulo solo mientras el evento está en la bandeja de salida.",
+      "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }]
+    },
+    "idCorrelacion": { "type": ["string", "null"] },
+    "claveIdempotencia": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "procedencia": {
+      "type": "object",
+      "required": ["fuente", "sistemaOrigen", "confianza"],
+      "properties": {
+        "fuente": { "enum": ["plataforma", "sistema-externo"] },
+        "sistemaOrigen": { "type": ["string", "null"] },
+        "confianza": { "$ref": "comun.v1.json#/$defs/confianza" }
+      }
+    },
+    "datos": { "type": "object" }
+  }
+}

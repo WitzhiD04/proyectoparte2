@@ -1,0 +1,19 @@
+# Overlay local: todo en el namespace "plataforma" del Kubernetes de Docker Desktop.
+# La topología del bus y la regla de réplica de PostgreSQL vienen de despliegue/bus y despliegue/compose/postgres
+# (los mismos archivos que usa compose). Kustomize no lee archivos fuera de su carpeta salvo con
+# --load-restrictor=LoadRestrictionsNone; por eso se aplica con despliegue/k8s/aplicar.sh.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: plataforma
+resources:
+  - namespace.yaml
+  - ../base
+configMapGenerator:
+  - name: bus-definiciones
+    files:
+      - definiciones.json=../../bus/definiciones.json
+  - name: postgres-replicacion
+    files:
+      - 04-replicacion.sh=../../compose/postgres/04-replicacion.sh
+generatorOptions:
+  disableNameSuffixHash: true

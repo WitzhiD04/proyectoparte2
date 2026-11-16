@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Anillo de entidades: sin referencias a otros proyectos ni a paquetes. -->
+  
+</Project>

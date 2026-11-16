@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-08.v1.json",
+  "title": "EV-08 Evaluación validada",
+  "description": "Productor: Evaluación de Daños. Se emite en cada cambio de validación (RF-ED-08). Campos del SAD más los de la enmienda E-02.",
+  "type": "object",
+  "required": ["idEvaluacion", "idDesastre", "tipoActivo", "nivelDano", "ubicacion", "evaluador", "organizacion", "version", "idActivo", "referenciaActivo", "codigoMunicipio", "codigoDepartamento", "estadoValidacion", "validadoPor", "instanteValidacion"],
+  "properties": {
+    "idEvaluacion": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "idDesastre": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "tipoActivo": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "nivelDano": { "$ref": "comun.v1.json#/$defs/nivelDano" },
+    "ubicacion": { "$ref": "comun.v1.json#/$defs/ubicacion" },
+    "evaluador": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "organizacion": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "version": { "$ref": "comun.v1.json#/$defs/version" },
+    "idActivo": { "$ref": "comun.v1.json#/$defs/uuid" },
+    "referenciaActivo": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "codigoMunicipio": { "$ref": "comun.v1.json#/$defs/codigoMunicipio" },
+    "codigoDepartamento": { "$ref": "comun.v1.json#/$defs/codigoDepartamento" },
+    "estadoValidacion": { "$ref": "comun.v1.json#/$defs/estadoValidacion" },
+    "validadoPor": { "$ref": "comun.v1.json#/$defs/textoNoVacio" },
+    "instanteValidacion": { "$ref": "comun.v1.json#/$defs/instante" }
+  }
+}

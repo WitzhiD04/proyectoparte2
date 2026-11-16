@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pruebas de entidades y casos de uso. No usan base de datos, bus ni servidor web. -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Reconstruccion.Dominio\Reconstruccion.Dominio.csproj" />
+    <ProjectReference Include="..\..\src\Reconstruccion.Aplicacion\Reconstruccion.Aplicacion.csproj" />
+  </ItemGroup>
+</Project>
