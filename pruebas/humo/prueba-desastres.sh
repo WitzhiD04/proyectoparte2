@@ -44,15 +44,15 @@ esperar "el administrador crea un tipo en ejecución" 201 "${ADM[@]}" "${J[@]}" 
 
 echo "2. Registro y operaciones"
 ZONA='{"geometria":{"type":"Polygon","coordinates":[[[-75.69,4.53],[-75.67,4.53],[-75.67,4.55],[-75.69,4.55],[-75.69,4.53]]]},"fuente":"DECISION_AUTORIDAD"}'
-esperar "sin identidad se rechaza" 401 "${J[@]}" -d "{}" "$B/desastres/00000000-0000-0000-0000-000000000000/historial"
+esperar "sin identidad se rechaza" 401 "$B/desastres/00000000-0000-0000-0000-000000000000/historial"
 esperar "registrar desastre con el tipo nuevo" 201 "${AUT[@]}" "${J[@]}" -d "{\"tipo\":\"$TIPO\",\"nombre\":\"Humo Armenia\",\"descripcion\":\"Prueba de humo\",\"instanteInicio\":\"2026-11-16T08:00:00Z\",\"lat\":4.5339,\"lon\":-75.6811,\"severidad\":\"NIVEL_2\",\"responsable\":\"ungrd\",\"participantes\":[],\"zona\":$ZONA}" "$B/desastres"
 D=$(campo "['id']")
 echo "       desastre $D"
-esperar "un organismo no responsable no reclasifica (QA-11)" 403 "${ORG[@]}" "${J[@]}" -d '{"severidad":"NIVEL_3","justificacion":"x"}' "$B/desastres/$D/severidad"
-esperar "reclasificar a NIVEL_3" 200 "${AUT[@]}" "${J[@]}" -d '{"severidad":"NIVEL_3","justificacion":"Réplicas fuertes"}' "$B/desastres/$D/severidad"
+esperar "un organismo no responsable no reclasifica (QA-11)" 403 "${ORG[@]}" -X PATCH "${J[@]}" -d '{"severidad":"NIVEL_3","justificacion":"x"}' "$B/desastres/$D/severidad"
+esperar "reclasificar a NIVEL_3" 200 "${AUT[@]}" -X PATCH "${J[@]}" -d '{"severidad":"NIVEL_3","justificacion":"Réplicas fuertes"}' "$B/desastres/$D/severidad"
 [ "$(campo "['perfil']")" = "EXTENDIDO" ] && echo "  ok   el perfil sube a EXTENDIDO con el nivel" || { echo "  FALLA el perfil no subió: $(campo "['perfil']")"; fallas=$((fallas+1)); }
 # La zona v2 crece. Va por polígono: la delimitación por municipios necesita la capa de SE-2 (EV-21) cargada.
-esperar "redelimitar: la zona crece (v2)" 200 "${AUT[@]}" "${J[@]}" -d '{"geometria":{"type":"Polygon","coordinates":[[[-75.72,4.50],[-75.64,4.50],[-75.64,4.58],[-75.72,4.58],[-75.72,4.50]]]},"fuente":"EVALUACION_CAMPO","justificacion":"Evaluación de campo"}' "$B/desastres/$D/zona"
+esperar "redelimitar: la zona crece (v2)" 200 "${AUT[@]}" -X PUT "${J[@]}" -d '{"geometria":{"type":"Polygon","coordinates":[[[-75.72,4.50],[-75.64,4.50],[-75.64,4.58],[-75.72,4.58],[-75.72,4.50]]]},"fuente":"EVALUACION_CAMPO","justificacion":"Evaluación de campo"}' "$B/desastres/$D/zona"
 esperar "una transición fuera del perfil se rechaza" 409 "${AUT[@]}" "${J[@]}" -d '{"estado":"EN_RECONSTRUCCION"}' "$B/desastres/$D/transiciones"
 for estado in EN_EVALUACION EN_ATENCION EN_RECUPERACION EN_RECONSTRUCCION; do
   esperar "pasar a $estado" 200 "${AUT[@]}" "${J[@]}" -d "{\"estado\":\"$estado\"}" "$B/desastres/$D/transiciones"
@@ -66,9 +66,8 @@ hasta "la vista trae la marca de cada dato" "d['severidad']['valor']=='NIVEL_3' 
 hasta "el mapa de todos trae la zona v2" "any(f['properties']['idDesastre']=='$D' and f['properties']['zonaVersion']==2 for f in d['features'])" "$B/consulta/mapa?soloActivos=false"
 hasta "el mapa de activos ya no lo trae" "not any(f['properties']['idDesastre']=='$D' for f in d['features'])" "$B/consulta/mapa"
 hasta "la evolución trae los cambios" "len(d['cambios'])>=8" "$B/consulta/desastres/$D/evolucion"
-T1=$(campo "[c['instante'] for c in d['cambios'] if c['tipo']=='REGISTRO'][0]")
-hasta "el desastre en el instante del registro: nivel 2 y zona v1 (RF-GD-09)" "d['enInstante']['severidad']=='NIVEL_2' and d['enInstante']['zona']['version']==1" "$B/consulta/desastres/$D/evolucion?en=$("$PY" -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$T1" | tr -d '
-')"
+T1=$("$PY" -c "import json,sys;d=json.load(sys.stdin);print([c['instante'] for c in d['cambios'] if c['tipo']=='REGISTRO'][0])" < "$SALIDA" | tr -d '\r')
+hasta "el desastre en el instante del registro: nivel 2 y zona v1 (RF-GD-09)" "d['enInstante']['severidad']=='NIVEL_2' and d['enInstante']['zona']['version']==1" "$B/consulta/desastres/$D/evolucion?en=$("$PY" -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$T1" | tr -d '\r')"
 esperar "integraciones" 200 "${AUT[@]}" "$B/integraciones"
 
 if [ "$fallas" -eq 0 ]; then echo "Todo bien."; else echo "$fallas fallas."; exit 1; fi
