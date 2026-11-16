@@ -6,3 +6,4 @@ resources:
   - 10-datos.yaml
   - 20-servicios.yaml
   - gestion-desastres.yaml
+  - consulta.yaml

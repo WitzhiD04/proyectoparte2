@@ -19,5 +19,9 @@ stringData:
   cadena-gestion-desastres-dueno: "Host=db;Port=5432;Database=gestion_desastres;Username=postgres;Password=postgres_local"
   cadena-gestion-desastres: "Host=db;Port=5432;Database=gestion_desastres;Username=gestion_desastres_app;Password=gestion_desastres_local"
   bus-gestion-desastres: gestion_desastres_local
+  consulta-app: consulta_local
+  cadena-consulta-dueno: "Host=db;Port=5432;Database=consulta;Username=postgres;Password=postgres_local"
+  cadena-consulta: "Host=db;Port=5432;Database=consulta;Username=consulta_app;Password=consulta_local"
+  bus-consulta: consulta_local
   minio-usuario: minioadmin
   minio-clave: minioadmin

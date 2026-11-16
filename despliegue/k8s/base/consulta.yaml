@@ -1,0 +1,122 @@
+# Consulta (AD-15) con su caché Redis (DT-06, AD-17): migrador, dos réplicas como mínimo y HPA (AD-18), PDB y servicios.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: cache }
+  template:
+    metadata:
+      labels: { app: cache }
+    spec:
+      containers:
+        - name: redis
+          image: redis:8.8.4-alpine
+          args: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+          ports: [{ containerPort: 6379 }]
+          readinessProbe:
+            exec: { command: ["redis-cli", "ping"] }
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 320Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cache
+spec:
+  selector: { app: cache }
+  ports: [{ port: 6379 }]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: consulta-migrador
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrador
+          image: plataforma/consulta:local
+          imagePullPolicy: IfNotPresent
+          args: ["migrar"]
+          env:
+            - name: ConnectionStrings__ConsultaDueno
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-consulta-dueno } }
+            - name: Migracion__ClaveConsultaApp
+              valueFrom: { secretKeyRef: { name: credenciales, key: consulta-app } }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consulta
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: consulta }
+  template:
+    metadata:
+      labels: { app: consulta }
+    spec:
+      containers:
+        - name: api
+          image: plataforma/consulta:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: Bus__Nodos__0, value: bus }
+            - { name: Bus__Usuario, value: consulta }
+            - { name: Bus__Productor, value: consulta }
+            - { name: Bus__Cola, value: q.consulta }
+            - { name: Redis__Conexion, value: "cache:6379" }
+            - name: Bus__Clave
+              valueFrom: { secretKeyRef: { name: credenciales, key: bus-consulta } }
+            - name: ConnectionStrings__Consulta
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-consulta } }
+          ports: [{ containerPort: 8080 }]
+          readinessProbe:
+            httpGet: { path: /salud/listo, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /salud/vivo, port: 8080 }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 160Mi }
+            limits: { memory: 384Mi }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: consulta
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: consulta }
+---
+# Es la ruta de mayor carga (FP-02): escala con la CPU, sin tocar a Gestión de Desastres (AD-18).
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: consulta
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: consulta }
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 70 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: consulta
+spec:
+  selector: { app: consulta }
+  ports: [{ port: 8080 }]

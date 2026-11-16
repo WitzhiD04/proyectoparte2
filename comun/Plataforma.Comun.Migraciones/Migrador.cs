@@ -38,7 +38,10 @@ public static class Migrador
 
     private static async Task AsegurarRolesAsync(string cadena, IReadOnlyList<RolBase> roles, ILogger log, CancellationToken ct)
     {
-        await using NpgsqlConnection conexion = new(cadena);
+        // Los roles son del clúster: se crean desde la base de mantenimiento, porque la del servicio puede no existir aún
+        // (EF la crea después, al migrar).
+        string mantenimiento = new NpgsqlConnectionStringBuilder(cadena) { Database = "postgres" }.ConnectionString;
+        await using NpgsqlConnection conexion = new(mantenimiento);
         await conexion.OpenAsync(ct);
         foreach (RolBase rol in roles)
         {
