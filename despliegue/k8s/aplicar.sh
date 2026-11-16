@@ -32,6 +32,7 @@ fi
 
 echo "1. Imágenes, construidas dentro de Minikube (no hace falta un registro)"
 minikube image build -t plataforma/reconstruccion:local -f servicios/reconstruccion/Dockerfile "$raiz"
+minikube image build -t plataforma/auditoria:local -f servicios/auditoria/Dockerfile "$raiz"
 minikube image build -t plataforma/consola:local "$raiz/consola"
 minikube image build -t plataforma/gestion-desastres:local -f servicios/gestion-desastres/Dockerfile "$raiz"
 minikube image build -t plataforma/consulta:local -f servicios/consulta/Dockerfile "$raiz"
@@ -51,6 +52,8 @@ k -n plataforma wait --for=condition=complete job/gestion-desastres-migrador --t
 k -n plataforma rollout status deployment/gestion-desastres --timeout=300s
 k -n plataforma wait --for=condition=complete job/consulta-migrador --timeout=600s
 k -n plataforma rollout status deployment/consulta --timeout=300s
+k -n plataforma wait --for=condition=complete job/auditoria-migrador --timeout=600s
+k -n plataforma rollout status deployment/auditoria --timeout=300s
 
 echo "Listo. Consola: http://$(minikube ip):30080"
 echo "Prueba: bash pruebas/humo/prueba-humo.sh http://$(minikube ip):30080"

@@ -7,3 +7,4 @@ resources:
   - 20-servicios.yaml
   - gestion-desastres.yaml
   - consulta.yaml
+  - auditoria.yaml

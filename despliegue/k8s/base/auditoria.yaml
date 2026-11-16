@@ -1,0 +1,82 @@
+# Microservicio de Auditoría (AD-21, DA-17): consume q.auditoria (enlazada a "#"), guarda un registro inmutable
+# particionado por mes, detecta huecos en la secuencia de cada productor (ATAM R-02) y expone la consulta del rastro.
+#
+# Migrador del esquema (DT-19): corre una vez con el rol dueño, crea el rol auditoria_app, la base auditoria, la tabla
+# particionada con las particiones del año en curso y del siguiente, y los permisos de solo inserción.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: auditoria-migrador
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrador
+          image: plataforma/auditoria:local
+          imagePullPolicy: IfNotPresent
+          args: ["migrar"]
+          env:
+            - name: ConnectionStrings__AuditoriaDueno
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-auditoria-dueno } }
+            - name: Migracion__ClaveAuditoriaApp
+              valueFrom: { secretKeyRef: { name: credenciales, key: auditoria-app } }
+---
+# Dos réplicas o más, sin sesión (AD-24). Comparten la cola: cada evento lo procesa una sola, y la revisión de huecos la
+# hace una a la vez (candado consultivo de PostgreSQL). No están listas hasta que la base y la cola responden.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auditoria
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: auditoria }
+  template:
+    metadata:
+      labels: { app: auditoria }
+    spec:
+      containers:
+        - name: api
+          image: plataforma/auditoria:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: Bus__Nodos__0, value: bus }
+            - { name: Bus__Usuario, value: auditoria }
+            - { name: Bus__Productor, value: auditoria }
+            - { name: Bus__Cola, value: q.auditoria }
+            - name: Bus__Clave
+              valueFrom: { secretKeyRef: { name: credenciales, key: bus-auditoria } }
+            - name: ConnectionStrings__Auditoria
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-auditoria } }
+            - { name: Auditoria__PlazoHuecoSegundos, value: "60" }
+          ports: [{ containerPort: 8080 }]
+          # Lista: base y cola disponibles. Viva: el proceso responde (no se reinicia por una caída del bus).
+          readinessProbe:
+            httpGet: { path: /salud/listo, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /salud/vivo, port: 8080 }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 160Mi }
+            limits: { memory: 384Mi }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: auditoria
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: auditoria }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auditoria
+spec:
+  selector: { app: auditoria }
+  ports: [{ port: 8080 }]
