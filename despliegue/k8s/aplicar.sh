@@ -33,6 +33,7 @@ fi
 echo "1. Imágenes, construidas dentro de Minikube (no hace falta un registro)"
 minikube image build -t plataforma/reconstruccion:local -f servicios/reconstruccion/Dockerfile "$raiz"
 minikube image build -t plataforma/consola:local "$raiz/consola"
+minikube image build -t plataforma/gestion-desastres:local -f servicios/gestion-desastres/Dockerfile "$raiz"
 # Las imágenes de los demás servicios se agregan aquí a medida que existen (ver despliegue/k8s/base/20-servicios.yaml).
 
 echo "2. Operadores: RabbitMQ Cluster Operator (v2.23.2)"
@@ -44,7 +45,9 @@ echo "3. Plataforma (namespace plataforma)"
 k kustomize --load-restrictor=LoadRestrictionsNone "$raiz/despliegue/k8s/local" | k apply -f -
 k -n plataforma wait --for=condition=complete job/reconstruccion-migrador --timeout=600s
 k -n plataforma rollout status deployment/reconstruccion --timeout=300s
-k -n plataforma rollout status deployment/consulta --timeout=300s
+k -n plataforma rollout status deployment/consulta-programa --timeout=300s
+k -n plataforma wait --for=condition=complete job/gestion-desastres-migrador --timeout=600s
+k -n plataforma rollout status deployment/gestion-desastres --timeout=300s
 
 echo "Listo. Consola: http://$(minikube ip):30080"
 echo "Prueba: bash pruebas/humo/prueba-humo.sh http://$(minikube ip):30080"

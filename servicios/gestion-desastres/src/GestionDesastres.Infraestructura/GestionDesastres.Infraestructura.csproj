@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Adaptadores de Gestión de Desastres: persistencia con EF Core y PostGIS (geometrías de la zona y capa de municipios),
+    bandeja de salida hacia el bus (EV-03 a 06 y EV-27) y adaptador de entrada de EV-18, EV-20 y EV-21.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.NetTopologySuite" />
+    <PackageReference Include="NetTopologySuite.IO.GeoJSON4STJ" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GestionDesastres.Aplicacion\GestionDesastres.Aplicacion.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Eventos\Plataforma.Comun.Eventos.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Mensajeria\Plataforma.Comun.Mensajeria.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Migraciones\Plataforma.Comun.Migraciones.csproj" />
+  </ItemGroup>
+</Project>

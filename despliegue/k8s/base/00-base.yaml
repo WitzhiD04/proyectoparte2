@@ -15,5 +15,9 @@ stringData:
   cadena-programa: "Host=db;Port=5432;Database=programa;Username=programa_app;Password=programa_local"
   bus-reconstruccion: reconstruccion_local
   bus-consulta-programa: consulta_programa_local
+  gestion-desastres-app: gestion_desastres_local
+  cadena-gestion-desastres-dueno: "Host=db;Port=5432;Database=gestion_desastres;Username=postgres;Password=postgres_local"
+  cadena-gestion-desastres: "Host=db;Port=5432;Database=gestion_desastres;Username=gestion_desastres_app;Password=gestion_desastres_local"
+  bus-gestion-desastres: gestion_desastres_local
   minio-usuario: minioadmin
   minio-clave: minioadmin

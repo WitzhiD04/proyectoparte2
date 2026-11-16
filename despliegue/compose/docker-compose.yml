@@ -157,7 +157,7 @@ services:
     restart: unless-stopped
 
   # Servicio de Consulta del Programa (AD-42): al menos dos réplicas (AD-18); es el que se aumenta con la carga.
-  consulta:
+  consulta-programa:
     <<: *reconstruccion
     deploy:
       replicas: 2
@@ -183,11 +183,50 @@ services:
       retries: 20
     restart: unless-stopped
 
+  # Gestión de Desastres mínima (DA-10): catálogo, ciclo de vida, severidad, zona y organismos. Publica EV-03 a 06 y EV-27.
+  gestion-desastres-migrador:
+    image: plataforma/gestion-desastres:local
+    build:
+      context: ../..
+      dockerfile: servicios/gestion-desastres/Dockerfile
+    command: ["migrar"]
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      ConnectionStrings__GestionDesastresDueno: "Host=db;Port=5432;Database=gestion_desastres;Username=postgres;Password=${POSTGRES_CLAVE:-postgres_local}"
+      Migracion__ClaveGestionDesastresApp: ${GESTION_DESASTRES_APP_CLAVE:-gestion_desastres_local}
+    restart: "no"
+
+  gestion-desastres:
+    image: plataforma/gestion-desastres:local
+    deploy:
+      replicas: 2
+    depends_on:
+      gestion-desastres-migrador: { condition: service_completed_successfully }
+      bus1: { condition: service_healthy }
+      bus2: { condition: service_healthy }
+      bus3: { condition: service_healthy }
+    environment:
+      ConnectionStrings__GestionDesastres: "Host=db;Port=5432;Database=gestion_desastres;Username=gestion_desastres_app;Password=${GESTION_DESASTRES_APP_CLAVE:-gestion_desastres_local}"
+      Bus__Nodos__0: bus1
+      Bus__Nodos__1: bus2
+      Bus__Nodos__2: bus3
+      Bus__Usuario: gestion-desastres
+      Bus__Clave: ${BUS_CLAVE_GESTION_DESASTRES:-gestion_desastres_local}
+      Bus__Productor: gestion-desastres
+      Bus__Cola: q.gestion-desastres
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
   web:
     build: ../../consola
     depends_on:
       reconstruccion: { condition: service_healthy }
-      consulta: { condition: service_healthy }
+      consulta-programa: { condition: service_healthy }
     ports:
       - "${PUERTO_WEB:-8080}:80"
     restart: unless-stopped
