@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: postgres:18.4
+          image: postgis/postgis:18-3.6   # PostgreSQL 18 con PostGIS (DT-03); la réplica usa la misma imagen
           args: ["-c", "wal_level=replica", "-c", "max_wal_senders=5", "-c", "max_replication_slots=5", "-c", "hot_standby=on"]
           env:
             - { name: POSTGRES_DB, value: reconstruccion }
@@ -74,7 +74,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: postgres:18.4
+          image: postgis/postgis:18-3.6   # PostgreSQL 18 con PostGIS (DT-03); la réplica usa la misma imagen
           command:
             - bash
             - -c

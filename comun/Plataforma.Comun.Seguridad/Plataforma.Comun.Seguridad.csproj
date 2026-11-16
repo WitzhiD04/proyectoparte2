@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Identidad de quien hace la petición (AD-22, DA-15). La capa Api de cada servicio la obtiene por el puerto
+    IIdentidadActual y con ella arma el actor de su dominio; el dominio y la aplicación no dependen de este paquete.
+    Hoy el adaptador lee encabezados (transición, aviso del plan); en el paso del gateway se agrega el adaptador que lee
+    el JWT validado y se elige por configuración (Identidad:Modo), sin cambiar los servicios.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+</Project>

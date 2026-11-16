@@ -31,6 +31,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reconstruccion.Integracion"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reconstruccion.Infraestructura", "servicios\reconstruccion\src\Reconstruccion.Infraestructura\Reconstruccion.Infraestructura.csproj", "{934560B1-D0D2-4DBC-A804-13B809870408}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plataforma.Comun.Seguridad", "comun\Plataforma.Comun.Seguridad\Plataforma.Comun.Seguridad.csproj", "{6BD2C84C-0969-41FA-B362-40C9B87F132A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -173,6 +175,18 @@ Global
 		{934560B1-D0D2-4DBC-A804-13B809870408}.Release|x64.Build.0 = Release|Any CPU
 		{934560B1-D0D2-4DBC-A804-13B809870408}.Release|x86.ActiveCfg = Release|Any CPU
 		{934560B1-D0D2-4DBC-A804-13B809870408}.Release|x86.Build.0 = Release|Any CPU
+		{6BD2C84C-0969-41FA-B362-40C9B87F132A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6BD2C84C-0969-41FA-B362-40C9B87F132A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6BD2C84C-0969-41FA-B362-40C9B87F132A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6BD2C84C-0969-41FA-B362-40C9B87F132A}.Debug|x64.Build.0 = Debug|Any CPU
+		{6BD2C84C-0969-41FA-B362-40C9B87F132A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6BD2C84C-0969-41FA-B362-40C9B87F132A}.Debug|x86.Build.0 = Debug|Any CPU
+		{6BD2C84C-0969-41FA-B362-40C9B87F132A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6BD2C84C-0969-41FA-B362-40C9B87F132A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6BD2C84C-0969-41FA-B362-40C9B87F132A}.Release|x64.ActiveCfg = Release|Any CPU
+		{6BD2C84C-0969-41FA-B362-40C9B87F132A}.Release|x64.Build.0 = Release|Any CPU
+		{6BD2C84C-0969-41FA-B362-40C9B87F132A}.Release|x86.ActiveCfg = Release|Any CPU
+		{6BD2C84C-0969-41FA-B362-40C9B87F132A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -190,5 +204,6 @@ Global
 		{F7E6F33D-7317-4CA0-BCA1-DAAAD14E1704} = {5DEC0A91-297C-A455-957C-A8066006AD58}
 		{3C48D1EB-71B7-4857-9670-575B41C3BCE5} = {5DEC0A91-297C-A455-957C-A8066006AD58}
 		{934560B1-D0D2-4DBC-A804-13B809870408} = {5DEC0A91-297C-A455-957C-A8066006AD58}
+		{6BD2C84C-0969-41FA-B362-40C9B87F132A} = {515E3A28-4127-0B7C-1BD4-7B25A9D55824}
 	EndGlobalSection
 EndGlobal

@@ -14,8 +14,8 @@ public sealed class BaseMigrada : IAsyncLifetime
     public const string ClaveApp = "reconstruccion_prueba";
     public const string ClavePrograma = "programa_prueba";
 
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
-        .WithImage("postgres:18.4").WithDatabase("reconstruccion").Build();
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:18.4")
+        .WithDatabase("reconstruccion").Build();
 
     public string Dueno => _postgres.GetConnectionString();
     public string DuenoPrograma => new NpgsqlConnectionStringBuilder(Dueno) { Database = "programa" }.ConnectionString;

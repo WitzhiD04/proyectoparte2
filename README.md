@@ -75,6 +75,6 @@ versión nueva del evento, que convive con la anterior. Cada esquema tiene un ej
 bash despliegue/k8s/aplicar.sh
 ```
 
-Solo trabaja contra el contexto `docker-desktop` y lo pasa explícito en cada comando, para no desplegar por error en
-otro clúster. Requiere activar Kubernetes en Docker Desktop. Instala el Cluster Operator de RabbitMQ (v2.23.2),
-crea el namespace `plataforma` y deja la consola en http://localhost:30080.
+Solo trabaja contra el contexto `minikube` y lo pasa explícito en cada comando, para no desplegar por error en
+otro clúster. Se ejecuta dentro de WSL, donde corre Minikube; ver las instrucciones al inicio del script. Instala el Cluster Operator de RabbitMQ (v2.23.2),
+crea el namespace `plataforma` y deja la consola en `http://<minikube ip>:30080`.

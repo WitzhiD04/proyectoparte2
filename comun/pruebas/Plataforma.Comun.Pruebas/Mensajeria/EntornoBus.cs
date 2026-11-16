@@ -47,14 +47,13 @@ public sealed class EntornoBus : IAsyncLifetime
     public const string ImagenPostgres = "postgres:18.4";
     public const string ImagenRabbit = "rabbitmq:4.4.0-management";
 
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder().WithImage(ImagenPostgres).Build();
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder(ImagenPostgres).Build();
     private readonly IContainer _rabbit;
 
     public EntornoBus()
     {
         string bus = Path.Combine(RaizRepositorio(), "despliegue", "bus");
-        _rabbit = new ContainerBuilder()
-            .WithImage(ImagenRabbit)
+        _rabbit = new ContainerBuilder(ImagenRabbit)
             .WithPortBinding(5672, true)
             .WithPortBinding(15672, true)
             .WithResourceMapping(File.ReadAllBytes(Path.Combine(bus, "definiciones.json")), "/etc/rabbitmq/definiciones.json")

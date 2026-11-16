@@ -35,7 +35,7 @@ x-reconstruccion: &reconstruccion
 
 services:
   db:
-    image: postgres:18.4
+    image: postgis/postgis:18-3.6   # PostgreSQL 18 con PostGIS (DT-03); la réplica usa la misma imagen
     command: ["postgres", "-c", "wal_level=replica", "-c", "max_wal_senders=5", "-c", "max_replication_slots=5", "-c", "hot_standby=on"]
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_CLAVE:-postgres_local}
@@ -53,7 +53,7 @@ services:
 
   # Réplica continua de PostgreSQL (segunda ubicación simulada). El rol replicador lo crea el migrador.
   db-replica:
-    image: postgres:18.4
+    image: postgis/postgis:18-3.6   # PostgreSQL 18 con PostGIS (DT-03); la réplica usa la misma imagen
     depends_on:
       reconstruccion-migrador: { condition: service_completed_successfully }
     environment:
