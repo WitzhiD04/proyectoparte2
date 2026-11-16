@@ -1,0 +1,74 @@
+# Gestión de Desastres (DA-10): migrador, dos réplicas activas (AD-24), PDB y servicio.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gestion-desastres-migrador
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrador
+          image: plataforma/gestion-desastres:local
+          imagePullPolicy: IfNotPresent
+          args: ["migrar"]
+          env:
+            - name: ConnectionStrings__GestionDesastresDueno
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-gestion-desastres-dueno } }
+            - name: Migracion__ClaveGestionDesastresApp
+              valueFrom: { secretKeyRef: { name: credenciales, key: gestion-desastres-app } }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gestion-desastres
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: gestion-desastres }
+  template:
+    metadata:
+      labels: { app: gestion-desastres }
+    spec:
+      containers:
+        - name: api
+          image: plataforma/gestion-desastres:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: Bus__Nodos__0, value: bus }
+            - { name: Bus__Usuario, value: gestion-desastres }
+            - { name: Bus__Productor, value: gestion-desastres }
+            - { name: Bus__Cola, value: q.gestion-desastres }
+            - name: Bus__Clave
+              valueFrom: { secretKeyRef: { name: credenciales, key: bus-gestion-desastres } }
+            - name: ConnectionStrings__GestionDesastres
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-gestion-desastres } }
+          ports: [{ containerPort: 8080 }]
+          readinessProbe:
+            httpGet: { path: /salud/listo, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /salud/vivo, port: 8080 }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 160Mi }
+            limits: { memory: 384Mi }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: gestion-desastres
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: gestion-desastres }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gestion-desastres
+spec:
+  selector: { app: gestion-desastres }
+  ports: [{ port: 8080 }]

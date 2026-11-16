@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pruebas del dominio y de la arquitectura de Gestión de Desastres. No usan base de datos, bus ni servidor web. -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\GestionDesastres.Dominio\GestionDesastres.Dominio.csproj" />
+    <ProjectReference Include="..\..\src\GestionDesastres.Aplicacion\GestionDesastres.Aplicacion.csproj" />
+  </ItemGroup>
+</Project>

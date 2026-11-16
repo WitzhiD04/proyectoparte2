@@ -34,7 +34,10 @@ echo "1. Imágenes, construidas dentro de Minikube (no hace falta un registro)"
 minikube image build -t plataforma/reconstruccion:local -f servicios/reconstruccion/Dockerfile "$raiz"
 minikube image build -t plataforma/evaluacion-danos:local -f servicios/evaluacion-danos/Dockerfile "$raiz"
 minikube image build -t plataforma/adaptador-se2:local -f adaptadores/adaptador-se2/Dockerfile "$raiz"
+minikube image build -t plataforma/auditoria:local -f servicios/auditoria/Dockerfile "$raiz"
 minikube image build -t plataforma/consola:local "$raiz/consola"
+minikube image build -t plataforma/gestion-desastres:local -f servicios/gestion-desastres/Dockerfile "$raiz"
+minikube image build -t plataforma/consulta:local -f servicios/consulta/Dockerfile "$raiz"
 # Las imágenes de los demás servicios se agregan aquí a medida que existen (ver despliegue/k8s/base/20-servicios.yaml).
 
 echo "2. Operadores: RabbitMQ Cluster Operator (v2.23.2)"
@@ -46,7 +49,17 @@ echo "3. Plataforma (namespace plataforma)"
 k kustomize --load-restrictor=LoadRestrictionsNone "$raiz/despliegue/k8s/local" | k apply -f -
 k -n plataforma wait --for=condition=complete job/reconstruccion-migrador --timeout=600s
 k -n plataforma rollout status deployment/reconstruccion --timeout=300s
+k -n plataforma rollout status deployment/consulta-programa --timeout=300s
+k -n plataforma wait --for=condition=complete job/adaptador-se2-migrador --timeout=600s
+k -n plataforma rollout status deployment/adaptador-se2 --timeout=300s
+k -n plataforma wait --for=condition=complete job/evaluacion-danos-migrador --timeout=600s
+k -n plataforma rollout status deployment/evaluacion-danos --timeout=300s
+k -n plataforma wait --for=condition=complete job/gestion-desastres-migrador --timeout=600s
+k -n plataforma rollout status deployment/gestion-desastres --timeout=300s
+k -n plataforma wait --for=condition=complete job/consulta-migrador --timeout=600s
 k -n plataforma rollout status deployment/consulta --timeout=300s
+k -n plataforma wait --for=condition=complete job/auditoria-migrador --timeout=600s
+k -n plataforma rollout status deployment/auditoria --timeout=300s
 
 echo "Listo. Consola: http://$(minikube ip):30080"
 echo "Prueba: bash pruebas/humo/prueba-humo.sh http://$(minikube ip):30080"

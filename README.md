@@ -17,6 +17,7 @@ La app móvil de evaluación de daños vive en su propio repositorio (`danos`) y
 | `adaptadores/adaptador-se2` | Adaptador de SE-2: publica la capa de municipios en EV-21 ([README](adaptadores/adaptador-se2/README.md)) |
 | `simuladores/simulador-qa14` | Simulador de QA-14 (120 evaluaciones, 5 conflictos, lote enviado dos veces) |
 | `datos/geo` | Capa de municipios que entrega SE-2 |
+| `servicios/auditoria` | Auditoría: registro inmutable de todos los eventos y detección de huecos (AD-21, DA-17) ([README](servicios/auditoria/README.md)) |
 | `consola/` | Consola de coordinación (Angular) |
 | `despliegue/bus` | Topología del bus declarada al desplegar: exchange, colas por consumidor, políticas y usuarios (DA-03) |
 | `despliegue/compose` | Plataforma en un computador |

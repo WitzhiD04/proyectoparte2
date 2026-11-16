@@ -91,14 +91,14 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: consulta
+  name: consulta-programa
 spec:
   replicas: 2
   selector:
-    matchLabels: { app: consulta }
+    matchLabels: { app: consulta-programa }
   template:
     metadata:
-      labels: { app: consulta }
+      labels: { app: consulta-programa }
     spec:
       containers:
         - name: api
@@ -129,27 +129,27 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: consulta
+  name: consulta-programa
 spec:
   minAvailable: 1
   selector:
-    matchLabels: { app: consulta }
+    matchLabels: { app: consulta-programa }
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: consulta
+  name: consulta-programa
 spec:
-  selector: { app: consulta }
+  selector: { app: consulta-programa }
   ports: [{ port: 8080 }]
 ---
 # Necesita el servidor de métricas del clúster (metrics-server) para medir el uso de CPU.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: consulta
+  name: consulta-programa
 spec:
-  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: consulta }
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: consulta-programa }
   minReplicas: 2
   maxReplicas: 5
   metrics:

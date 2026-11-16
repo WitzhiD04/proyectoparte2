@@ -384,7 +384,7 @@ public class SincronizacionTests(Entorno api)
         return payloads.Any(p => p.Contains(texto));
     }
 
-    private async Task<ResultadoOperacion> Uno(string dispositivo, Operacion op)
+    private async Task<ResultadoOperacionDto> Uno(string dispositivo, Operacion op)
     {
         var respuesta = await Entorno.Sincronizar(api.Cliente(dispositivo), Lote(dispositivo, op));
         return Assert.Single(respuesta.Resultados);

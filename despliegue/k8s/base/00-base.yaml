@@ -23,5 +23,17 @@ stringData:
   bus-adaptador-se2: adaptador_se2_local
   bus-reconstruccion: reconstruccion_local
   bus-consulta-programa: consulta_programa_local
+  gestion-desastres-app: gestion_desastres_local
+  cadena-gestion-desastres-dueno: "Host=db;Port=5432;Database=gestion_desastres;Username=postgres;Password=postgres_local"
+  cadena-gestion-desastres: "Host=db;Port=5432;Database=gestion_desastres;Username=gestion_desastres_app;Password=gestion_desastres_local"
+  bus-gestion-desastres: gestion_desastres_local
+  consulta-app: consulta_local
+  cadena-consulta-dueno: "Host=db;Port=5432;Database=consulta;Username=postgres;Password=postgres_local"
+  cadena-consulta: "Host=db;Port=5432;Database=consulta;Username=consulta_app;Password=consulta_local"
+  bus-consulta: consulta_local
+  auditoria-app: auditoria_local
+  cadena-auditoria-dueno: "Host=db;Port=5432;Database=auditoria;Username=postgres;Password=postgres_local"
+  cadena-auditoria: "Host=db;Port=5432;Database=auditoria;Username=auditoria_app;Password=auditoria_local"
+  bus-auditoria: auditoria_local
   minio-usuario: minioadmin
   minio-clave: minioadmin

@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Casos de uso del modelo de lectura: solo conoce al dominio. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Consulta.Dominio\Consulta.Dominio.csproj" />
+  </ItemGroup>
+</Project>

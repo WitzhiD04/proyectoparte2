@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using EvaluacionDanos.Api.Controllers;
 using EvaluacionDanos.Aplicacion;
+using EvaluacionDanos.Dominio;
 using EvaluacionDanos.Infraestructura;
 using EvaluacionDanos.Infraestructura.Persistencia;
 

@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Anillo de casos de uso: solo conoce al dominio. Sin paquetes y sin conocer el bus ni la base de datos. -->
+  <ItemGroup>
+    <ProjectReference Include="..\GestionDesastres.Dominio\GestionDesastres.Dominio.csproj" />
+  </ItemGroup>
+</Project>
