@@ -32,15 +32,16 @@ public static class CatalogoEventos
     public const string AdaptadorSe4 = "adaptador-se4";
     public const string AdaptadorSe6 = "adaptador-se6";
     public const string AdaptadorSe7 = "adaptador-se7";
+    public const string AdaptadorSe8 = "adaptador-se8";
 
-    // SAD, Cuadro 16. Fuera de alcance: Consolidación, Notificación y Recursos (sección 2.3 de la revisión).
+    // SAD, Cuadro 16. Fuera de alcance: Consolidación y Recursos (sección 2.3 de la revisión). Notificación entra (RF-GD-06).
     public static readonly DefinicionEvento ReporteRecibido = new("EV-01", "reporte.recibido", 1, AdaptadorSe1, false);
     public static readonly DefinicionEvento ReporteConsolidado = new("EV-02", "reporte.consolidado", 1, Consolidacion, false);
     public static readonly DefinicionEvento DesastreCreado = new("EV-03", "desastre.creado", 1, GestionDesastres, true);
     public static readonly DefinicionEvento SeveridadCambiada = new("EV-04", "desastre.severidad-cambiada", 1, GestionDesastres, true);
     public static readonly DefinicionEvento ZonaActualizada = new("EV-05", "desastre.zona-actualizada", 1, GestionDesastres, true);
     public static readonly DefinicionEvento EstadoDesastreCambiado = new("EV-06", "desastre.estado-cambiado", 1, GestionDesastres, true);
-    public static readonly DefinicionEvento NotificacionDespachada = new("EV-07", "notificacion.despachada", 1, Notificacion, false);
+    public static readonly DefinicionEvento NotificacionDespachada = new("EV-07", "notificacion.despachada", 1, Notificacion, true);
     public static readonly DefinicionEvento EvaluacionValidada = new("EV-08", "evaluacion.validada", 1, EvaluacionDanos, true);
     public static readonly DefinicionEvento EvaluacionSincronizada = new("EV-09", "evaluacion.sincronizada", 1, EvaluacionDanos, true);
     public static readonly DefinicionEvento ConflictoDetectado = new("EV-10", "evaluacion.conflicto-detectado", 1, EvaluacionDanos, true);
@@ -63,6 +64,8 @@ public static class CatalogoEventos
     public static readonly DefinicionEvento TipoActivoActualizado = new("EV-25", "catalogo.tipo-activo-actualizado", 1, EvaluacionDanos, true);
     public static readonly DefinicionEvento EvaluacionActualizada = new("EV-26", "evaluacion.actualizada", 1, EvaluacionDanos, true);
     public static readonly DefinicionEvento OrganismosDesastreCambiados = new("EV-27", "desastre.organismos-cambiados", 1, GestionDesastres, true);
+    public static readonly DefinicionEvento EnvioNotificacionSolicitado = new("EV-28", "notificacion.envio-solicitado", 1, Notificacion, true);
+    public static readonly DefinicionEvento AcuseNotificacion = new("EV-29", "notificacion.acuse-recibido", 1, AdaptadorSe8, true);
 
     public static IReadOnlyList<DefinicionEvento> Todos { get; } =
     [
@@ -71,6 +74,7 @@ public static class CatalogoEventos
         RecursoRegistrado, SolicitudConfirmacionReserva, ReservaConfirmada, ReservaRechazada, ReservaExpirada, RecursoAsignado,
         ProyectoCreado, PresupuestoCambiado, EstadoOAvanceCambiado, CapaGeograficaActualizada, ConflictoResuelto,
         EstadoIntegracionCambiado, ReporteExternoProyecto, TipoActivoActualizado, EvaluacionActualizada, OrganismosDesastreCambiados,
+        EnvioNotificacionSolicitado, AcuseNotificacion,
     ];
 
     public static IReadOnlyList<DefinicionEvento> EnAlcance { get; } = Todos.Where(e => e.EnAlcance).ToList();

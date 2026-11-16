@@ -51,3 +51,9 @@ public enum TipoReporteExterno { AVANCE, CONTRATISTA }
 public enum CapaGeografica { MUNICIPIOS, BARRIOS, ZONAS_RIESGO }
 
 public enum Confianza { ALTA, MEDIA, BAJA }
+
+/// <summary>Canal externo por el que SE-8 entrega una notificación (Cuadro 14).</summary>
+public enum CanalNotificacion { CORREO, SMS }
+
+/// <summary>Estado de entrega de una notificación (RF-GD-15). Solo pasa a ENTREGADA con acuse de SE-8 (RN-3, QA-08).</summary>
+public enum EstadoEntrega { PENDIENTE, ENTREGADA, FALLIDA }

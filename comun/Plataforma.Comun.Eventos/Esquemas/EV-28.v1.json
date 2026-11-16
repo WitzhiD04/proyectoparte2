@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-28.v1.json",
+  "title": "EV-28 Envío de notificación solicitado",
+  "description": "Extensión aditiva (E-37). Productor: Notificación. Consumidor: adaptador de SE-8, por la cola de salida de SE-8. Un mensaje por intento.",
+  "type": "object",
+  "required": ["idNotificacion", "intento", "idEventoOrigen", "idDesastre", "organismo", "canal", "destino", "asunto", "mensaje", "severidad"],
+  "properties": {
+    "idNotificacion": {"$ref": "comun.v1.json#/$defs/uuid"},
+    "intento": {"type": "integer", "minimum": 1},
+    "idEventoOrigen": {"$ref": "comun.v1.json#/$defs/uuid"},
+    "idDesastre": {"$ref": "comun.v1.json#/$defs/uuid"},
+    "organismo": {"$ref": "comun.v1.json#/$defs/textoNoVacio"},
+    "canal": {"$ref": "comun.v1.json#/$defs/canalNotificacion"},
+    "destino": {"$ref": "comun.v1.json#/$defs/textoNoVacio"},
+    "asunto": {"$ref": "comun.v1.json#/$defs/textoNoVacio"},
+    "mensaje": {"$ref": "comun.v1.json#/$defs/textoNoVacio"},
+    "severidad": {"$ref": "comun.v1.json#/$defs/severidad"}
+  }
+}

@@ -25,6 +25,7 @@ public static class InterpretacionEventos
     public const string TipoActivo = "tipo-activo";
     public const string CapaGeografica = "capa-geografica";
     public const string Integracion = "integracion";
+    public const string Notificacion = "notificacion";
 
     private const ResultadoOperacion Exitoso = ResultadoOperacion.Exitoso;
 
@@ -93,6 +94,16 @@ public static class InterpretacionEventos
             "EV-23" => De(sobre.LeerDatos<EstadoIntegracionCambiadoV1>(), d =>
                 new Interpretacion(sistema, Integracion, d.SistemaExterno, "CAMBIO_ESTADO_INTEGRACION", Exitoso,
                     d.EstadoAnterior.ToString(), d.EstadoNuevo.ToString())),
+            // Notificación (AD-13, E-37): el estado de entrega queda en el rastro por destinatario (QA-08: consultable).
+            "EV-07" => De(sobre.LeerDatos<NotificacionDespachadaV1>(), d =>
+                new Interpretacion(sistema, Notificacion, Texto(d.IdNotificacion), "ENTREGA_" + d.EstadoEntrega, Exitoso,
+                    null, $"{string.Join(",", d.OrganismosDestino)} por {d.Canal}, {d.Intentos} intento(s)")),
+            "EV-28" => De(sobre.LeerDatos<EnvioNotificacionSolicitadoV1>(), d =>
+                new Interpretacion(sistema, Notificacion, Texto(d.IdNotificacion), "ENVIO_SOLICITADO", Exitoso, null,
+                    $"{d.Organismo} por {d.Canal}, intento {d.Intento}")),
+            "EV-29" => De(sobre.LeerDatos<AcuseNotificacionV1>(), d =>
+                new Interpretacion(sistema, Notificacion, Texto(d.IdNotificacion), "ACUSE_" + d.Resultado, Exitoso, null,
+                    d.Motivo ?? $"intento {d.Intento}")),
             _ => Interpretacion.Desconocida,
         };
     }

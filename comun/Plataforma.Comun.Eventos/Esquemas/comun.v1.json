@@ -28,6 +28,8 @@
     "motivoActualizacion": { "enum": ["ACTUALIZACION", "ASOCIACION"] },
     "estadoIntegracion": { "enum": ["CERRADO", "ABIERTO", "SEMIABIERTO"] },
     "tipoReporteExterno": { "enum": ["AVANCE", "CONTRATISTA"] },
+    "canalNotificacion": { "enum": ["CORREO", "SMS"] },
+    "estadoEntrega": { "enum": ["PENDIENTE", "ENTREGADA", "FALLIDA"] },
     "capaGeografica": { "enum": ["MUNICIPIOS", "BARRIOS", "ZONAS_RIESGO"] },
     "confianza": { "enum": ["ALTA", "MEDIA", "BAJA"] },
     "ubicacion": {

@@ -14,6 +14,7 @@ public static class EjemplosContrato
     private static readonly Guid Evaluacion = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001");
     private static readonly Guid Activo = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000001");
     private static readonly Guid Proyecto = Guid.Parse("cccccccc-0000-0000-0000-000000000001");
+    private static readonly Guid Notificacion = Guid.Parse("dddddddd-0000-0000-0000-000000000001");
     private static readonly DateTimeOffset Instante = new(2026, 11, 16, 14, 3, 22, TimeSpan.Zero);
     private static readonly Ubicacion Armenia = new(4.5339, -75.6811);
 
@@ -72,6 +73,11 @@ public static class EjemplosContrato
         ["EV-27"] = new OrganismosDesastreCambiadosV1(Desastre, "ungrd",
             [new Participante("defensa-civil", "Evaluación de daños"), new Participante("alcaldia.armenia", "Autoridad local")],
             2, "coordinador.quindio"),
+        ["EV-07"] = new NotificacionDespachadaV1(Notificacion, Evaluacion, ["defensa-civil"], CanalNotificacion.CORREO, EstadoEntrega.ENTREGADA,
+            1, Desastre, Severidad.NIVEL_3, Instante),
+        ["EV-28"] = new EnvioNotificacionSolicitadoV1(Notificacion, 1, Evaluacion, Desastre, "defensa-civil", CanalNotificacion.CORREO,
+            "alertas@defensacivil.example", "Sismo del Eje Cafetero: nivel 3", "El desastre pasó a Nivel_3 (Alto).", Severidad.NIVEL_3),
+        ["EV-29"] = new AcuseNotificacionV1(Notificacion, 1, EstadoEntrega.ENTREGADA, null, Instante, "se8:msg:551"),
     };
 
     public static Sobre Sobre(string tipo, string? clave = null)

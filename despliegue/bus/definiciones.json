@@ -67,6 +67,20 @@
       "limits": {}
     },
     {
+      "name": "notificacion",
+      "password_hash": "wnD+ziOhMOsKRZVib3HHBiHwMmkSlA5JSn6A9+v+yzzDvM4T",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": [],
+      "limits": {}
+    },
+    {
+      "name": "adaptador-se8",
+      "password_hash": "FSD1UUdHePpVRypJdPfXQvTxM2u/pQCBRw3hBfjX//TMXerw",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": [],
+      "limits": {}
+    },
+    {
       "name": "adaptador-se2",
       "password_hash": "cLOHqnD3wNRmzVyvMDsKQOrqfpMB84BUkl3WnkWhCVQMlEMC",
       "hashing_algorithm": "rabbit_password_hashing_sha256",
@@ -142,6 +156,20 @@
       "configure": "^$",
       "write": "^(plataforma\\.eventos)$",
       "read": "^(q\\.salida\\.se7)$"
+    },
+    {
+      "user": "notificacion",
+      "vhost": "/",
+      "configure": "^$",
+      "write": "^(plataforma\\.eventos)$",
+      "read": "^(q\\.notificacion)$"
+    },
+    {
+      "user": "adaptador-se8",
+      "vhost": "/",
+      "configure": "^$",
+      "write": "^(plataforma\\.eventos)$",
+      "read": "^(q\\.salida\\.se8)$"
     },
     {
       "user": "adaptador-se2",
@@ -336,6 +364,46 @@
     },
     {
       "name": "dlq.salida.se7",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "q.notificacion",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "plataforma.dlx",
+        "x-dead-letter-routing-key": "q.notificacion"
+      }
+    },
+    {
+      "name": "dlq.notificacion",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "q.salida.se8",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "plataforma.dlx",
+        "x-dead-letter-routing-key": "q.salida.se8"
+      }
+    },
+    {
+      "name": "dlq.salida.se8",
       "vhost": "/",
       "durable": true,
       "auto_delete": false,
@@ -707,6 +775,54 @@
       "destination": "q.salida.se7",
       "destination_type": "queue",
       "routing_key": "ev20.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.dlx",
+      "vhost": "/",
+      "destination": "dlq.notificacion",
+      "destination_type": "queue",
+      "routing_key": "q.notificacion",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.notificacion",
+      "destination_type": "queue",
+      "routing_key": "ev03.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.notificacion",
+      "destination_type": "queue",
+      "routing_key": "ev04.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.notificacion",
+      "destination_type": "queue",
+      "routing_key": "ev29.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.dlx",
+      "vhost": "/",
+      "destination": "dlq.salida.se8",
+      "destination_type": "queue",
+      "routing_key": "q.salida.se8",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.salida.se8",
+      "destination_type": "queue",
+      "routing_key": "ev28.#",
       "arguments": {}
     },
     {

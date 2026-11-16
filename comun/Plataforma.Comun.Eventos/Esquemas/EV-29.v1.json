@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-29.v1.json",
+  "title": "EV-29 Acuse de notificación",
+  "description": "Extensión aditiva (E-37). Productor: adaptador de SE-8. Consumidor: Notificación, que actualiza el estado de entrega y publica EV-07. resultado es ENTREGADA (hay acuse de SE-8) o FALLIDA (SE-8 rechazó el envío).",
+  "type": "object",
+  "required": ["idNotificacion", "intento", "resultado", "motivo", "instante", "claveOrigen"],
+  "properties": {
+    "idNotificacion": {"$ref": "comun.v1.json#/$defs/uuid"},
+    "intento": {"type": "integer", "minimum": 1},
+    "resultado": {"enum": ["ENTREGADA", "FALLIDA"]},
+    "motivo": {"type": ["string", "null"]},
+    "instante": {"$ref": "comun.v1.json#/$defs/instante"},
+    "claveOrigen": {"type": ["string", "null"]}
+  }
+}

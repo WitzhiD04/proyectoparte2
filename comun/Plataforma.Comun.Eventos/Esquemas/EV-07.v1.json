@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plataforma.local/esquemas/EV-07.v1.json",
+  "title": "EV-07 Notificación despachada",
+  "description": "Productor: Notificación (AD-13). Se publica cuando cambia el estado de entrega: con el acuse de SE-8 (ENTREGADA) o al agotar los intentos (FALLIDA). Campos del SAD más idDesastre, severidad e instanteAcuse (E-37).",
+  "type": "object",
+  "required": ["idNotificacion", "idEventoOrigen", "organismosDestino", "canal", "estadoEntrega", "intentos", "idDesastre", "severidad", "instanteAcuse"],
+  "properties": {
+    "idNotificacion": {"$ref": "comun.v1.json#/$defs/uuid"},
+    "idEventoOrigen": {"$ref": "comun.v1.json#/$defs/uuid"},
+    "organismosDestino": {"type": "array", "minItems": 1, "items": {"$ref": "comun.v1.json#/$defs/textoNoVacio"}},
+    "canal": {"$ref": "comun.v1.json#/$defs/canalNotificacion"},
+    "estadoEntrega": {"$ref": "comun.v1.json#/$defs/estadoEntrega"},
+    "intentos": {"type": "integer", "minimum": 0},
+    "idDesastre": {"$ref": "comun.v1.json#/$defs/uuid"},
+    "severidad": {"$ref": "comun.v1.json#/$defs/severidad"},
+    "instanteAcuse": {"anyOf": [{"$ref": "comun.v1.json#/$defs/instante"}, {"type": "null"}]}
+  }
+}

@@ -36,7 +36,7 @@ public class PruebasContrato
     [Fact]
     public void Las_claves_de_ruteo_siguen_el_formato_y_no_se_repiten()
     {
-        Assert.Equal(27, CatalogoEventos.Todos.Count);
+        Assert.Equal(29, CatalogoEventos.Todos.Count);
         Assert.Equal(CatalogoEventos.Todos.Count, CatalogoEventos.Todos.Select(e => e.ClaveRuteo).Distinct().Count());
         foreach (DefinicionEvento evento in CatalogoEventos.Todos)
         {
