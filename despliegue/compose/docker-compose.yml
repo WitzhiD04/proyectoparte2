@@ -464,6 +464,7 @@ services:
       consulta: { condition: service_healthy }
       auditoria: { condition: service_healthy }
       evaluacion-danos: { condition: service_healthy }
+      consulta-danos: { condition: service_healthy }
     ports:
       - "${PUERTO_WEB:-8080}:80"
     restart: unless-stopped
