@@ -272,3 +272,71 @@ public class OperacionesPruebas
         Assert.Empty(_memoria.Archivos);
     }
 }
+
+/// <summary>CU-11 con jurisdicción (DA-14, Cuadro 3 del SRS): cada autoridad cuenta solo los proyectos de su territorio.</summary>
+public class ConsolidadoPorJurisdiccionPruebas
+{
+    private readonly Memoria _memoria = new();
+
+    public ConsolidadoPorJurisdiccionPruebas()
+    {
+        Fila("Armenia", 100, "63001");
+        Fila("Calarcá", 200, "63130");
+        Fila("La Virginia", 400, "66400");
+    }
+
+    private void Fila(string nombre, decimal presupuesto, string municipio)
+    {
+        Guid id = Guid.NewGuid();
+        _memoria.Filas[id] = new FilaPrograma(id, Datos.IdDesastre, nombre, EstadoProyecto.Aprobado, presupuesto, 0, 0, 3, Datos.Ahora,
+            new[] { municipio });
+    }
+
+    private async Task<ConsolidadoDto> Consultar(Actor actor)
+    {
+        SalidaDePrueba<ConsolidadoDto> salida = new();
+        await new ConsultarConsolidado(_memoria).EjecutarAsync(new SolicitudConsolidado(actor, Datos.IdDesastre), salida);
+        Assert.Equal("exito", salida.Resultado);
+        return salida.Respuesta!;
+    }
+
+    [Fact]
+    public async Task La_autoridad_local_solo_cuenta_los_proyectos_de_su_municipio()
+    {
+        ConsolidadoDto c = await Consultar(Datos.AutoridadLocal);
+        Assert.Equal(1, c.TotalProyectos);
+        Assert.Equal(100m, c.PresupuestoAsignado);
+    }
+
+    [Fact]
+    public async Task La_autoridad_regional_cuenta_los_de_su_departamento()
+    {
+        ConsolidadoDto c = await Consultar(Datos.AutoridadRegional);
+        Assert.Equal(2, c.TotalProyectos);
+        Assert.Equal(300m, c.PresupuestoAsignado);
+    }
+
+    [Fact]
+    public async Task La_autoridad_nacional_y_el_auditor_ven_todo_el_desastre()
+    {
+        Assert.Equal(3, (await Consultar(Datos.AutoridadNacional)).TotalProyectos);
+        Assert.Equal(3, (await Consultar(Datos.Auditor)).TotalProyectos);
+    }
+
+    [Fact]
+    public async Task Un_EV18_atrasado_completa_los_municipios_sin_retroceder_la_version()
+    {
+        Guid id = Guid.NewGuid();
+        ActualizarProyeccionPrograma proyeccion = new(_memoria);
+        // Llega primero un EV-20 (versión 5, sin municipios) y después el EV-18 de la creación (versión 1).
+        await proyeccion.EjecutarAsync(new FilaPrograma(id, Datos.IdDesastre, "Puente", EstadoProyecto.EnEjecucion, 50, 10, 40, 5, Datos.Ahora));
+        await proyeccion.EjecutarAsync(new FilaPrograma(id, Datos.IdDesastre, "Puente", EstadoProyecto.Formulado, 0, 0, 0, 1, Datos.Ahora,
+            new[] { "63001" }));
+
+        FilaPrograma fila = _memoria.Filas[id];
+        Assert.Equal(5, fila.Version);
+        Assert.Equal(EstadoProyecto.EnEjecucion, fila.Estado);
+        Assert.Equal(new[] { "63001" }, fila.CodigosMunicipio);
+        Assert.Equal(2, (await Consultar(Datos.AutoridadLocal)).TotalProyectos);
+    }
+}

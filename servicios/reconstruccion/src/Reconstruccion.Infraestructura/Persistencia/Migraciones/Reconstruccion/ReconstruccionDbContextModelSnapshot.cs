@@ -506,7 +506,7 @@ namespace Reconstruccion.Infraestructura.Persistencia.Migraciones.Reconstruccion
 
                     b.ToTable("proyectos", null, t =>
                         {
-                            t.HasCheckConstraint("ck_proyectos_alcance", "alcance IN ('Municipal', 'Regional')");
+                            t.HasCheckConstraint("ck_proyectos_alcance", "alcance IN ('Municipal', 'Regional', 'Nacional')");
 
                             t.HasCheckConstraint("ck_proyectos_avance", "avance BETWEEN 0 AND 100");
 

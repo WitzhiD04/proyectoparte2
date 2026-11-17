@@ -77,11 +77,9 @@ public static class CreacionDeProyectos
                 origen.Add(new EvaluacionOrigen(evaluacion.Id, evaluacion.IdActivo, evaluacion.TipoActivo, evaluacion.NivelDano,
                     evaluacion.CodigoMunicipio));
             }
-            // Si las evaluaciones están en un solo municipio el proyecto es municipal; si no, regional.
+            // Un municipio: municipal; varios del mismo departamento: regional; varios departamentos: nacional (DA-14).
             // Se compara el código DIVIPOLA y no el nombre, que puede escribirse de varias formas.
-            AlcanceTerritorial alcance = delActivo.Select(e => e.CodigoMunicipio).Distinct().Count() == 1
-                ? AlcanceTerritorial.Municipal
-                : AlcanceTerritorial.Regional;
+            AlcanceTerritorial alcance = Jurisdiccion.AlcanceDe(delActivo.Select(e => e.CodigoMunicipio));
             string nombre = "Reconstrucción de " + delActivo[0].NombreActivo;
             proyectos.Add(ProyectoReconstruccion.Crear(Guid.NewGuid(), idDesastre, nombre, alcance, origen, actor, instante));
         }
@@ -145,9 +143,12 @@ public static class ReconstruccionHistorica
 /// <summary>
 /// Fila del modelo de lectura: lo mínimo de un proyecto para armar el consolidado.
 /// ActualizadoEn es el instante del evento que la dejó así: la consulta lo muestra como marca de tiempo del dato (AD-16).
+/// CodigosMunicipio son los municipios del proyecto, para filtrar por jurisdicción (DA-14). Solo los trae EV-18; en
+/// EV-19 y EV-20 llegan nulos y la proyección conserva los que ya tenía.
 /// </summary>
 public sealed record FilaPrograma(Guid IdProyecto, Guid IdDesastre, string Nombre, EstadoProyecto Estado,
-    decimal Presupuesto, decimal CostoEjecutado, decimal Avance, int Version, DateTimeOffset ActualizadoEn);
+    decimal Presupuesto, decimal CostoEjecutado, decimal Avance, int Version, DateTimeOffset ActualizadoEn,
+    IReadOnlyList<string>? CodigosMunicipio = null);
 
 public sealed record Consolidado(
     Guid IdDesastre,

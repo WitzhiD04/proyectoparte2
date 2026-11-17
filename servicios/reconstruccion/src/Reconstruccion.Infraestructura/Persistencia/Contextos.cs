@@ -29,7 +29,7 @@ public sealed class ReconstruccionDbContext : DbContext
         {
             e.ToTable("proyectos", t =>
             {
-                t.HasCheckConstraint("ck_proyectos_alcance", "alcance IN ('Municipal', 'Regional')");
+                t.HasCheckConstraint("ck_proyectos_alcance", "alcance IN ('Municipal', 'Regional', 'Nacional')");
                 t.HasCheckConstraint("ck_proyectos_estado", "estado IN ('Formulado', 'Aprobado', 'EnEjecucion', 'Finalizado', 'Cancelado')");
                 t.HasCheckConstraint("ck_proyectos_presupuesto", "presupuesto >= 0");
                 t.HasCheckConstraint("ck_proyectos_avance", "avance BETWEEN 0 AND 100");
@@ -217,6 +217,8 @@ public sealed class ProgramaDbContext : DbContext
             e.Property(x => x.Avance).HasColumnName("avance").HasPrecision(5, 2);
             e.Property(x => x.Version).HasColumnName("version");
             e.Property(x => x.ActualizadoEn).HasColumnName("actualizado_en");
+            // Municipios del proyecto (DA-14): filtran el consolidado por la jurisdicción de la autoridad.
+            e.Property(x => x.CodigosMunicipio).HasColumnName("codigos_municipio");
             e.HasIndex(x => x.IdDesastre).HasDatabaseName("ix_proyeccion_desastre");
         });
 

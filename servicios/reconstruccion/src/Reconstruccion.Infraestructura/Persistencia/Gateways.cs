@@ -271,15 +271,26 @@ public sealed class ProyeccionProgramaEf : IProyeccionPrograma
     public async Task AplicarAsync(FilaPrograma fila, CancellationToken ct = default)
     {
         string estado = fila.Estado.ToString();
+        string[]? municipios = fila.CodigosMunicipio?.ToArray();
         // Inserta o actualiza, pero solo si la versión que llega es más nueva: un evento repetido o atrasado no cambia nada.
+        // Los municipios solo llegan con EV-18: si el evento no los trae, se conservan los que había.
         await _db.Database.ExecuteSqlInterpolatedAsync($@"
-            INSERT INTO proyeccion_proyectos (id_proyecto, id_desastre, nombre, estado, presupuesto, costo_ejecutado, avance, version, actualizado_en)
-            VALUES ({fila.IdProyecto}, {fila.IdDesastre}, {fila.Nombre}, {estado}, {fila.Presupuesto}, {fila.CostoEjecutado}, {fila.Avance}, {fila.Version}, {fila.ActualizadoEn})
+            INSERT INTO proyeccion_proyectos (id_proyecto, id_desastre, nombre, estado, presupuesto, costo_ejecutado, avance, version, actualizado_en, codigos_municipio)
+            VALUES ({fila.IdProyecto}, {fila.IdDesastre}, {fila.Nombre}, {estado}, {fila.Presupuesto}, {fila.CostoEjecutado}, {fila.Avance}, {fila.Version}, {fila.ActualizadoEn}, {municipios})
             ON CONFLICT (id_proyecto) DO UPDATE SET
                 nombre = EXCLUDED.nombre, estado = EXCLUDED.estado, presupuesto = EXCLUDED.presupuesto,
                 costo_ejecutado = EXCLUDED.costo_ejecutado, avance = EXCLUDED.avance, version = EXCLUDED.version,
-                actualizado_en = EXCLUDED.actualizado_en
+                actualizado_en = EXCLUDED.actualizado_en,
+                codigos_municipio = COALESCE(EXCLUDED.codigos_municipio, proyeccion_proyectos.codigos_municipio)
             WHERE proyeccion_proyectos.version < EXCLUDED.version", ct);
+        if (municipios is not null)
+        {
+            // EV-18 atrasado (llegó después de un EV-19 o EV-20 más nuevo): su versión ya no cambia la fila, pero sus
+            // municipios sí hacen falta para la jurisdicción. Los municipios de un proyecto no cambian después de creado.
+            await _db.Database.ExecuteSqlInterpolatedAsync($@"
+                UPDATE proyeccion_proyectos SET codigos_municipio = {municipios}
+                WHERE id_proyecto = {fila.IdProyecto} AND codigos_municipio IS NULL", ct);
+        }
     }
 
     public async Task<IReadOnlyList<FilaPrograma>> DeDesastreAsync(Guid idDesastre, CancellationToken ct = default)
@@ -289,7 +300,7 @@ public sealed class ProyeccionProgramaEf : IProyeccionPrograma
         foreach (FilaProgramaFila f in filas)
         {
             resultado.Add(new FilaPrograma(f.IdProyecto, f.IdDesastre, f.Nombre, Enum.Parse<EstadoProyecto>(f.Estado),
-                f.Presupuesto, f.CostoEjecutado, f.Avance, f.Version, f.ActualizadoEn));
+                f.Presupuesto, f.CostoEjecutado, f.Avance, f.Version, f.ActualizadoEn, f.CodigosMunicipio));
         }
         return resultado;
     }

@@ -11,6 +11,7 @@ COPY comun/Plataforma.Comun.Eventos/Plataforma.Comun.Eventos.csproj comun/Plataf
 COPY comun/Plataforma.Comun.Mensajeria/Plataforma.Comun.Mensajeria.csproj comun/Plataforma.Comun.Mensajeria/
 COPY comun/Plataforma.Comun.Salud/Plataforma.Comun.Salud.csproj comun/Plataforma.Comun.Salud/
 COPY comun/Plataforma.Comun.Migraciones/Plataforma.Comun.Migraciones.csproj comun/Plataforma.Comun.Migraciones/
+COPY comun/Plataforma.Comun.Seguridad/Plataforma.Comun.Seguridad.csproj comun/Plataforma.Comun.Seguridad/
 COPY servicios/reconstruccion/src/Reconstruccion.Dominio/Reconstruccion.Dominio.csproj servicios/reconstruccion/src/Reconstruccion.Dominio/
 COPY servicios/reconstruccion/src/Reconstruccion.Aplicacion/Reconstruccion.Aplicacion.csproj servicios/reconstruccion/src/Reconstruccion.Aplicacion/
 COPY servicios/reconstruccion/src/Reconstruccion.Infraestructura/Reconstruccion.Infraestructura.csproj servicios/reconstruccion/src/Reconstruccion.Infraestructura/

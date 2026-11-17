@@ -209,6 +209,10 @@ services:
       Minio__Endpoint: "archivos:9000"
       Minio__Usuario: ${MINIO_USUARIO:-minioadmin}
       Minio__Clave: ${MINIO_CLAVE:-minioadmin}
+      Identidad__Modo: ${IDENTIDAD_MODO:-Encabezados}
+      Identidad__Emisor: ${IDENTIDAD_EMISOR:-http://localhost:8180/realms/plataforma}
+      Identidad__Audiencia: ${IDENTIDAD_AUDIENCIA:-gateway}
+      Identidad__Metadatos: ${IDENTIDAD_METADATOS:-http://keycloak:8080/realms/plataforma/.well-known/openid-configuration}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
       interval: 5s
@@ -236,6 +240,10 @@ services:
       Bus__Clave: ${BUS_CLAVE_CONSULTA_PROGRAMA:-consulta_programa_local}
       Bus__Productor: consulta-programa
       Bus__Cola: q.consulta-programa
+      Identidad__Modo: ${IDENTIDAD_MODO:-Encabezados}
+      Identidad__Emisor: ${IDENTIDAD_EMISOR:-http://localhost:8180/realms/plataforma}
+      Identidad__Audiencia: ${IDENTIDAD_AUDIENCIA:-gateway}
+      Identidad__Metadatos: ${IDENTIDAD_METADATOS:-http://keycloak:8080/realms/plataforma/.well-known/openid-configuration}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
       interval: 5s

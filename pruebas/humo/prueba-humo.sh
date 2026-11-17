@@ -3,6 +3,8 @@
 # Desastres, la evaluación entra por la sincronización de Evaluación de Daños y se valida, y Reconstrucción la recibe
 # por eventos (sin siembra); el proyecto recorre su ciclo y, al final, el desastre se puede cerrar (E-07).
 # Uso: bash pruebas/humo/prueba-humo.sh [http://localhost:8080]
+# Identidad (DA-15): MODO_IDENTIDAD=encabezados (por omisión) o jwt, que pide los tokens a Keycloak. Debe coincidir con
+# el IDENTIDAD_MODO con que se levantó compose. Todos los servicios, Reconstrucción incluida, usan la misma identidad.
 set -u
 B="${1:-http://localhost:8080}/v1"
 # Intérprete de Python para leer el JSON. En Windows, "python3" puede ser el acceso directo de la tienda y no un
@@ -12,15 +14,47 @@ for candidato in python3 python py; do
   if command -v "$candidato" >/dev/null 2>&1 && "$candidato" -c "import json" >/dev/null 2>&1; then PY="$candidato"; break; fi
 done
 [ -n "$PY" ] || { echo "Se necesita Python 3 para leer las respuestas JSON."; exit 2; }
-AUT=(-H "X-Usuario: alcaldia.armenia" -H "X-Rol: Autoridad" -H "X-Ambito: Local")
-REG=(-H "X-Usuario: gobernacion.quindio" -H "X-Rol: Autoridad" -H "X-Ambito: Regional")
-RES=(-H "X-Usuario: ing.perez" -H "X-Rol: Responsable")
-AUD=(-H "X-Usuario: contraloria" -H "X-Rol: Auditor")
-# Gestión de Desastres y Evaluación de Daños leen la identidad con los encabezados de transición (hasta el gateway).
-GD=(-H "X-Usuario: ungrd.operador" -H "X-Roles: autoridad" -H "X-Organizacion: ungrd" -H "X-Ambito: NACIONAL")
-ORG=(-H "X-Usuario: bomberos.operador" -H "X-Roles: organismo" -H "X-Organizacion: bomberos")
+MODO_IDENTIDAD="${MODO_IDENTIDAD:-encabezados}"
+KEYCLOAK_URL="${KEYCLOAK_URL:-http://localhost:8180}"
 DISP="humo-$(date +%s)"
-EVA=(-H "X-Usuario: evaluador.armenia" -H "X-Organizacion: alcaldia-armenia" -H "X-Dispositivo: $DISP")
+# Usuarios del realm "plataforma" (clave = usuario + "_local"). Las autoridades llevan ámbito y territorio DIVIPOLA
+# (DA-14): Armenia 63001 y Calarcá 63130, del Quindío (63).
+pedir_token() {
+  local respuesta
+  respuesta=$(curl -s -X POST "$KEYCLOAK_URL/realms/plataforma/protocol/openid-connect/token" \
+    -d "grant_type=password" -d "client_id=movil" -d "username=$1" -d "password=${1}_local")
+  "$PY" -c "import json,sys;print(json.load(sys.stdin)['access_token'])" <<< "$respuesta" 2>/dev/null | tr -d '\r'
+}
+case "${MODO_IDENTIDAD,,}" in
+  jwt)
+    declare -A TOKEN
+    for usuario in alcaldia.armenia alcaldia.calarca gobernacion.quindio ing.perez auditor.1 ungrd.operador bomberos.operador evaluador.armenia; do
+      TOKEN[$usuario]=$(pedir_token "$usuario")
+      [ -n "${TOKEN[$usuario]}" ] || { echo "No se pudo obtener el token de $usuario en $KEYCLOAK_URL."; exit 2; }
+    done
+    AUT=(-H "Authorization: Bearer ${TOKEN[alcaldia.armenia]}")
+    CAL=(-H "Authorization: Bearer ${TOKEN[alcaldia.calarca]}")
+    REG=(-H "Authorization: Bearer ${TOKEN[gobernacion.quindio]}")
+    RES=(-H "Authorization: Bearer ${TOKEN[ing.perez]}")
+    AUD=(-H "Authorization: Bearer ${TOKEN[auditor.1]}")
+    GD=(-H "Authorization: Bearer ${TOKEN[ungrd.operador]}")
+    ORG=(-H "Authorization: Bearer ${TOKEN[bomberos.operador]}")
+    # X-Dispositivo no es identidad: la app lo sigue enviando como dato del dispositivo (contrato de identidad).
+    EVA=(-H "Authorization: Bearer ${TOKEN[evaluador.armenia]}" -H "X-Dispositivo: $DISP")
+    ;;
+  encabezados)
+    AUT=(-H "X-Usuario: alcaldia.armenia" -H "X-Roles: autoridad" -H "X-Organizacion: alcaldia-armenia" -H "X-Ambito: LOCAL" -H "X-Territorio: 63001")
+    CAL=(-H "X-Usuario: alcaldia.calarca" -H "X-Roles: autoridad" -H "X-Organizacion: alcaldia-calarca" -H "X-Ambito: LOCAL" -H "X-Territorio: 63130")
+    REG=(-H "X-Usuario: gobernacion.quindio" -H "X-Roles: autoridad" -H "X-Organizacion: gobernacion-quindio" -H "X-Ambito: REGIONAL" -H "X-Territorio: 63")
+    RES=(-H "X-Usuario: ing.perez" -H "X-Roles: responsable-proyecto" -H "X-Organizacion: alcaldia-armenia")
+    AUD=(-H "X-Usuario: auditor.1" -H "X-Roles: auditor" -H "X-Organizacion: contraloria")
+    GD=(-H "X-Usuario: ungrd.operador" -H "X-Roles: autoridad" -H "X-Organizacion: ungrd" -H "X-Ambito: NACIONAL")
+    ORG=(-H "X-Usuario: bomberos.operador" -H "X-Roles: organismo" -H "X-Organizacion: bomberos")
+    EVA=(-H "X-Usuario: evaluador.armenia" -H "X-Roles: evaluador" -H "X-Organizacion: alcaldia-armenia" -H "X-Territorio: 63001" -H "X-Dispositivo: $DISP")
+    ;;
+  *)
+    echo "MODO_IDENTIDAD desconocido: $MODO_IDENTIDAD (use 'encabezados' o 'jwt')."; exit 2 ;;
+esac
 J=(-H "Content-Type: application/json")
 SALIDA="${TMPDIR:-/tmp}/humo.json"
 fallas=0
@@ -53,6 +87,7 @@ evaluar() { # id, nivel de daño, referencia, latitud: el dispositivo la sincron
   hasta "la validación de $referencia la acepta un organismo participante" "d.get('estado')=='VALIDADA'" "${ORG[@]}" "${J[@]}" -X POST --data-binary '{"estado":"VALIDADA","motivo":"Verificada en campo"}' "$B/evaluaciones/$ev/validacion"
 }
 
+echo "Identidad: $MODO_IDENTIDAD"
 echo "0. El desastre y las evaluaciones llegan por eventos (escenario E: DA-01, sin siembra)"
 esperar "sin identidad se rechaza" 401 "$B/reconstruccion/desastres"
 esperar "Gestión de Desastres registra el desastre" 201 "${GD[@]}" "${J[@]}" -d '{"tipo":"TERREMOTO","nombre":"Sismo de prueba de humo","descripcion":"Escenario E","instanteInicio":"2026-11-16T08:00:00Z","lat":4.5339,"lon":-75.6811,"severidad":"NIVEL_3","responsable":"ungrd","participantes":[{"organismo":"bomberos","responsabilidad":"Evaluación de daños"}],"zona":{"geometria":{"type":"Polygon","coordinates":[[[-75.72,4.50],[-75.64,4.50],[-75.64,4.58],[-75.72,4.58],[-75.72,4.50]]]},"fuente":"DECISION_AUTORIDAD"}}' "$B/desastres"
@@ -89,6 +124,7 @@ esperar "aprobar con datos incompletos" 422 "${AUT[@]}" "${J[@]}" -d '{"accion":
 esperar "asignar presupuesto" 200 "${AUT[@]}" "${J[@]}" -X PATCH -d '{"presupuesto":500000000,"fuenteFinanciacion":"Fondo de reconstrucción","inicio":"2027-01-15","fin":"2027-09-30","justificacion":"Asignación inicial"}' "$B/proyectos/$P/presupuesto"
 esperar "asignar responsable" 200 "${AUT[@]}" "${J[@]}" -X PATCH -d '{"responsable":"ing.perez","justificacion":"Asignación inicial"}' "$B/proyectos/$P/responsable"
 esperar "la autoridad regional no aprueba un proyecto municipal" 403 "${REG[@]}" "${J[@]}" -d '{"accion":"APROBAR"}' "$B/proyectos/$P/transiciones"
+esperar "la autoridad local de otro municipio (Calarcá) no lo aprueba (DA-14)" 403 "${CAL[@]}" "${J[@]}" -d '{"accion":"APROBAR"}' "$B/proyectos/$P/transiciones"
 esperar "aprobar" 200 "${AUT[@]}" "${J[@]}" -d '{"accion":"APROBAR"}' "$B/proyectos/$P/transiciones"
 
 echo "3. Ejecutar"
@@ -107,6 +143,9 @@ esperar "historial" 200 "${AUD[@]}" "$B/proyectos/$P/historial"
 sleep 5   # el relevo publica los eventos y la consulta actualiza su modelo de lectura
 esperar "consolidado (servicio de consulta)" 200 "${AUD[@]}" "$B/programa/consolidado?desastre=$D"
 "$PY" -c "import json,sys;d=json.load(sys.stdin);print('       finalizados:',d['proyectosPorEstado']['Finalizado'],' en sobrecosto:',len(d['proyectosEnSobrecosto']),' dato al:',d['datoAl']); sys.exit(0 if d['datoAl'] else 1)" < $SALIDA
+# Jurisdicción en el consolidado (DA-14, Cuadro 3 del SRS): la alcaldía de Armenia cuenta su proyecto; la de Calarcá, no.
+hasta "la autoridad de Armenia ve su proyecto en el consolidado" "d['totalProyectos']==1" "${AUT[@]}" "$B/programa/consolidado?desastre=$D"
+hasta "la autoridad de Calarcá no lo cuenta (otro municipio)" "d['totalProyectos']==0" "${CAL[@]}" "$B/programa/consolidado?desastre=$D"
 
 echo "5. Cierre del desastre (E-07): Gestión de Desastres sabe por EV-18 y EV-20 que el proyecto terminó"
 cerrar() { printf '%s' '{"estado":"CERRADO","justificacion":"Reconstrucción terminada"}' | curl -s -o "$SALIDA" -w "%{http_code}" "${GD[@]}" "${J[@]}" --data-binary @- "$B/desastres/$D/transiciones"; }

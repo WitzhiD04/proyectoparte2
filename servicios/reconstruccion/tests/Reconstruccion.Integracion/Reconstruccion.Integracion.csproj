@@ -17,5 +17,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Reconstruccion.Infraestructura\Reconstruccion.Infraestructura.csproj" />
+    <!-- La traducción de la identidad común al actor del dominio vive en la capa Api (DA-15). -->
+    <ProjectReference Include="..\..\src\Reconstruccion.Api\Reconstruccion.Api.csproj" />
   </ItemGroup>
 </Project>

@@ -4,5 +4,6 @@
     <ProjectReference Include="..\Reconstruccion.Aplicacion\Reconstruccion.Aplicacion.csproj" />
     <ProjectReference Include="..\Reconstruccion.Infraestructura\Reconstruccion.Infraestructura.csproj" />
     <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Salud\Plataforma.Comun.Salud.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Seguridad\Plataforma.Comun.Seguridad.csproj" />
   </ItemGroup>
 </Project>

@@ -33,6 +33,7 @@ public static class MapeoCanonico
     {
         AlcanceTerritorial.Municipal => Canonico.AlcanceProyecto.MUNICIPAL,
         AlcanceTerritorial.Regional => Canonico.AlcanceProyecto.REGIONAL,
+        AlcanceTerritorial.Nacional => Canonico.AlcanceProyecto.NACIONAL,
         _ => throw new ArgumentOutOfRangeException(nameof(alcance), alcance, "Alcance sin equivalente canónico."),
     };
 

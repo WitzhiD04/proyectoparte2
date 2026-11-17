@@ -132,7 +132,7 @@ public class PruebasCopiasLocales : IClassFixture<BaseMigrada>, IAsyncLifetime
     /// <summary>Un proyecto en ejecución, guardado por el camino normal.</summary>
     private async Task<Guid> ProyectoEnEjecucionAsync(bool iniciar = true)
     {
-        Actor autoridad = new("alcaldia.armenia", Rol.Autoridad, Ambito.Local);
+        Actor autoridad = new("alcaldia.armenia", Rol.Autoridad, Ambito.Local, "63001");
         Actor responsable = new("ing.perez", Rol.Responsable);
         ProyectoReconstruccion p = ProyectoReconstruccion.Crear(Guid.NewGuid(), Guid.NewGuid(), "Reconstrucción de Escuela",
             AlcanceTerritorial.Municipal, [new EvaluacionOrigen(Guid.NewGuid(), Guid.NewGuid(), "ESCUELA", NivelDano.Grave, "63001")], autoridad, T0);
