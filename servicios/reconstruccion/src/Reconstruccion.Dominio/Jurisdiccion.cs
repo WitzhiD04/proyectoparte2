@@ -67,6 +67,24 @@ public static class Jurisdiccion
     /// jurisdicción. Sin municipios conocidos o sin territorio, una autoridad que no es nacional no lo ve: ante la duda se
     /// muestra de menos, no de más. Los demás roles (el auditor) no tienen restricción territorial.
     /// </summary>
+    /// <summary>Si un municipio está dentro de lo que el actor puede ver (misma regla que <see cref="Cubre"/>).</summary>
+    public static bool CubreMunicipio(Actor actor, string codigoMunicipio) => Cubre(actor, [codigoMunicipio]);
+
+    /// <summary>
+    /// Una autoridad solo crea proyectos con evaluaciones de su jurisdicción (Cuadro 3 del SRS, DA-14): cada municipio
+    /// tiene que estar en su territorio, no basta con que uno lo esté. Si alguno queda fuera lanza
+    /// <see cref="NoAutorizadoException"/> y no se crea nada.
+    /// </summary>
+    public static void ExigirJurisdiccionSobre(Actor actor, IEnumerable<string> codigosMunicipio)
+    {
+        List<string> fuera = codigosMunicipio.Distinct().Where(m => !CubreMunicipio(actor, m)).OrderBy(m => m).ToList();
+        if (fuera.Count > 0)
+        {
+            throw new NoAutorizadoException(
+                "Hay evaluaciones de municipios fuera de su jurisdicción: " + string.Join(", ", fuera) + ".");
+        }
+    }
+
     public static bool Cubre(Actor actor, IReadOnlyList<string>? codigosMunicipio)
     {
         if (actor.Rol != Rol.Autoridad || actor.Ambito == Ambito.Nacional)

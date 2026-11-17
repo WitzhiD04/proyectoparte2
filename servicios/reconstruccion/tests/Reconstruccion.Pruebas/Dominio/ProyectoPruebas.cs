@@ -401,6 +401,61 @@ public class ServiciosPruebas
         Assert.Equal(AlcanceTerritorial.Regional, Assert.Single(proyectos).Alcance);
     }
 
+    // ------------------------------------------------------------------ jurisdicción al crear y en las candidatas (Cuadro 3 del SRS)
+
+    [Fact]
+    public void Calarca_no_crea_proyectos_con_evaluaciones_de_Armenia()
+    {
+        EvaluacionValidada armenia = Datos.Evaluacion(municipio: "Armenia");
+        NoAutorizadoException e = Assert.Throws<NoAutorizadoException>(() =>
+            CreacionDeProyectos.CrearProyectos(Datos.IdDesastre, new[] { armenia }, Datos.AutoridadLocalCalarca, Datos.Ahora));
+        Assert.Contains("63001", e.Message);
+    }
+
+    [Fact]
+    public void Un_lote_con_una_sola_evaluacion_fuera_de_la_jurisdiccion_no_crea_ninguno()
+    {
+        EvaluacionValidada armenia = Datos.Evaluacion(municipio: "Armenia");
+        EvaluacionValidada calarca = Datos.Evaluacion(municipio: "Calarcá");
+        Assert.Throws<NoAutorizadoException>(() =>
+            CreacionDeProyectos.CrearProyectos(Datos.IdDesastre, new[] { armenia, calarca }, Datos.AutoridadLocal, Datos.Ahora));
+    }
+
+    [Fact]
+    public void La_regional_del_Quindio_crea_con_evaluaciones_de_Armenia_y_Calarca_pero_no_de_Risaralda()
+    {
+        EvaluacionValidada armenia = Datos.Evaluacion(municipio: "Armenia");
+        EvaluacionValidada calarca = Datos.Evaluacion(municipio: "Calarcá");
+        Assert.Equal(2, CreacionDeProyectos.CrearProyectos(Datos.IdDesastre, new[] { armenia, calarca }, Datos.AutoridadRegional, Datos.Ahora).Count);
+        Assert.Throws<NoAutorizadoException>(() => CreacionDeProyectos.CrearProyectos(Datos.IdDesastre,
+            new[] { Datos.Evaluacion(municipio: "La Virginia") }, Datos.AutoridadRegional, Datos.Ahora));
+    }
+
+    [Fact]
+    public void La_nacional_crea_con_evaluaciones_de_cualquier_departamento()
+    {
+        List<ProyectoReconstruccion> proyectos = CreacionDeProyectos.CrearProyectos(Datos.IdDesastre,
+            new[] { Datos.Evaluacion(municipio: "Armenia"), Datos.Evaluacion(municipio: "La Virginia") }, Datos.AutoridadNacional, Datos.Ahora);
+        Assert.Equal(2, proyectos.Count);
+    }
+
+    [Theory]
+    [InlineData("alcaldia.calarca", new[] { "Calarcá" })]
+    [InlineData("alcaldia.armenia", new[] { "Armenia" })]
+    [InlineData("gobernacion.quindio", new[] { "Armenia", "Calarcá" })]
+    [InlineData("ungrd.operador", new[] { "Armenia", "Calarcá", "La Virginia" })]
+    public void Cada_autoridad_ve_las_candidatas_de_su_jurisdiccion(string usuario, string[] municipiosVisibles)
+    {
+        Actor actor = new[] { Datos.AutoridadLocal, Datos.AutoridadLocalCalarca, Datos.AutoridadRegional, Datos.AutoridadNacional }
+            .Single(a => a.Usuario == usuario);
+        EvaluacionValidada[] evaluaciones =
+            [Datos.Evaluacion(municipio: "Armenia"), Datos.Evaluacion(municipio: "Calarcá"), Datos.Evaluacion(municipio: "La Virginia")];
+
+        List<EvaluacionValidada> visibles = CreacionDeProyectos.Candidatas(evaluaciones, new HashSet<Guid>(), actor);
+
+        Assert.Equal(municipiosVisibles.OrderBy(m => m), visibles.Select(e => e.Municipio).OrderBy(m => m));
+    }
+
     [Fact]
     public void Un_activo_evaluado_en_varios_departamentos_da_un_proyecto_nacional()
     {

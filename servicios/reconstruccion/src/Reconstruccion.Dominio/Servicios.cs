@@ -20,6 +20,24 @@ public static class CreacionDeProyectos
         return candidatas;
     }
 
+    /// <summary>
+    /// Candidatas que la autoridad puede ver: las de municipios de su jurisdicción (Cuadro 3 del SRS, DA-14).
+    /// La nacional ve todas.
+    /// </summary>
+    public static List<EvaluacionValidada> Candidatas(IEnumerable<EvaluacionValidada> evaluaciones, IReadOnlySet<Guid> yaVinculadas,
+        Actor actor)
+    {
+        List<EvaluacionValidada> candidatas = new();
+        foreach (EvaluacionValidada evaluacion in Candidatas(evaluaciones, yaVinculadas))
+        {
+            if (Jurisdiccion.CubreMunicipio(actor, evaluacion.CodigoMunicipio))
+            {
+                candidatas.Add(evaluacion);
+            }
+        }
+        return candidatas;
+    }
+
     /// <summary>Valida todo el lote. Devuelve un error por cada evaluación que incumple una regla.</summary>
     public static List<string> ValidarLote(
         DesastreLocal? desastre,
@@ -67,6 +85,8 @@ public static class CreacionDeProyectos
     public static List<ProyectoReconstruccion> CrearProyectos(
         Guid idDesastre, IReadOnlyList<EvaluacionValidada> evaluaciones, Actor actor, DateTimeOffset instante)
     {
+        // Todo el lote o nada: si una evaluación está fuera de la jurisdicción de la autoridad, no se crea ninguno.
+        Jurisdiccion.ExigirJurisdiccionSobre(actor, evaluaciones.Select(e => e.CodigoMunicipio));
         List<ProyectoReconstruccion> proyectos = new();
         foreach (IGrouping<Guid, EvaluacionValidada> porActivo in evaluaciones.GroupBy(e => e.IdActivo))
         {
