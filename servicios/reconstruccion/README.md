@@ -40,8 +40,20 @@ Usuarios de prueba del realm (clave = usuario + `_local`):
 **Jurisdicción (DA-14, E-20).** El alcance sale de los municipios DIVIPOLA de las evaluaciones (los 2 primeros dígitos
 son el departamento): un municipio es `Municipal` y lo aprueba la autoridad LOCAL de ese municipio; varios del mismo
 departamento es `Regional` y lo aprueba la REGIONAL de ese departamento; varios departamentos es `Nacional` y lo aprueba
-la NACIONAL. En el consolidado, cada autoridad cuenta los proyectos que tocan su territorio (Cuadro 3 del SRS); la
-nacional y el auditor ven todo el desastre. Código: `Dominio/Jurisdiccion.cs`.
+la NACIONAL.
+
+**Lo que ve y usa cada autoridad (Cuadro 3 del SRS, E-39).** Una autoridad solo trabaja con su jurisdicción; la nacional y
+el auditor ven todo, y el responsable sigue como antes (sus proyectos asignados):
+
+| Ruta | Para una autoridad |
+|---|---|
+| `GET /v1/reconstruccion/candidatas` | Solo las evaluaciones de municipios de su jurisdicción |
+| `POST /v1/proyectos:lote` | 403 si alguna evaluación del lote es de otro territorio; no se crea ninguno |
+| `GET /v1/proyectos?desastre=` | Solo los proyectos que tocan su territorio |
+| `GET /v1/proyectos/{id}` y `/historial` | 404 si el proyecto no es de su jurisdicción (no revela que existe) |
+| `GET /v1/programa/consolidado` | Solo cuenta los proyectos que tocan su territorio |
+
+Las reglas están en `Dominio/Jurisdiccion.cs` y `CreacionDeProyectos`, y las aplican los casos de uso.
 
 Recorrido sugerido: como autoridad local, cree proyectos en *Evaluaciones candidatas*; asigne presupuesto,
 cronograma y el responsable `ing.perez`, y apruebe. Cambie al perfil del responsable para iniciar, registrar
@@ -87,14 +99,14 @@ Un proyecto por anillo; cada uno solo referencia a los de más adentro. Una prue
 
 | Método | Ruta | Caso de uso |
 |---|---|---|
-| GET | `/v1/desastres` | Lista de desastres de la copia local (pasa a `/v1/reconstruccion/desastres` con el gateway, E-09) |
+| GET | `/v1/reconstruccion/desastres` | Lista de desastres de la copia local (E-09) |
 | GET | `/v1/reconstruccion/candidatas?desastre=` | CU-01 |
-| POST | `/v1/proyectos/lote` | CU-02 (pasa a `/v1/proyectos:lote` con el gateway, E-09) |
+| POST | `/v1/proyectos:lote` | CU-02 (E-09) |
 | GET | `/v1/proyectos?desastre=` y `/v1/proyectos/{id}` | Lista y detalle |
 | PATCH | `/v1/proyectos/{id}/presupuesto` | CU-03: presupuesto, fuente y cronograma |
 | PATCH | `/v1/proyectos/{id}/responsable` | CU-03: responsable |
 | POST | `/v1/proyectos/{id}/transiciones` | CU-04, 05, 08 y 09 (`APROBAR`, `INICIAR`, `FINALIZAR`, `CANCELAR`) |
-| POST | `/v1/proyectos/{id}/avances` | CU-06 |
+| POST | `/v1/proyectos/{id}/avance` | CU-06 |
 | POST | `/v1/proyectos/{id}/documentos` | CU-07 |
 | GET | `/v1/proyectos/{id}/historial?fecha=` | CU-10 |
 | GET | `/v1/programa/consolidado?desastre=` | CU-11 (servicio de consulta), con `datoAl` |
@@ -116,8 +128,8 @@ Si la migración crea tablas, agregue en ella los `GRANT` del rol del servicio (
 
 - **La consola en modo `Encabezados`** todavía envía `X-Rol`: Reconstrucción le responde 403 hasta que la consola pase
   al inicio de sesión con Keycloak (encargo `docs/encargos/consola.md`).
-- **La jurisdicción en el resto de lecturas:** la lista de proyectos, las candidatas y el historial no filtran por
-  territorio (solo el consolidado y la aprobación lo hacen).
+- **La jurisdicción en las operaciones de escritura:** asignar presupuesto o responsable y cancelar no revisan el
+  territorio de la autoridad; solo la aprobación y la creación lo hacen.
 - **El adaptador de SE-6** (sistema financiero): presupuesto y costos por lotes, con cola y reintento. Encargo:
   `docs/encargos/adaptador-se6.md`.
 - **La entrada por el gateway** (YARP + Keycloak): hasta entonces la consola usa el selector de perfil.
