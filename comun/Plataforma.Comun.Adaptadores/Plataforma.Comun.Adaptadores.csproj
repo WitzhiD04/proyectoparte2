@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Piezas comunes de los adaptadores de sistemas externos (DA-11; AD-03, AD-05, AD-09, AD-14, AD-36, AD-37):
+    el contrato IContratoAdaptador, la marca de avance persistida, la resiliencia de las llamadas al sistema externo
+    (Polly v8 con Microsoft.Extensions.Http.Resilience, DT-09), el estado del cortacircuitos publicado en EV-23 (E-15),
+    el ciclo de entrada por consulta periódica y la salida desde la cola del adaptador.
+    Lo usan solo los adaptadores (SE-7 y, después, SE-6). No modifica nada de los demás proyectos de comun.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+    <PackageReference Include="RabbitMQ.Client" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Plataforma.Comun.Eventos\Plataforma.Comun.Eventos.csproj" />
+    <ProjectReference Include="..\Plataforma.Comun.Mensajeria\Plataforma.Comun.Mensajeria.csproj" />
+  </ItemGroup>
+</Project>

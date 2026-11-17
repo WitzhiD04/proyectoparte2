@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Pruebas de integración del adaptador de SE-7 (requieren Docker): PostgreSQL 18 y RabbitMQ 4.4 reales con la
+    topología de despliegue/bus (Testcontainers) y el simulador de SE-7 en memoria (WebApplicationFactory).
+    QA-01: con SE-7 caído los EV-18 esperan en q.salida.se7 y se entregan todos al volver, sin duplicados; EV-23 sale
+    al abrir y al cerrar el circuito; la entrada publica EV-24 una vez por cambio aunque se reinicie a mitad.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AdaptadorSe7\AdaptadorSe7.csproj" />
+    <ProjectReference Include="..\..\..\..\simuladores\sim-se7\SimSe7.csproj" />
+  </ItemGroup>
+</Project>

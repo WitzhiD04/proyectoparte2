@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!--
+    Adaptador de SE-7, sistema de proyectos de infraestructura (DA-11; AD-03, AD-05, AD-09, AD-14, AD-25, AD-36, AD-37).
+    Una imagen con dos modos: "salida" (EV-18 y EV-20 de q.salida.se7 hacia SE-7) y "entrada" (cambios de SE-7 desde
+    su marca de avance, publicados en EV-24), más "migrar". Es un trabajador pequeño en un solo proyecto, como el de
+    SE-2: Traduccion.cs no depende de la base, del bus ni de HTTP (se prueba sin ellos).
+    No tiene appsettings.json: toda su configuración llega por variables de entorno (ver README).
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Eventos\Plataforma.Comun.Eventos.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Mensajeria\Plataforma.Comun.Mensajeria.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Migraciones\Plataforma.Comun.Migraciones.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Salud\Plataforma.Comun.Salud.csproj" />
+    <ProjectReference Include="..\..\..\..\comun\Plataforma.Comun.Adaptadores\Plataforma.Comun.Adaptadores.csproj" />
+  </ItemGroup>
+</Project>

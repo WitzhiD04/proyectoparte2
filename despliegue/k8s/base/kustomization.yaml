@@ -7,6 +7,7 @@ resources:
   - 20-servicios.yaml
   - evaluacion-danos.yaml
   - adaptador-se2.yaml
+  - adaptador-se7.yaml
   - gestion-desastres.yaml
   - consulta.yaml
   - auditoria.yaml

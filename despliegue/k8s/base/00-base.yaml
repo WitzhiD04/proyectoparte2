@@ -21,6 +21,12 @@ stringData:
   cadena-adaptador-se2: "Host=db;Port=5432;Database=adaptador_se2;Username=adaptador_se2_app;Password=adaptador_se2_local"
   bus-evaluacion-danos: evaluacion_danos_local
   bus-adaptador-se2: adaptador_se2_local
+  adaptador-se7-app: adaptador_se7_local
+  cadena-adaptador-se7-dueno: "Host=db;Port=5432;Database=adaptadores;Username=postgres;Password=postgres_local"
+  cadena-adaptador-se7: "Host=db;Port=5432;Database=adaptadores;Username=adaptador_se7_app;Password=adaptador_se7_local"
+  bus-adaptador-se7: adaptador_se7_local
+  # KEDA mide q.salida.se7 con el usuario del adaptador. Nombre completo del servicio: el operador está en otro namespace.
+  amqp-adaptador-se7: "amqp://adaptador-se7:adaptador_se7_local@bus.plataforma.svc.cluster.local:5672/%2F"
   bus-reconstruccion: reconstruccion_local
   bus-consulta-programa: consulta_programa_local
   gestion-desastres-app: gestion_desastres_local

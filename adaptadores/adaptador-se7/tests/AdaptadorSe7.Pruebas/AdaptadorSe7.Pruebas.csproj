@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Pruebas unitarias del adaptador de SE-7, sin Docker: traducción EV-18/EV-20 -> SE-7 y SE-7 -> EV-24 contra el
+    contrato, EV-23, la resiliencia (el circuito se abre con 3 fallos de 3), la marca de avance del ciclo de entrada,
+    la salida sin cola de mensajes muertos con SE-7 caído y el registro del simulador.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AdaptadorSe7\AdaptadorSe7.csproj" />
+    <ProjectReference Include="..\..\..\..\simuladores\sim-se7\SimSe7.csproj" />
+  </ItemGroup>
+</Project>
