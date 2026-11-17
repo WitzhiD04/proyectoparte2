@@ -293,6 +293,50 @@ services:
       retries: 20
     restart: unless-stopped
 
+  # Consulta de Daños (DA-08): modelo de lectura de la evaluación de daños (mapa por zona, consolidado, evolución e
+  # indicadores de R-08). Usa la misma caché que Consulta, con su propio espacio de claves (E-21).
+  consulta-danos-migrador:
+    image: plataforma/consulta-danos:local
+    build:
+      context: ../..
+      dockerfile: servicios/consulta-danos/Dockerfile
+    command: ["migrar"]
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      ConnectionStrings__ConsultaDanosDueno: "Host=db;Port=5432;Database=consulta_danos;Username=postgres;Password=${POSTGRES_CLAVE:-postgres_local}"
+      Migracion__ClaveConsultaDanosApp: ${CONSULTA_DANOS_APP_CLAVE:-consulta_danos_local}
+    restart: "no"
+
+  consulta-danos:
+    image: plataforma/consulta-danos:local
+    deploy:
+      replicas: 2
+    depends_on:
+      consulta-danos-migrador: { condition: service_completed_successfully }
+      cache: { condition: service_healthy }
+      bus1: { condition: service_healthy }
+      bus2: { condition: service_healthy }
+      bus3: { condition: service_healthy }
+    environment:
+      ConnectionStrings__ConsultaDanos: "Host=db;Port=5432;Database=consulta_danos;Username=consulta_danos_app;Password=${CONSULTA_DANOS_APP_CLAVE:-consulta_danos_local}"
+      Redis__Conexion: cache:6379
+      Bus__Nodos__0: bus1
+      Bus__Nodos__1: bus2
+      Bus__Nodos__2: bus3
+      Bus__Usuario: consulta-danos
+      Bus__Clave: ${BUS_CLAVE_CONSULTA_DANOS:-consulta_danos_local}
+      Bus__Productor: consulta-danos
+      Bus__Cola: q.consulta-danos
+      ConsultaDanos__UmbralConflictos: ${CONSULTA_DANOS_UMBRAL_CONFLICTOS:-50}
+      ConsultaDanos__UmbralHoras: ${CONSULTA_DANOS_UMBRAL_HORAS:-24}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
   # Migrador de Auditoría (DT-19): crea el rol auditoria_app, la base auditoria, la tabla particionada por mes con las
   # particiones del año en curso y del siguiente, y los permisos de solo inserción. Corre una vez.
   auditoria-migrador:

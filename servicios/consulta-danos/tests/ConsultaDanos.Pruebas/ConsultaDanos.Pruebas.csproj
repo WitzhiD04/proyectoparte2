@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Dominio, casos de uso con puertos en memoria y prueba de arquitectura. No requieren Docker. -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ConsultaDanos.Dominio\ConsultaDanos.Dominio.csproj" />
+    <ProjectReference Include="..\..\src\ConsultaDanos.Aplicacion\ConsultaDanos.Aplicacion.csproj" />
+  </ItemGroup>
+</Project>

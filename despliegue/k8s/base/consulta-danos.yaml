@@ -1,0 +1,93 @@
+# Consulta de Daños (DA-08): migrador, dos réplicas como mínimo y HPA (AD-18, QA-05), PDB y servicio. Usa la caché
+# "cache" que declara consulta.yaml, con su propio espacio de claves (consulta-danos:, E-21).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: consulta-danos-migrador
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrador
+          image: plataforma/consulta-danos:local
+          imagePullPolicy: IfNotPresent
+          args: ["migrar"]
+          env:
+            - name: ConnectionStrings__ConsultaDanosDueno
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-consulta-danos-dueno } }
+            - name: Migracion__ClaveConsultaDanosApp
+              valueFrom: { secretKeyRef: { name: credenciales, key: consulta-danos-app } }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consulta-danos
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: consulta-danos }
+  template:
+    metadata:
+      labels: { app: consulta-danos }
+    spec:
+      containers:
+        - name: api
+          image: plataforma/consulta-danos:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: Bus__Nodos__0, value: bus }
+            - { name: Bus__Usuario, value: consulta-danos }
+            - { name: Bus__Productor, value: consulta-danos }
+            - { name: Bus__Cola, value: q.consulta-danos }
+            - { name: Redis__Conexion, value: "cache:6379" }
+            - { name: ConsultaDanos__UmbralConflictos, value: "50" }
+            - { name: ConsultaDanos__UmbralHoras, value: "24" }
+            - name: Bus__Clave
+              valueFrom: { secretKeyRef: { name: credenciales, key: bus-consulta-danos } }
+            - name: ConnectionStrings__ConsultaDanos
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-consulta-danos } }
+          ports: [{ containerPort: 8080 }]
+          readinessProbe:
+            httpGet: { path: /salud/listo, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /salud/vivo, port: 8080 }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 160Mi }
+            limits: { memory: 384Mi }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: consulta-danos
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: consulta-danos }
+---
+# Es la ruta de lectura de mayor volumen del módulo: escala con la CPU, sin tocar a Evaluación de Daños (AD-18, QA-05 d).
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: consulta-danos
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: consulta-danos }
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 70 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: consulta-danos
+spec:
+  selector: { app: consulta-danos }
+  ports: [{ port: 8080 }]

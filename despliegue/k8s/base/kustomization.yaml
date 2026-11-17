@@ -10,3 +10,4 @@ resources:
   - gestion-desastres.yaml
   - consulta.yaml
   - auditoria.yaml
+  - consulta-danos.yaml

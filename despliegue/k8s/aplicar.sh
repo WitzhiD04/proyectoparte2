@@ -38,6 +38,7 @@ minikube image build -t plataforma/auditoria:local -f servicios/auditoria/Docker
 minikube image build -t plataforma/consola:local "$raiz/consola"
 minikube image build -t plataforma/gestion-desastres:local -f servicios/gestion-desastres/Dockerfile "$raiz"
 minikube image build -t plataforma/consulta:local -f servicios/consulta/Dockerfile "$raiz"
+minikube image build -t plataforma/consulta-danos:local -f servicios/consulta-danos/Dockerfile "$raiz"
 # Las imágenes de los demás servicios se agregan aquí a medida que existen (ver despliegue/k8s/base/20-servicios.yaml).
 
 echo "2. Operadores: RabbitMQ Cluster Operator (v2.23.2)"
@@ -58,6 +59,8 @@ k -n plataforma wait --for=condition=complete job/gestion-desastres-migrador --t
 k -n plataforma rollout status deployment/gestion-desastres --timeout=300s
 k -n plataforma wait --for=condition=complete job/consulta-migrador --timeout=600s
 k -n plataforma rollout status deployment/consulta --timeout=300s
+k -n plataforma wait --for=condition=complete job/consulta-danos-migrador --timeout=600s
+k -n plataforma rollout status deployment/consulta-danos --timeout=300s
 k -n plataforma wait --for=condition=complete job/auditoria-migrador --timeout=600s
 k -n plataforma rollout status deployment/auditoria --timeout=300s
 

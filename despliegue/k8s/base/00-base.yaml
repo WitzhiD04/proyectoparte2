@@ -35,5 +35,9 @@ stringData:
   cadena-auditoria-dueno: "Host=db;Port=5432;Database=auditoria;Username=postgres;Password=postgres_local"
   cadena-auditoria: "Host=db;Port=5432;Database=auditoria;Username=auditoria_app;Password=auditoria_local"
   bus-auditoria: auditoria_local
+  consulta-danos-app: consulta_danos_local
+  cadena-consulta-danos-dueno: "Host=db;Port=5432;Database=consulta_danos;Username=postgres;Password=postgres_local"
+  cadena-consulta-danos: "Host=db;Port=5432;Database=consulta_danos;Username=consulta_danos_app;Password=consulta_danos_local"
+  bus-consulta-danos: consulta_danos_local
   minio-usuario: minioadmin
   minio-clave: minioadmin
