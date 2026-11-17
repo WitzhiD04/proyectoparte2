@@ -1,5 +1,7 @@
 # Encargo · Notificación mínima con SE-8
 
+> **Fuera de esta entrega (2026-11-17).** Notificación es de Gestión de Desastres. No se implementa; queda declarada como límite del prototipo.
+
 Lea primero `D:\Proyecto arqui\encargos\convenciones.md` completo: manda sobre este encargo.
 
 **Base:** trabaje sobre la rama principal actual: ya trae el contrato de este encargo (EV-07, EV-28, EV-29 y la
