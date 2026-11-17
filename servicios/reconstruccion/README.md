@@ -51,9 +51,15 @@ el auditor ven todo, y el responsable sigue como antes (sus proyectos asignados)
 | `POST /v1/proyectos:lote` | 403 si alguna evaluación del lote es de otro territorio; no se crea ninguno |
 | `GET /v1/proyectos?desastre=` | Solo los proyectos que tocan su territorio |
 | `GET /v1/proyectos/{id}` y `/historial` | 404 si el proyecto no es de su jurisdicción (no revela que existe) |
+| `PATCH /v1/proyectos/{id}/presupuesto` y `/responsable` | 404 si el proyecto no es de su jurisdicción, antes que cualquier otra regla |
+| `POST /v1/proyectos/{id}/transiciones` con `APROBAR` | 404 si no lo ve; 403 si lo ve pero no es la autoridad que lo aprueba (la gobernación con un municipal) |
+| `POST /v1/proyectos/{id}/transiciones` con `CANCELAR` | 404 si el proyecto no es de su jurisdicción |
 | `GET /v1/programa/consolidado` | Solo cuenta los proyectos que tocan su territorio |
 
-Las reglas están en `Dominio/Jurisdiccion.cs` y `CreacionDeProyectos`, y las aplican los casos de uso.
+Las reglas están en `Dominio/Jurisdiccion.cs` (`Cubre`, `ExigirQueLoVe`, `ExigirAprobador`, `ExigirJurisdiccionSobre`),
+`CreacionDeProyectos` y los métodos de `ProyectoReconstruccion`; los casos de uso las aplican y traducen
+`FueraDeJurisdiccionException` a 404. Las acciones del responsable (iniciar, avance y costo, documentos, finalizar) no
+miran territorio: exigen ser el responsable asignado.
 
 Recorrido sugerido: como autoridad local, cree proyectos en *Evaluaciones candidatas*; asigne presupuesto,
 cronograma y el responsable `ing.perez`, y apruebe. Cambie al perfil del responsable para iniciar, registrar
@@ -128,8 +134,6 @@ Si la migración crea tablas, agregue en ella los `GRANT` del rol del servicio (
 
 - **La consola en modo `Encabezados`** todavía envía `X-Rol`: Reconstrucción le responde 403 hasta que la consola pase
   al inicio de sesión con Keycloak (encargo `docs/encargos/consola.md`).
-- **La jurisdicción en las operaciones de escritura:** asignar presupuesto o responsable y cancelar no revisan el
-  territorio de la autoridad; solo la aprobación y la creación lo hacen.
 - **El adaptador de SE-6** (sistema financiero): presupuesto y costos por lotes, con cola y reintento. Encargo:
   `docs/encargos/adaptador-se6.md`.
 - **La entrada por el gateway** (YARP + Keycloak): hasta entonces la consola usa el selector de perfil.
