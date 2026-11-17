@@ -1,5 +1,9 @@
 # Plataforma para la Gestión de Desastres y Reconstrucción
 
+> **Estado del proyecto y lo que falta:** [`docs/encargos/LEEME.md`](docs/encargos/LEEME.md). Las decisiones de arquitectura y las
+> enmiendas a los documentos están en [`docs/decisiones/`](docs/decisiones/).
+
+
 Monorepo de la segunda entrega. La arquitectura está en `docs/` (SRS, SAD, ATAM y el diseño de Reconstrucción).
 La app móvil de evaluación de daños vive en su propio repositorio (`danos`) y se integra por el contrato de la API.
 
