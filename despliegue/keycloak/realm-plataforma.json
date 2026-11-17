@@ -1,0 +1,439 @@
+{
+  "id": "plataforma",
+  "realm": "plataforma",
+  "displayName": "Plataforma para la Gestión de Desastres y Reconstrucción",
+  "enabled": true,
+  "sslRequired": "NONE",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": false,
+  "accessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 2592000,
+  "ssoSessionMaxLifespan": 2592000,
+  "offlineSessionIdleTimeout": 2592000,
+  "offlineSessionMaxLifespanEnabled": false,
+  "attributes": {
+    "keycloak.userprofile.config": "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"organizacion\",\"displayName\":\"Organización\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"multivalued\":false},{\"name\":\"ambito\",\"displayName\":\"Ámbito territorial\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"multivalued\":false},{\"name\":\"territorio\",\"displayName\":\"Código DIVIPOLA del territorio\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}],\"unmanagedAttributePolicy\":\"ENABLED\"}"
+  },
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": [
+            "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"organizacion\",\"displayName\":\"Organización\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"multivalued\":false},{\"name\":\"ambito\",\"displayName\":\"Ámbito territorial\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"multivalued\":false},{\"name\":\"territorio\",\"displayName\":\"Código DIVIPOLA del territorio\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}],\"unmanagedAttributePolicy\":\"ENABLED\"}"
+          ]
+        }
+      }
+    ]
+  },
+  "roles": {
+    "realm": [
+      {
+        "name": "autoridad",
+        "description": "Autoridad con competencia sobre desastres y proyectos de reconstrucción"
+      },
+      {
+        "name": "responsable-proyecto",
+        "description": "Responsable técnico asignado a proyectos de reconstrucción"
+      },
+      {
+        "name": "auditor",
+        "description": "Auditor de control y trazabilidad"
+      },
+      {
+        "name": "evaluador",
+        "description": "Evaluador de daños en campo"
+      },
+      {
+        "name": "operador",
+        "description": "Operador de bandeja de revisión de conflictos y duplicados"
+      },
+      {
+        "name": "organismo",
+        "description": "Organismo de socorro o técnico participante"
+      },
+      {
+        "name": "administrador",
+        "description": "Administrador de catálogos en ejecución"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "gateway",
+      "name": "API Gateway de la Plataforma",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "bearerOnly": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    },
+    {
+      "clientId": "consola",
+      "name": "Consola de coordinación",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "redirectUris": [
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "audiencia-gateway",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "gateway",
+            "included.custom.audience": "gateway",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "organizacion",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "organizacion",
+            "claim.name": "organizacion",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "multivalued": "false",
+            "aggregate.attrs": "false"
+          }
+        },
+        {
+          "name": "ambito",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "ambito",
+            "claim.name": "ambito",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "multivalued": "false",
+            "aggregate.attrs": "false"
+          }
+        },
+        {
+          "name": "territorio",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "territorio",
+            "claim.name": "territorio",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "multivalued": "false",
+            "aggregate.attrs": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "movil",
+      "name": "Cliente móvil de Evaluación de Daños",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "redirectUris": [
+        "co.plataforma.danos:/oauth2redirect"
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email",
+        "basic",
+        "offline_access"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "microprofile-jwt"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "audiencia-gateway",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "gateway",
+            "included.custom.audience": "gateway",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "organizacion",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "organizacion",
+            "claim.name": "organizacion",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "multivalued": "false",
+            "aggregate.attrs": "false"
+          }
+        },
+        {
+          "name": "ambito",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "ambito",
+            "claim.name": "ambito",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "multivalued": "false",
+            "aggregate.attrs": "false"
+          }
+        },
+        {
+          "name": "territorio",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "territorio",
+            "claim.name": "territorio",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "multivalued": "false",
+            "aggregate.attrs": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "evaluador.armenia",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Evaluador",
+      "lastName": "Armenia",
+      "email": "evaluador.armenia@plataforma.local",
+      "attributes": {
+        "organizacion": [
+          "alcaldia-armenia"
+        ],
+        "territorio": [
+          "63001"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "evaluador.armenia_local",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-plataforma",
+        "evaluador"
+      ],
+      "requiredActions": []
+    },
+    {
+      "username": "ungrd.operador",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Operador",
+      "lastName": "UNGRD",
+      "email": "ungrd.operador@plataforma.local",
+      "attributes": {
+        "organizacion": [
+          "ungrd"
+        ],
+        "ambito": [
+          "NACIONAL"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ungrd.operador_local",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-plataforma",
+        "autoridad"
+      ],
+      "requiredActions": []
+    },
+    {
+      "username": "bomberos.operador",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Operador",
+      "lastName": "Bomberos",
+      "email": "bomberos.operador@plataforma.local",
+      "attributes": {
+        "organizacion": [
+          "bomberos"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "bomberos.operador_local",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-plataforma",
+        "organismo"
+      ],
+      "requiredActions": []
+    },
+    {
+      "username": "operador.danos",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Operador",
+      "lastName": "Daños",
+      "email": "operador.danos@plataforma.local",
+      "attributes": {
+        "organizacion": [
+          "ungrd"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "operador.danos_local",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-plataforma",
+        "operador"
+      ],
+      "requiredActions": []
+    },
+    {
+      "username": "admin.catalogo",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Administrador",
+      "lastName": "Catálogo",
+      "email": "admin.catalogo@plataforma.local",
+      "attributes": {
+        "organizacion": [
+          "ungrd"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin.catalogo_local",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-plataforma",
+        "administrador"
+      ],
+      "requiredActions": []
+    },
+    {
+      "username": "auditor.1",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Auditor",
+      "lastName": "General",
+      "email": "auditor.1@plataforma.local",
+      "attributes": {
+        "organizacion": [
+          "contraloria"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "auditor.1_local",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-plataforma",
+        "auditor"
+      ],
+      "requiredActions": []
+    },
+    {
+      "username": "ing.perez",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Ingeniero",
+      "lastName": "Pérez",
+      "email": "ing.perez@plataforma.local",
+      "attributes": {
+        "organizacion": [
+          "alcaldia-armenia"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ing.perez_local",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-plataforma",
+        "responsable-proyecto"
+      ],
+      "requiredActions": []
+    }
+  ]
+}

@@ -47,3 +47,4 @@ stringData:
   bus-consulta-danos: consulta_danos_local
   minio-usuario: minioadmin
   minio-clave: minioadmin
+  keycloak-admin: admin_local

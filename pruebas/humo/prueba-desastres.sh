@@ -9,9 +9,40 @@ for candidato in python3 python py; do
   if command -v "$candidato" >/dev/null 2>&1 && "$candidato" -c "import json" >/dev/null 2>&1; then PY="$candidato"; break; fi
 done
 [ -n "$PY" ] || { echo "Se necesita Python 3 para leer las respuestas JSON."; exit 2; }
-AUT=(-H "X-Usuario: ungrd.operador" -H "X-Roles: autoridad" -H "X-Organizacion: ungrd" -H "X-Ambito: NACIONAL")
-ORG=(-H "X-Usuario: bomberos.operador" -H "X-Roles: organismo" -H "X-Organizacion: bomberos")
-ADM=(-H "X-Usuario: admin.catalogo" -H "X-Roles: administrador" -H "X-Organizacion: ungrd")
+MODO_IDENTIDAD="${MODO_IDENTIDAD:-encabezados}"
+KEYCLOAK_URL="${KEYCLOAK_URL:-http://localhost:8180}"
+
+pedir_token() {
+  local usuario="$1"
+  local respuesta
+  respuesta=$(curl -s -X POST "$KEYCLOAK_URL/realms/plataforma/protocol/openid-connect/token" \
+    -d "grant_type=password" \
+    -d "client_id=movil" \
+    -d "username=$usuario" \
+    -d "password=${usuario}_local")
+  "$PY" -c "import json,sys;d=json.load(sys.stdin);sys.exit(0 if 'access_token' in d else 1);print(d['access_token'])" <<< "$respuesta" 2>/dev/null && \
+    "$PY" -c "import json,sys;print(json.load(sys.stdin)['access_token'])" <<< "$respuesta" | tr -d '\r'
+}
+
+case "${MODO_IDENTIDAD,,}" in
+  jwt)
+    TOKEN_AUT=$(pedir_token "ungrd.operador") || { echo "No se pudo obtener token JWT para ungrd.operador en $KEYCLOAK_URL."; exit 2; }
+    TOKEN_ORG=$(pedir_token "bomberos.operador") || { echo "No se pudo obtener token JWT para bomberos.operador en $KEYCLOAK_URL."; exit 2; }
+    TOKEN_ADM=$(pedir_token "admin.catalogo") || { echo "No se pudo obtener token JWT para admin.catalogo en $KEYCLOAK_URL."; exit 2; }
+    AUT=(-H "Authorization: Bearer $TOKEN_AUT")
+    ORG=(-H "Authorization: Bearer $TOKEN_ORG")
+    ADM=(-H "Authorization: Bearer $TOKEN_ADM")
+    ;;
+  encabezados)
+    AUT=(-H "X-Usuario: ungrd.operador" -H "X-Roles: autoridad" -H "X-Organizacion: ungrd" -H "X-Ambito: NACIONAL")
+    ORG=(-H "X-Usuario: bomberos.operador" -H "X-Roles: organismo" -H "X-Organizacion: bomberos")
+    ADM=(-H "X-Usuario: admin.catalogo" -H "X-Roles: administrador" -H "X-Organizacion: ungrd")
+    ;;
+  *)
+    echo "MODO_IDENTIDAD desconocido: $MODO_IDENTIDAD (use 'encabezados' o 'jwt')."
+    exit 2
+    ;;
+esac
 J=(-H "Content-Type: application/json")
 SALIDA="${TMPDIR:-/tmp}/humo-desastres.json"
 fallas=0
