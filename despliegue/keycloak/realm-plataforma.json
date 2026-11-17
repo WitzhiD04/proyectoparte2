@@ -434,6 +434,99 @@
         "responsable-proyecto"
       ],
       "requiredActions": []
+    },
+    {
+      "username": "alcaldia.armenia",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Alcaldía",
+      "lastName": "Armenia",
+      "email": "alcaldia.armenia@plataforma.local",
+      "attributes": {
+        "organizacion": [
+          "alcaldia-armenia"
+        ],
+        "ambito": [
+          "LOCAL"
+        ],
+        "territorio": [
+          "63001"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "alcaldia.armenia_local",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-plataforma",
+        "autoridad"
+      ],
+      "requiredActions": []
+    },
+    {
+      "username": "alcaldia.calarca",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Alcaldía",
+      "lastName": "Calarcá",
+      "email": "alcaldia.calarca@plataforma.local",
+      "attributes": {
+        "organizacion": [
+          "alcaldia-calarca"
+        ],
+        "ambito": [
+          "LOCAL"
+        ],
+        "territorio": [
+          "63130"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "alcaldia.calarca_local",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-plataforma",
+        "autoridad"
+      ],
+      "requiredActions": []
+    },
+    {
+      "username": "gobernacion.quindio",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Gobernación",
+      "lastName": "Quindío",
+      "email": "gobernacion.quindio@plataforma.local",
+      "attributes": {
+        "organizacion": [
+          "gobernacion-quindio"
+        ],
+        "ambito": [
+          "REGIONAL"
+        ],
+        "territorio": [
+          "63"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "gobernacion.quindio_local",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-plataforma",
+        "autoridad"
+      ],
+      "requiredActions": []
     }
   ]
 }
