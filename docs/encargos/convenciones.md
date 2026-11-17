@@ -117,7 +117,8 @@ La autorización de nivel 2 (reglas que dependen de datos del dominio, AD-22) va
 ## Contrato de identidad y de entrada (fijado el 2026-11-16; lo implementan el gateway y la app)
 
 - **Keycloak 26**, realm `plataforma`, publicado en compose en el puerto **8180** del host
-  (emisor `http://localhost:8180/realms/plataforma`; desde el emulador de Android, `http://10.0.2.2:8180/realms/plataforma`).
+  (emisor `http://localhost:8180/realms/plataforma`, **el mismo para todos**: Keycloak fija `KC_HOSTNAME`, los contenedores
+  descubren las llaves por `http://keycloak:8080` y el emulador de Android llega con `adb reverse tcp:8180 tcp:8180`).
   - Roles de realm: `autoridad`, `responsable-proyecto`, `auditor`, `evaluador`, `operador`, `organismo`, `administrador`.
   - Atributos de usuario emitidos como claims de primer nivel: `organizacion`, `ambito` (`LOCAL|REGIONAL|NACIONAL`), `territorio`.
   - Clientes: `consola` (público, PKCE S256), `movil` (público, PKCE S256, `offline_access`, redirección

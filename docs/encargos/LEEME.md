@@ -15,7 +15,7 @@ Todos parten de `docs/encargos/convenciones.md`, que es obligatorio leer primero
 
 ## Hecho y verificado
 
-La suite tiene 820 pruebas en verde (`bash herramientas/dotnet.sh test Plataforma.sln`) y en compose pasan las dos pruebas
+La suite completa está en verde (`bash herramientas/dotnet.sh test Plataforma.sln`) y en compose pasan las dos pruebas
 de humo.
 
 | Pieza | Dónde | Qué demuestra |
@@ -29,13 +29,14 @@ de humo.
 | Auditoría | `servicios/auditoria` | QA-13, QA-15, R-02 |
 | Adaptador de SE-7, simulador y KEDA | `adaptadores/adaptador-se7`, `simuladores/sim-se7` | QA-01 con SE-7 |
 | Contrato de Notificación (EV-07, 28 y 29) | `comun/` | E-37 |
-| App móvil con OIDC | repositorio `danos`, rama `gemini-app-oidc` | H-70 a H-72. Falta probarla contra Keycloak |
+| Keycloak (realm `plataforma`) y adaptador JWT de `IIdentidadActual` | `despliegue/keycloak`, `comun/Plataforma.Comun.Seguridad` | DA-15: con `IDENTIDAD_MODO=Jwt` los servicios validan el token y rechazan los `X-*` (401); la prueba de humo de desastres pasa con tokens. Reconstrucción aún lee su propia identidad |
+| App móvil con OIDC | repositorio `danos`, rama `gemini-app-oidc` | H-70 a H-72. Falta correr su prueba instrumentada contra Keycloak (emulador con `adb reverse tcp:8180 tcp:8180`) |
 
 ## Lo que falta, en orden
 
 | # | Encargo | Depende de | Notas |
 |---|---|---|---|
-| 1 | `keycloak-jwt.md` | — | Puede estar ya hecho: ver la nota del encargo |
+| 1 | `keycloak-jwt.md` | — | **Hecho** |
 | 2 | `gateway.md` | 1 | Lo más grande que queda. Habilita QA-11 medido, AD-19 y los rechazos a Auditoría |
 | 3 | `reconstruccion-identidad.md` | 1 | Puede ir en paralelo con el 2 |
 | 4 | `consola.md` | 1 (y 2 para el recorrido final) | Puede empezar en cuanto exista Keycloak |
