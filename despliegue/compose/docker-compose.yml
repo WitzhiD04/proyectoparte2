@@ -80,7 +80,9 @@ services:
       # Solo la regla de pg_hba para la réplica. El esquema lo crea el migrador (DT-19), no initdb.
       - ./postgres/04-replicacion.sh:/docker-entrypoint-initdb.d/04-replicacion.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d reconstruccion"]
+      # Por TCP (-h 127.0.0.1): mientras corre initdb, el servidor temporal solo escucha en el socket Unix y los
+      # migradores, que entran por TCP, serían rechazados si se marcara sano antes de tiempo.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d reconstruccion"]
       interval: 3s
       timeout: 3s
       retries: 30

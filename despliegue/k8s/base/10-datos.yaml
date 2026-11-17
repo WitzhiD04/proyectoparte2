@@ -31,7 +31,8 @@ spec:
               valueFrom: { secretKeyRef: { name: credenciales, key: postgres } }
           ports: [{ containerPort: 5432 }]
           readinessProbe:
-            exec: { command: ["pg_isready", "-U", "postgres", "-d", "reconstruccion"] }
+            # Por TCP: durante initdb el servidor temporal solo escucha en el socket Unix (ver compose).
+            exec: { command: ["pg_isready", "-h", "127.0.0.1", "-U", "postgres", "-d", "reconstruccion"] }
             periodSeconds: 5
           resources:
             requests: { cpu: 100m, memory: 256Mi }
