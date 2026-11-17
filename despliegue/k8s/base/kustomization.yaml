@@ -12,3 +12,10 @@ resources:
   - consulta.yaml
   - auditoria.yaml
   - consulta-danos.yaml
+  - keycloak.yaml
+configMapGenerator:
+  - name: keycloak-realm
+    files:
+      - realm-plataforma.json=../../keycloak/realm-plataforma.json
+generatorOptions:
+  disableNameSuffixHash: true
