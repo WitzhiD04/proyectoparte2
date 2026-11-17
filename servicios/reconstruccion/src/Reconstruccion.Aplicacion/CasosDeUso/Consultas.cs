@@ -69,7 +69,7 @@ public sealed class ConsultarProyecto : Interactor, IConsultarProyectoEntrada
             // Fuera de la jurisdicción de la autoridad responde igual que si no existiera: no revela que existe.
             if (proyecto is null || !Jurisdiccion.Cubre(solicitud.Actor, proyecto.CodigosMunicipio))
             {
-                salida.NoEncontrado("El proyecto no existe.");
+                salida.NoEncontrado(MensajeProyectoNoExiste);
                 return;
             }
             salida.Exito(proyecto.ADto());
@@ -107,14 +107,14 @@ public sealed class ConsultarHistorial : Interactor, IConsultarHistorialEntrada
                 ProyectoReconstruccion? proyecto = await _proyectos.BuscarAsync(solicitud.IdProyecto, ct);
                 if (proyecto is null || !Jurisdiccion.Cubre(solicitud.Actor, proyecto.CodigosMunicipio))
                 {
-                    salida.NoEncontrado("El proyecto no existe.");
+                    salida.NoEncontrado(MensajeProyectoNoExiste);
                     return;
                 }
             }
             IReadOnlyList<EntradaHistorial> entradas = await _historial.DeProyectoAsync(solicitud.IdProyecto, solicitud.Fecha, ct);
             if (entradas.Count == 0 && !solicitud.Fecha.HasValue)
             {
-                salida.NoEncontrado("El proyecto no existe.");
+                salida.NoEncontrado(MensajeProyectoNoExiste);
                 return;
             }
             List<EntradaHistorialDto> dto = new();

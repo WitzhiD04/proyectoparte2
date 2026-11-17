@@ -127,3 +127,95 @@ public class LecturasPorJurisdiccionPruebas
         Assert.Equal(2, salida.Respuesta!.IdsProyectos.Count);
     }
 }
+
+/// <summary>
+/// Acciones de una autoridad sobre un proyecto (asignar, aprobar, cancelar) con jurisdicción (E-39): quien no ve el
+/// proyecto recibe "no existe" (404) antes que cualquier otra regla; quien lo ve pero no lo aprueba recibe 403 (DA-14).
+/// </summary>
+public class AccionesPorJurisdiccionPruebas
+{
+    private readonly Memoria _memoria = new();
+    private readonly RelojFijo _reloj = new();
+    private readonly ProyectoReconstruccion _deArmenia = Datos.ProyectoListoParaAprobar();   // municipal, 63001
+
+    public AccionesPorJurisdiccionPruebas()
+    {
+        _memoria.Sembrar(_deArmenia);
+    }
+
+    private async Task<SalidaDePrueba<ProyectoDto>> Aprobar(Actor actor)
+    {
+        SalidaDePrueba<ProyectoDto> salida = new();
+        await new AprobarProyecto(_memoria, _memoria.Guardado(), _reloj).EjecutarAsync(new SolicitudAprobar(actor, _deArmenia.Id), salida);
+        return salida;
+    }
+
+    private async Task<SalidaDePrueba<ProyectoDto>> Cancelar(Actor actor)
+    {
+        SalidaDePrueba<ProyectoDto> salida = new();
+        await new CancelarProyecto(_memoria, _memoria.Guardado(), _reloj).EjecutarAsync(
+            new SolicitudCancelar(actor, _deArmenia.Id, "El activo se reubicó"), salida);
+        return salida;
+    }
+
+    [Fact]
+    public async Task Calarca_no_asigna_no_aprueba_y_no_cancela_un_proyecto_de_Armenia()
+    {
+        SalidaDePrueba<ProyectoDto> presupuesto = new(), responsable = new();
+        await new AsignarPresupuesto(_memoria, _memoria.Guardado(), _reloj).EjecutarAsync(new SolicitudAsignarPresupuesto(
+            Datos.AutoridadLocalCalarca, _deArmenia.Id, 1, null, null, null, "Cambio"), presupuesto);
+        await new AsignarResponsable(_memoria, _memoria.Guardado(), _reloj).EjecutarAsync(new SolicitudAsignarResponsable(
+            Datos.AutoridadLocalCalarca, _deArmenia.Id, "ing.gomez", "Cambio"), responsable);
+        SalidaDePrueba<ProyectoDto> aprobacion = await Aprobar(Datos.AutoridadLocalCalarca);
+        SalidaDePrueba<ProyectoDto> cancelacion = await Cancelar(Datos.AutoridadLocalCalarca);
+
+        foreach (SalidaDePrueba<ProyectoDto> s in new[] { presupuesto, responsable, aprobacion, cancelacion })
+        {
+            Assert.Equal("no_encontrado", s.Resultado);
+            Assert.Equal(Interactor.MensajeProyectoNoExiste, s.Mensaje);
+        }
+        Assert.Empty(_memoria.Bandeja);
+        Assert.Equal(EstadoProyecto.Formulado, _memoria.Proyectos[_deArmenia.Id].Estado);
+    }
+
+    [Fact]
+    public async Task Fuera_de_la_jurisdiccion_ni_un_dato_invalido_revela_que_el_proyecto_existe()
+    {
+        // Inicio sin fin sería CRONOGRAMA_INVALIDO (422) para quien sí ve el proyecto.
+        SalidaDePrueba<ProyectoDto> salida = new();
+        await new AsignarPresupuesto(_memoria, _memoria.Guardado(), _reloj).EjecutarAsync(new SolicitudAsignarPresupuesto(
+            Datos.AutoridadLocalCalarca, _deArmenia.Id, null, null, new DateOnly(2027, 1, 1), null, "Cambio"), salida);
+        Assert.Equal("no_encontrado", salida.Resultado);
+
+        SalidaDePrueba<ProyectoDto> propia = new();
+        await new AsignarPresupuesto(_memoria, _memoria.Guardado(), _reloj).EjecutarAsync(new SolicitudAsignarPresupuesto(
+            Datos.AutoridadLocal, _deArmenia.Id, null, null, new DateOnly(2027, 1, 1), null, "Cambio"), propia);
+        Assert.Equal("regla", propia.Resultado);
+    }
+
+    [Fact]
+    public async Task La_gobernacion_del_Quindio_ve_el_proyecto_municipal_de_Armenia_pero_no_lo_aprueba()
+    {
+        SalidaDePrueba<ProyectoDto> salida = await Aprobar(Datos.AutoridadRegional);
+        Assert.Equal("no_autorizado", salida.Resultado);
+    }
+
+    [Fact]
+    public async Task La_alcaldia_de_Armenia_aprueba_y_la_nacional_cancela()
+    {
+        Assert.Equal("exito", (await Aprobar(Datos.AutoridadLocal)).Resultado);
+        Assert.Equal("exito", (await Cancelar(Datos.AutoridadNacional)).Resultado);
+        Assert.Equal(EstadoProyecto.Cancelado, _memoria.Proyectos[_deArmenia.Id].Estado);
+    }
+
+    [Fact]
+    public async Task Las_acciones_del_responsable_no_cambian()
+    {
+        // Iniciar exige ser el responsable asignado, sin mirar territorio (el responsable no tiene ámbito).
+        Assert.Equal("exito", (await Aprobar(Datos.AutoridadLocal)).Resultado);
+        SalidaDePrueba<ProyectoDto> inicio = new();
+        await new IniciarEjecucion(_memoria, _memoria.Guardado(), _reloj).EjecutarAsync(
+            new SolicitudIniciar(Datos.Responsable, _deArmenia.Id, "Constructora Andina"), inicio);
+        Assert.Equal("exito", inicio.Resultado);
+    }
+}

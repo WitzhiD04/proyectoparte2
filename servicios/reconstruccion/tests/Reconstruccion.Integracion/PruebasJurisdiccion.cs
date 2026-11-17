@@ -1,16 +1,20 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Reconstruccion.Aplicacion;
 using Reconstruccion.Aplicacion.CasosDeUso;
 using Reconstruccion.Aplicacion.Puertos;
 using Reconstruccion.Dominio;
+using Reconstruccion.Infraestructura;
 using Reconstruccion.Infraestructura.Persistencia;
 using NivelDano = Reconstruccion.Dominio.NivelDano;
 
 namespace Reconstruccion.Integracion;
 
 /// <summary>
-/// La jurisdicción de las lecturas (Cuadro 3 del SRS, DA-14) con los adaptadores reales: el repositorio devuelve los
-/// municipios de las evaluaciones de origen, y con ellos la lista, el detalle y el historial filtran por territorio.
+/// La jurisdicción de las lecturas y de las acciones de la autoridad (Cuadro 3 del SRS, DA-14, E-39) con los adaptadores
+/// reales: el repositorio devuelve los municipios de las evaluaciones de origen, y con ellos la lista, el detalle y el
+/// historial filtran por territorio, y asignar, aprobar y cancelar responden 404 a quien no ve el proyecto.
 /// </summary>
 public class PruebasJurisdiccion : IClassFixture<BaseMigrada>
 {
@@ -72,5 +76,71 @@ public class PruebasJurisdiccion : IClassFixture<BaseMigrada>
         Assert.Equal(ve ? 1 : 0, lista.Respuesta!.Count);
         Assert.Equal(ve ? "exito" : "no_encontrado", detalle.Resultado);
         Assert.Equal(ve ? "exito" : "no_encontrado", historial.Resultado);
+    }
+
+    /// <summary>Casos de uso de escritura con los adaptadores reales (repositorio, historial, bandeja y unidad de trabajo).</summary>
+    private ServiceProvider Servicios()
+    {
+        IConfiguration configuracion = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["ConnectionStrings:Reconstruccion"] = _base.App,
+            ["Bus:Cola"] = "q.reconstruccion",
+            ["Bus:Productor"] = "reconstruccion",
+        }).Build();
+        ServiceCollection s = new();
+        s.AddLogging();
+        s.AgregarInfraestructura(configuracion, Registro.RolEscritura);
+        s.AddScoped<GuardadoDeProyectos>();
+        s.AddScoped<AsignarPresupuesto>();
+        s.AddScoped<AprobarProyecto>();
+        s.AddScoped<CancelarProyecto>();
+        return s.BuildServiceProvider();
+    }
+
+    /// <summary>Proyecto de Armenia listo para aprobar, guardado con su historial.</summary>
+    private async Task<ProyectoReconstruccion> ProyectoDeArmeniaListoAsync()
+    {
+        ProyectoReconstruccion p = ProyectoReconstruccion.Crear(Guid.NewGuid(), Guid.NewGuid(), "Reconstrucción del Puente El Alambrado",
+            AlcanceTerritorial.Municipal, [new EvaluacionOrigen(Guid.NewGuid(), Guid.NewGuid(), "Puente", NivelDano.DestruccionTotal, "63001")],
+            Armenia, Ahora);
+        p.AsignarPresupuesto(Armenia, new Dinero(900_000_000), "Fondo de reconstrucción",
+            new Cronograma(new DateOnly(2027, 1, 15), new DateOnly(2027, 12, 15)), "Asignación inicial", Ahora);
+        p.AsignarResponsable(Armenia, "ing.perez", "Asignación inicial", Ahora);
+        await using ReconstruccionDbContext db = ComoApp();
+        await new RepositorioProyectosEf(db).GuardarAsync(p, default);
+        await new HistorialEf(db).AgregarAsync(p.EntradasNuevas, default);
+        await db.SaveChangesAsync();
+        return p;
+    }
+
+    private static async Task<Salida<ProyectoDto>> En<TCaso, TSolicitud>(ServiceProvider servicios, TSolicitud solicitud)
+        where TCaso : IPuertoEntrada<TSolicitud, ProyectoDto>
+    {
+        await using AsyncServiceScope ambito = servicios.CreateAsyncScope();
+        Salida<ProyectoDto> salida = new();
+        await ambito.ServiceProvider.GetRequiredService<TCaso>().EjecutarAsync(solicitud, salida);
+        return salida;
+    }
+
+    [Fact]
+    public async Task Las_acciones_de_la_autoridad_respetan_la_jurisdiccion_con_la_base_real()
+    {
+        ProyectoReconstruccion p = await ProyectoDeArmeniaListoAsync();
+        await using ServiceProvider servicios = Servicios();
+
+        // Calarcá no ve el proyecto: asignar, aprobar y cancelar responden "no existe" (404).
+        Assert.Equal("no_encontrado", (await En<AsignarPresupuesto, SolicitudAsignarPresupuesto>(servicios,
+            new SolicitudAsignarPresupuesto(Calarca, p.Id, 1, null, null, null, "Cambio"))).Resultado);
+        Assert.Equal("no_encontrado", (await En<AprobarProyecto, SolicitudAprobar>(servicios, new SolicitudAprobar(Calarca, p.Id))).Resultado);
+        Assert.Equal("no_encontrado", (await En<CancelarProyecto, SolicitudCancelar>(servicios,
+            new SolicitudCancelar(Calarca, p.Id, "No procede"))).Resultado);
+        // La gobernación del Quindío lo ve, pero un municipal lo aprueba la alcaldía (403).
+        Assert.Equal("no_autorizado", (await En<AprobarProyecto, SolicitudAprobar>(servicios, new SolicitudAprobar(Quindio, p.Id))).Resultado);
+        // La alcaldía de Armenia sí lo aprueba, y queda guardado.
+        Assert.Equal("exito", (await En<AprobarProyecto, SolicitudAprobar>(servicios, new SolicitudAprobar(Armenia, p.Id))).Resultado);
+
+        await using ReconstruccionDbContext db = ComoApp();
+        ProyectoReconstruccion? guardado = await new RepositorioProyectosEf(db).BuscarAsync(p.Id, default);
+        Assert.Equal(EstadoProyecto.Aprobado, guardado!.Estado);
     }
 }

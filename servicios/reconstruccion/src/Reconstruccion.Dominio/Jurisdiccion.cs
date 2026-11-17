@@ -61,12 +61,19 @@ public static class Jurisdiccion
     }
 
     /// <summary>
-    /// Si un proyecto con esos municipios está dentro de lo que el actor puede ver. Según el Cuadro 3 del SRS, la
-    /// autoridad local ve la información de su jurisdicción, la regional la de los municipios de su región y la nacional
-    /// todo el territorio. Un proyecto que toca el territorio de la autoridad (aunque abarque otros) es de su
-    /// jurisdicción. Sin municipios conocidos o sin territorio, una autoridad que no es nacional no lo ve: ante la duda se
-    /// muestra de menos, no de más. Los demás roles (el auditor) no tienen restricción territorial.
+    /// Las acciones de una autoridad sobre un proyecto (asignar, aprobar, cancelar) exigen que el proyecto sea de su
+    /// jurisdicción. Si no lo es, lanza <see cref="FueraDeJurisdiccionException"/>, que la aplicación responde como un
+    /// proyecto que no existe: quien no ve el proyecto no debe saber que existe (Cuadro 3 del SRS, E-39). Se revisa antes
+    /// que cualquier otra regla, para que una regla incumplida no revele nada del proyecto.
     /// </summary>
+    public static void ExigirQueLoVe(Actor actor, IReadOnlyList<string> codigosMunicipio)
+    {
+        if (!Cubre(actor, codigosMunicipio))
+        {
+            throw new FueraDeJurisdiccionException();
+        }
+    }
+
     /// <summary>Si un municipio está dentro de lo que el actor puede ver (misma regla que <see cref="Cubre"/>).</summary>
     public static bool CubreMunicipio(Actor actor, string codigoMunicipio) => Cubre(actor, [codigoMunicipio]);
 
@@ -85,6 +92,13 @@ public static class Jurisdiccion
         }
     }
 
+    /// <summary>
+    /// Si un proyecto con esos municipios está dentro de lo que el actor puede ver. Según el Cuadro 3 del SRS, la
+    /// autoridad local ve la información de su jurisdicción, la regional la de los municipios de su región y la nacional
+    /// todo el territorio. Un proyecto que toca el territorio de la autoridad (aunque abarque otros) es de su
+    /// jurisdicción. Sin municipios conocidos o sin territorio, una autoridad que no es nacional no lo ve: ante la duda se
+    /// muestra de menos, no de más. Los demás roles (el auditor) no tienen restricción territorial.
+    /// </summary>
     public static bool Cubre(Actor actor, IReadOnlyList<string>? codigosMunicipio)
     {
         if (actor.Rol != Rol.Autoridad || actor.Ambito == Ambito.Nacional)

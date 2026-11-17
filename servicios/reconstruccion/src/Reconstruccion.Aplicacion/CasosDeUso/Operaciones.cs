@@ -18,6 +18,15 @@ public abstract class OperacionSobreProyecto<TSolicitud> : Interactor, IPuertoEn
     }
 
     protected abstract Guid IdDe(TSolicitud solicitud);
+    protected abstract Actor ActorDe(TSolicitud solicitud);
+
+    /// <summary>
+    /// Acciones de la autoridad (asignar, aprobar, cancelar): exigen que el proyecto sea de su jurisdicción antes que
+    /// cualquier otra regla, también las que el caso de uso revisa antes de llamar a la entidad (E-39). Las del
+    /// responsable no, porque ya exigen ser el responsable asignado.
+    /// </summary>
+    protected virtual bool EsAccionDeAutoridad => false;
+
     /// <summary>Llama al método de la entidad que contiene la regla.</summary>
     protected abstract void Aplicar(ProyectoReconstruccion proyecto, TSolicitud solicitud);
 
@@ -28,8 +37,13 @@ public abstract class OperacionSobreProyecto<TSolicitud> : Interactor, IPuertoEn
             ProyectoReconstruccion? proyecto = await _proyectos.BuscarAsync(IdDe(solicitud), ct);
             if (proyecto is null)
             {
-                salida.NoEncontrado("El proyecto no existe.");
+                salida.NoEncontrado(MensajeProyectoNoExiste);
                 return;
+            }
+            if (EsAccionDeAutoridad)
+            {
+                // Fuera de su jurisdicción, "no existe" (lo traduce ProtegerAsync a 404).
+                Jurisdiccion.ExigirQueLoVe(ActorDe(solicitud), proyecto.CodigosMunicipio);
             }
             Aplicar(proyecto, solicitud);
             await _guardado.GuardarAsync(proyecto, ct);
@@ -48,6 +62,8 @@ public sealed class AsignarPresupuesto : OperacionSobreProyecto<SolicitudAsignar
 {
     public AsignarPresupuesto(IRepositorioProyectos p, GuardadoDeProyectos g, IReloj r) : base(p, g, r) { }
     protected override Guid IdDe(SolicitudAsignarPresupuesto s) => s.IdProyecto;
+    protected override Actor ActorDe(SolicitudAsignarPresupuesto s) => s.Actor;
+    protected override bool EsAccionDeAutoridad => true;
     protected override void Aplicar(ProyectoReconstruccion proyecto, SolicitudAsignarPresupuesto s)
     {
         if (s.Inicio.HasValue != s.Fin.HasValue)
@@ -67,6 +83,8 @@ public sealed class AsignarResponsable : OperacionSobreProyecto<SolicitudAsignar
 {
     public AsignarResponsable(IRepositorioProyectos p, GuardadoDeProyectos g, IReloj r) : base(p, g, r) { }
     protected override Guid IdDe(SolicitudAsignarResponsable s) => s.IdProyecto;
+    protected override Actor ActorDe(SolicitudAsignarResponsable s) => s.Actor;
+    protected override bool EsAccionDeAutoridad => true;
     protected override void Aplicar(ProyectoReconstruccion proyecto, SolicitudAsignarResponsable s)
     {
         proyecto.AsignarResponsable(s.Actor, s.Responsable, s.Justificacion, Reloj.Ahora);
@@ -82,6 +100,8 @@ public sealed class AprobarProyecto : OperacionSobreProyecto<SolicitudAprobar>, 
 {
     public AprobarProyecto(IRepositorioProyectos p, GuardadoDeProyectos g, IReloj r) : base(p, g, r) { }
     protected override Guid IdDe(SolicitudAprobar s) => s.IdProyecto;
+    protected override Actor ActorDe(SolicitudAprobar s) => s.Actor;
+    protected override bool EsAccionDeAutoridad => true;
     protected override void Aplicar(ProyectoReconstruccion proyecto, SolicitudAprobar s) => proyecto.Aprobar(s.Actor, Reloj.Ahora);
 }
 
@@ -94,6 +114,7 @@ public sealed class IniciarEjecucion : OperacionSobreProyecto<SolicitudIniciar>,
 {
     public IniciarEjecucion(IRepositorioProyectos p, GuardadoDeProyectos g, IReloj r) : base(p, g, r) { }
     protected override Guid IdDe(SolicitudIniciar s) => s.IdProyecto;
+    protected override Actor ActorDe(SolicitudIniciar s) => s.Actor;
     protected override void Aplicar(ProyectoReconstruccion proyecto, SolicitudIniciar s) => proyecto.IniciarEjecucion(s.Actor, s.Contratista, Reloj.Ahora);
 }
 
@@ -106,6 +127,7 @@ public sealed class RegistrarAvanceYCosto : OperacionSobreProyecto<SolicitudAvan
 {
     public RegistrarAvanceYCosto(IRepositorioProyectos p, GuardadoDeProyectos g, IReloj r) : base(p, g, r) { }
     protected override Guid IdDe(SolicitudAvanceYCosto s) => s.IdProyecto;
+    protected override Actor ActorDe(SolicitudAvanceYCosto s) => s.Actor;
     protected override void Aplicar(ProyectoReconstruccion proyecto, SolicitudAvanceYCosto s)
     {
         if (!s.Avance.HasValue && !s.Costo.HasValue)
@@ -133,6 +155,7 @@ public sealed class FinalizarProyecto : OperacionSobreProyecto<SolicitudFinaliza
 {
     public FinalizarProyecto(IRepositorioProyectos p, GuardadoDeProyectos g, IReloj r) : base(p, g, r) { }
     protected override Guid IdDe(SolicitudFinalizar s) => s.IdProyecto;
+    protected override Actor ActorDe(SolicitudFinalizar s) => s.Actor;
     protected override void Aplicar(ProyectoReconstruccion proyecto, SolicitudFinalizar s) => proyecto.Finalizar(s.Actor, Reloj.Ahora);
 }
 
@@ -145,5 +168,7 @@ public sealed class CancelarProyecto : OperacionSobreProyecto<SolicitudCancelar>
 {
     public CancelarProyecto(IRepositorioProyectos p, GuardadoDeProyectos g, IReloj r) : base(p, g, r) { }
     protected override Guid IdDe(SolicitudCancelar s) => s.IdProyecto;
+    protected override Actor ActorDe(SolicitudCancelar s) => s.Actor;
+    protected override bool EsAccionDeAutoridad => true;
     protected override void Aplicar(ProyectoReconstruccion proyecto, SolicitudCancelar s) => proyecto.Cancelar(s.Actor, s.Justificacion, Reloj.Ahora);
 }
