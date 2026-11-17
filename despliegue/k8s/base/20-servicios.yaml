@@ -58,6 +58,11 @@ spec:
               valueFrom: { secretKeyRef: { name: credenciales, key: minio-usuario } }
             - name: Minio__Clave
               valueFrom: { secretKeyRef: { name: credenciales, key: minio-clave } }
+            # Identidad común (DA-15). Encabezados como el resto de servicios en k8s; con el gateway pasa a "Jwt".
+            - { name: Identidad__Modo, value: Encabezados }
+            - { name: Identidad__Emisor, value: "http://localhost:8180/realms/plataforma" }
+            - { name: Identidad__Audiencia, value: gateway }
+            - { name: Identidad__Metadatos, value: "http://keycloak:8080/realms/plataforma/.well-known/openid-configuration" }
           ports: [{ containerPort: 8080 }]
           # Lista: base y bus disponibles. Viva: el proceso responde (no se reinicia por una caída del bus).
           readinessProbe:
@@ -115,6 +120,11 @@ spec:
               valueFrom: { secretKeyRef: { name: credenciales, key: bus-consulta-programa } }
             - name: ConnectionStrings__Programa
               valueFrom: { secretKeyRef: { name: credenciales, key: cadena-programa } }
+            # Identidad común (DA-15). Encabezados como el resto de servicios en k8s; con el gateway pasa a "Jwt".
+            - { name: Identidad__Modo, value: Encabezados }
+            - { name: Identidad__Emisor, value: "http://localhost:8180/realms/plataforma" }
+            - { name: Identidad__Audiencia, value: gateway }
+            - { name: Identidad__Metadatos, value: "http://keycloak:8080/realms/plataforma/.well-known/openid-configuration" }
           ports: [{ containerPort: 8080 }]
           readinessProbe:
             httpGet: { path: /salud/listo, port: 8080 }

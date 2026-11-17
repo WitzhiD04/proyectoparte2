@@ -15,15 +15,33 @@ Para ejecutar la plataforma, vea el [README de la raíz](../../README.md).
 
 ## Perfiles de prueba
 
-El inicio de sesión será del API Gateway (paso del gateway, YARP + Keycloak). Mientras tanto, la consola trae un
-selector de perfil y envía el usuario, el rol y el ámbito en los encabezados `X-Usuario`, `X-Rol` y `X-Ambito`.
+Reconstrucción y la Consulta del Programa leen la identidad común (`IIdentidadActual` de
+`comun/Plataforma.Comun.Seguridad`, DA-15), igual que los demás servicios. `Identidad:Modo` elige de dónde sale:
 
-| Perfil | Qué puede hacer |
-|---|---|
-| Autoridad local (alcaldia.armenia) | Crear proyectos, asignar, aprobar proyectos municipales, cancelar, ver historial y consolidado |
-| Autoridad regional (gobernacion.quindio) | Lo mismo, y aprueba los proyectos que abarcan varios municipios |
-| Responsable (ing.perez, ing.gomez) | Iniciar, registrar avance y costo, adjuntar documentos y finalizar sus proyectos |
-| Auditor (contraloria) | Ver historial y consolidado |
+- **`Jwt`**: el token de Keycloak (`Authorization: Bearer`). Usuario = `preferred_username`; roles del realm; claims
+  `ambito` y `territorio`. Los encabezados `X-*` de identidad se rechazan (401).
+- **`Encabezados`** (transición): `X-Usuario`, `X-Roles`, `X-Organizacion`, `X-Ambito` y `X-Territorio`. El antiguo
+  `X-Rol` ya no se lee.
+
+Roles del realm → rol del dominio: `autoridad` → Autoridad, `responsable-proyecto` → Responsable, `auditor` → Auditor
+(si alguien tiene varios, prima ese orden). Sin identidad: 401. Con identidad pero sin ninguno de esos roles: 403.
+
+Usuarios de prueba del realm (clave = usuario + `_local`):
+
+| Usuario | Rol, ámbito y territorio | Qué puede hacer |
+|---|---|---|
+| `alcaldia.armenia` | autoridad, LOCAL, 63001 | Crear, asignar, cancelar; aprobar los proyectos municipales de Armenia; consolidado de Armenia |
+| `alcaldia.calarca` | autoridad, LOCAL, 63130 | Lo mismo para Calarcá |
+| `gobernacion.quindio` | autoridad, REGIONAL, 63 | Aprobar los proyectos de varios municipios del Quindío; consolidado del departamento |
+| `ungrd.operador` | autoridad, NACIONAL | Aprobar los proyectos de varios departamentos; consolidado completo |
+| `ing.perez` | responsable-proyecto | Iniciar, registrar avance y costo, adjuntar documentos y finalizar sus proyectos |
+| `auditor.1` | auditor | Ver historial y consolidado completo |
+
+**Jurisdicción (DA-14, E-20).** El alcance sale de los municipios DIVIPOLA de las evaluaciones (los 2 primeros dígitos
+son el departamento): un municipio es `Municipal` y lo aprueba la autoridad LOCAL de ese municipio; varios del mismo
+departamento es `Regional` y lo aprueba la REGIONAL de ese departamento; varios departamentos es `Nacional` y lo aprueba
+la NACIONAL. En el consolidado, cada autoridad cuenta los proyectos que tocan su territorio (Cuadro 3 del SRS); la
+nacional y el auditor ven todo el desastre. Código: `Dominio/Jurisdiccion.cs`.
 
 Recorrido sugerido: como autoridad local, cree proyectos en *Evaluaciones candidatas*; asigne presupuesto,
 cronograma y el responsable `ing.perez`, y apruebe. Cambie al perfil del responsable para iniciar, registrar
@@ -62,6 +80,7 @@ Un proyecto por anillo; cada uno solo referencia a los de más adentro. Una prue
 | Copias locales (DA-01) | `ManejadorEventosReconstruccion` (cola `q.reconstruccion`) → `ActualizarCopiasLocales` → `EscrituraCopiasLocalesEf`, alimentadas por EV-03, EV-06, EV-08 y EV-21; reportes de SE-7 por EV-24 (`RegistrarReporteExterno`) |
 | Lote atómico y sin repetidos | `CrearProyectosPorLote`, tabla `lotes_creacion`, índice `ux_evaluacion_vigente` |
 | Consolidado en un servicio de lectura aparte (AD-42) con marca de tiempo (AD-16) | `ProyeccionProgramaEf`, `ManejadorEventosPrograma`, `ConsolidadoDto.DatoAl`, base `programa` |
+| Identidad común y jurisdicción territorial (DA-14, DA-15) | `Api/Controllers/ControladorBase.cs` (identidad → `Actor`), `Dominio/Jurisdiccion.cs`, `ConsultarConsolidado` |
 | Réplica continua de base de datos | `db` y `db-replica` (`despliegue/compose/docker-compose.yml` y `despliegue/k8s/base/10-datos.yaml`) |
 
 ## Rutas
@@ -95,8 +114,10 @@ Si la migración crea tablas, agregue en ella los `GRANT` del rol del servicio (
 
 ## Lo que todavía no está
 
-- **La identidad común y la jurisdicción territorial (DA-14):** Reconstrucción y la Consulta del Programa todavía leen
-  `X-Usuario`, `X-Rol` y `X-Ambito` por su cuenta. Encargo: `docs/encargos/reconstruccion-identidad.md`.
+- **La consola en modo `Encabezados`** todavía envía `X-Rol`: Reconstrucción le responde 403 hasta que la consola pase
+  al inicio de sesión con Keycloak (encargo `docs/encargos/consola.md`).
+- **La jurisdicción en el resto de lecturas:** la lista de proyectos, las candidatas y el historial no filtran por
+  territorio (solo el consolidado y la aprobación lo hacen).
 - **El adaptador de SE-6** (sistema financiero): presupuesto y costos por lotes, con cola y reintento. Encargo:
   `docs/encargos/adaptador-se6.md`.
 - **La entrada por el gateway** (YARP + Keycloak): hasta entonces la consola usa el selector de perfil.

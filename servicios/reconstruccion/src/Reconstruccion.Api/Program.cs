@@ -1,4 +1,5 @@
 using Plataforma.Comun.Salud;
+using Plataforma.Comun.Seguridad;
 using Reconstruccion.Api.Presenters;
 using Reconstruccion.Aplicacion.CasosDeUso;
 using Reconstruccion.Infraestructura;
@@ -36,6 +37,8 @@ if (rol is not (Registro.RolEscritura or Registro.RolConsulta))
 bool escritura = rol == Registro.RolEscritura;
 
 builder.Services.AddControllers();
+// Identidad común (DA-15): JWT de Keycloak o encabezados de transición según "Identidad:Modo". Los dos roles la usan.
+builder.Services.AgregarIdentidad(builder.Configuration);
 
 // Aquí se conecta cada puerto con su implementación (adaptadores) según el rol.
 builder.Services.AgregarInfraestructura(builder.Configuration, rol);
