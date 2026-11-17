@@ -147,6 +147,28 @@ services:
       - documentos:/data
     restart: unless-stopped
 
+  # Proveedor de identidad Keycloak 26 (DT-08, DA-15): importa el realm "plataforma", fija el emisor en
+  # http://localhost:8180/realms/plataforma y permite descubrir las llaves por el canal interno http://keycloak:8080.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.5.2
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_CLAVE_ADMIN:-admin_local}
+      KC_HEALTH_ENABLED: "true"
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-http://localhost:8180}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+    ports:
+      - "${PUERTO_KEYCLOAK:-8180}:8080"
+    volumes:
+      - ../keycloak/realm-plataforma.json:/opt/keycloak/data/import/realm-plataforma.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q 'UP' <&3"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
   # Migrador (DT-19): crea los roles, aplica las migraciones con el rol dueño y carga los datos de prueba. Corre una vez.
   reconstruccion-migrador:
     <<: *reconstruccion
@@ -239,6 +261,7 @@ services:
       replicas: 2
     depends_on:
       gestion-desastres-migrador: { condition: service_completed_successfully }
+      keycloak: { condition: service_healthy }
       bus1: { condition: service_healthy }
       bus2: { condition: service_healthy }
       bus3: { condition: service_healthy }
@@ -251,6 +274,10 @@ services:
       Bus__Clave: ${BUS_CLAVE_GESTION_DESASTRES:-gestion_desastres_local}
       Bus__Productor: gestion-desastres
       Bus__Cola: q.gestion-desastres
+      Identidad__Modo: ${IDENTIDAD_MODO:-Encabezados}
+      Identidad__Emisor: ${IDENTIDAD_EMISOR:-http://localhost:8180/realms/plataforma}
+      Identidad__Audiencia: ${IDENTIDAD_AUDIENCIA:-gateway}
+      Identidad__Metadatos: ${IDENTIDAD_METADATOS:-http://keycloak:8080/realms/plataforma/.well-known/openid-configuration}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
       interval: 5s
@@ -289,6 +316,7 @@ services:
       replicas: 2
     depends_on:
       consulta-migrador: { condition: service_completed_successfully }
+      keycloak: { condition: service_healthy }
       cache: { condition: service_healthy }
       bus1: { condition: service_healthy }
       bus2: { condition: service_healthy }
@@ -303,6 +331,10 @@ services:
       Bus__Clave: ${BUS_CLAVE_CONSULTA:-consulta_local}
       Bus__Productor: consulta
       Bus__Cola: q.consulta
+      Identidad__Modo: ${IDENTIDAD_MODO:-Encabezados}
+      Identidad__Emisor: ${IDENTIDAD_EMISOR:-http://localhost:8180/realms/plataforma}
+      Identidad__Audiencia: ${IDENTIDAD_AUDIENCIA:-gateway}
+      Identidad__Metadatos: ${IDENTIDAD_METADATOS:-http://keycloak:8080/realms/plataforma/.well-known/openid-configuration}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
       interval: 5s
@@ -331,6 +363,7 @@ services:
       replicas: 2
     depends_on:
       consulta-danos-migrador: { condition: service_completed_successfully }
+      keycloak: { condition: service_healthy }
       cache: { condition: service_healthy }
       bus1: { condition: service_healthy }
       bus2: { condition: service_healthy }
@@ -347,6 +380,10 @@ services:
       Bus__Cola: q.consulta-danos
       ConsultaDanos__UmbralConflictos: ${CONSULTA_DANOS_UMBRAL_CONFLICTOS:-50}
       ConsultaDanos__UmbralHoras: ${CONSULTA_DANOS_UMBRAL_HORAS:-24}
+      Identidad__Modo: ${IDENTIDAD_MODO:-Encabezados}
+      Identidad__Emisor: ${IDENTIDAD_EMISOR:-http://localhost:8180/realms/plataforma}
+      Identidad__Audiencia: ${IDENTIDAD_AUDIENCIA:-gateway}
+      Identidad__Metadatos: ${IDENTIDAD_METADATOS:-http://keycloak:8080/realms/plataforma/.well-known/openid-configuration}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
       interval: 5s
@@ -374,6 +411,7 @@ services:
       replicas: 2
     depends_on:
       auditoria-migrador: { condition: service_completed_successfully }
+      keycloak: { condition: service_healthy }
       bus1: { condition: service_healthy }
       bus2: { condition: service_healthy }
       bus3: { condition: service_healthy }
@@ -387,6 +425,10 @@ services:
       Bus__Productor: auditoria
       Bus__Cola: q.auditoria
       Auditoria__PlazoHuecoSegundos: ${AUDITORIA_PLAZO_HUECO_SEGUNDOS:-60}
+      Identidad__Modo: ${IDENTIDAD_MODO:-Encabezados}
+      Identidad__Emisor: ${IDENTIDAD_EMISOR:-http://localhost:8180/realms/plataforma}
+      Identidad__Audiencia: ${IDENTIDAD_AUDIENCIA:-gateway}
+      Identidad__Metadatos: ${IDENTIDAD_METADATOS:-http://keycloak:8080/realms/plataforma/.well-known/openid-configuration}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
       interval: 5s
@@ -415,6 +457,7 @@ services:
       replicas: 2
     depends_on:
       evaluacion-danos-migrador: { condition: service_completed_successfully }
+      keycloak: { condition: service_healthy }
       bus1: { condition: service_healthy }
       bus2: { condition: service_healthy }
       bus3: { condition: service_healthy }
@@ -432,6 +475,10 @@ services:
       Minio__Usuario: ${MINIO_USUARIO:-minioadmin}
       Minio__Clave: ${MINIO_CLAVE:-minioadmin}
       Minio__Bucket: evaluacion-danos-evidencias
+      Identidad__Modo: ${IDENTIDAD_MODO:-Encabezados}
+      Identidad__Emisor: ${IDENTIDAD_EMISOR:-http://localhost:8180/realms/plataforma}
+      Identidad__Audiencia: ${IDENTIDAD_AUDIENCIA:-gateway}
+      Identidad__Metadatos: ${IDENTIDAD_METADATOS:-http://keycloak:8080/realms/plataforma/.well-known/openid-configuration}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
       interval: 5s
@@ -555,6 +602,10 @@ services:
       auditoria: { condition: service_healthy }
       evaluacion-danos: { condition: service_healthy }
       consulta-danos: { condition: service_healthy }
+    # Si cambia IDENTIDAD_MODO se recrean los servicios; esta variable hace que compose recree también a nginx
+    # después de que estén listos para refrescar las IP internas del DNS.
+    environment:
+      IDENTIDAD_MODO: ${IDENTIDAD_MODO:-Encabezados}
     ports:
       - "${PUERTO_WEB:-8080}:80"
     restart: unless-stopped
