@@ -1,5 +1,14 @@
 # Encargo: pruebas de carga (k6) y de caos
 
+> **Alcance de esta entrega (fijado el 2026-11-17).** Se implementan Móvil, Evaluación de Daños, Mapa y visualización
+> de desastres, y Reconstrucción. Esta nota recorta el encargo y manda sobre el resto de su texto.
+>
+> - **Fuera:** QA-07 (registro de desastres). No escriba su script.
+> - QA-01 se hace con SE-7 y, si ya existe `simuladores/sim-se6`, también con SE-6, con el mismo script parametrizado
+>   por sistema externo.
+> - QA-05 y QA-06 se centran en la lectura del mapa y del consolidado: Consulta de Daños, Consulta y Consulta del
+>   Programa.
+
 Este archivo es **autocontenido**: un agente (o una persona) puede hacer el trabajo solo con este repositorio. Explica qué
 medir, contra qué rutas, con qué identidad y cómo correrlo en la plataforma de compose.
 

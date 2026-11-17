@@ -1,5 +1,14 @@
 # Encargo · Consola de coordinación unificada en Angular (DA-13)
 
+> **Alcance de esta entrega (fijado el 2026-11-17).** Se implementan Móvil, Evaluación de Daños, Mapa y visualización
+> de desastres, y Reconstrucción. Esta nota recorta el encargo y manda sobre el resto de su texto.
+>
+> - **Solo** el inicio de sesión, el interceptor, el menú por roles y los módulos `mapa`, `evaluaciones` y
+>   `reconstruccion`. **Fuera:** los módulos `desastres`, `auditoria` e `integraciones`.
+> - El módulo `mapa` va completo, con sus tres capas (la tercera es la zona del desastre con su barra de tiempo).
+> - Recorrido final: el desastre y su zona se registran por la API (`pruebas/humo/prueba-desastres.sh`), no desde la
+>   consola. La validación y el proyecto se hacen en la consola. El paso del auditor queda fuera.
+
 Lea primero `docs/encargos/convenciones.md`. Alcance: `consola/` (Angular 22) y, si lo necesita, la entrada `web` de
 compose y k8s.
 

@@ -1,5 +1,15 @@
 # Encargo · Cierre: medidas por escenario de calidad, Kubernetes y documentación
 
+> **Alcance de esta entrega (fijado el 2026-11-17).** Se implementan Móvil, Evaluación de Daños, Mapa y visualización
+> de desastres, y Reconstrucción. Esta nota recorta el encargo y manda sobre el resto de su texto.
+>
+> - QA-13 y QA-15 (Auditoría) se reportan con las pruebas que ya existen. No se agrega la medida de QA-13 (d) con k6.
+> - La tabla incluye QA-01 con SE-6 si su adaptador está fusionado, y KEDA se verifica en los adaptadores de SE-7 y SE-6.
+> - Las dos regiones (punto 5) no se implementan: se presentan como diseño.
+> - Se declaran como límite del prototipo, con su motivo: SE-8 y QA-08, los rechazos y la alarma a Auditoría, el filtro de
+>   Auditoría por jurisdicción, el `ETag` de la descarga, el aviso de activo fusionado, unificar la base de SE-2, mTLS,
+>   la disponibilidad mensual de QA-02 y los 10 000 usuarios de QA-05 y QA-06.
+
 Es el último encargo. Lea `docs/encargos/convenciones.md` y `docs/encargos/LEEME.md` para saber qué quedó hecho.
 
 1. **Limpieza:**

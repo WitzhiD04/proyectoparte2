@@ -1,5 +1,16 @@
 # Encargo · Gateway (YARP): catálogo de rutas, priorización, QA-11 y rechazos a Auditoría
 
+> **Alcance de esta entrega (fijado el 2026-11-17).** Se implementan Móvil, Evaluación de Daños, Mapa y visualización
+> de desastres, y Reconstrucción. Esta nota recorta el encargo y manda sobre el resto de su texto.
+>
+> - **Fuera:** el punto 3 (rechazos a Auditoría). No agregue eventos a `comun/Plataforma.Comun.Eventos` ni toque
+>   Auditoría. Si sobra tiempo, el orquestador lo encarga aparte.
+> - El catálogo de rutas sí incluye todos los servicios, para que todo entre por el gateway. El trabajo fino (reglas de
+>   dominio, QA-11 y priorización) se centra en Evaluación de Daños, Consulta de Daños, Consulta, Reconstrucción,
+>   Consulta del Programa y Gestión de Desastres (la usa el escenario E).
+> - Si al empezar ya está fusionado `reconstruccion-identidad.md`, use la regla de dominio real de Reconstrucción y no
+>   `reconstruccion-propia`.
+
 Lea primero `docs/encargos/convenciones.md` completo, en especial **"Contrato de identidad y de entrada"**. Manda sobre
 este encargo.
 

@@ -59,7 +59,7 @@ Un proyecto por anillo; cada uno solo referencia a los de más adentro. Una prue
 | Cambio, historial y evento en una transacción (AD-45) | `GuardadoDeProyectos` (`CasosDeUso/Comun.cs`), `PublicadorHechosBandeja` y `UnidadDeTrabajoEf` |
 | Eventos EV-18, EV-19 y EV-20 con el sobre canónico (AD-09, E-10) | `Infraestructura/Mensajeria/PublicadorHechosBandeja.cs` y `comun/Plataforma.Comun.Eventos` |
 | Relevo con secuencia sin huecos y consumidor idempotente | `comun/Plataforma.Comun.Mensajeria` |
-| Copias locales (DA-01) | `CopiasLocalesEf`; hoy se cargan con la siembra, en el paso 4 las alimentan EV-03, EV-06 y EV-08 |
+| Copias locales (DA-01) | `ManejadorEventosReconstruccion` (cola `q.reconstruccion`) → `ActualizarCopiasLocales` → `EscrituraCopiasLocalesEf`, alimentadas por EV-03, EV-06, EV-08 y EV-21; reportes de SE-7 por EV-24 (`RegistrarReporteExterno`) |
 | Lote atómico y sin repetidos | `CrearProyectosPorLote`, tabla `lotes_creacion`, índice `ux_evaluacion_vigente` |
 | Consolidado en un servicio de lectura aparte (AD-42) con marca de tiempo (AD-16) | `ProyeccionProgramaEf`, `ManejadorEventosPrograma`, `ConsolidadoDto.DatoAl`, base `programa` |
 | Réplica continua de base de datos | `db` y `db-replica` (`despliegue/compose/docker-compose.yml` y `despliegue/k8s/base/10-datos.yaml`) |
@@ -95,7 +95,8 @@ Si la migración crea tablas, agregue en ella los `GRANT` del rol del servicio (
 
 ## Lo que todavía no está
 
-- **Consumir los eventos de otros módulos** (paso 4): EV-03 y EV-06 de Gestión de Desastres, EV-08 de Evaluación de
-  Daños y EV-24 de SE-7. La cola `q.reconstruccion` ya existe y acumula lo que llegue.
-- **El adaptador de SE-7** (cola `q.salida.se7` ya declarada) y la jurisdicción territorial exacta (DA-14).
-- **El gateway con identidad real** (YARP + Keycloak): hasta entonces la identidad viaja en encabezados.
+- **La identidad común y la jurisdicción territorial (DA-14):** Reconstrucción y la Consulta del Programa todavía leen
+  `X-Usuario`, `X-Rol` y `X-Ambito` por su cuenta. Encargo: `docs/encargos/reconstruccion-identidad.md`.
+- **El adaptador de SE-6** (sistema financiero): presupuesto y costos por lotes, con cola y reintento. Encargo:
+  `docs/encargos/adaptador-se6.md`.
+- **La entrada por el gateway** (YARP + Keycloak): hasta entonces la consola usa el selector de perfil.

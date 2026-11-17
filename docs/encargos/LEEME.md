@@ -32,6 +32,26 @@ de humo.
 | Keycloak (realm `plataforma`) y adaptador JWT de `IIdentidadActual` | `despliegue/keycloak`, `comun/Plataforma.Comun.Seguridad` | DA-15: con `IDENTIDAD_MODO=Jwt` los servicios validan el token y rechazan los `X-*` (401); la prueba de humo de desastres pasa con tokens. Reconstrucción aún lee su propia identidad |
 | App móvil con OIDC | repositorio `danos`, rama `gemini-app-oidc` | H-70 a H-72. Falta correr su prueba instrumentada contra Keycloak (emulador con `adb reverse tcp:8180 tcp:8180`) |
 
+## Alcance de esta entrega y reparto (fijado el 2026-11-17)
+
+Se implementan **Móvil, Evaluación de Daños, Mapa y visualización de desastres, y Reconstrucción**. Los encargos de
+gateway, consola, carga y caos, y cierre llevan al inicio una nota que los recorta a ese alcance.
+
+| Encargo | En esta entrega | Persona |
+|---|---|---|
+| `reconstruccion-identidad.md` | Completo | A |
+| `gateway.md` | Recortado: sin rechazos a Auditoría | A |
+| `adaptador-se6.md` | Completo: es parte del diseño de Reconstrucción (presupuesto y costos al sistema financiero) | A |
+| Evolución por zona en Consulta de Daños | Pendiente menor que sí se hace | A |
+| `consola.md` | Recortado: login, `mapa`, `evaluaciones` y `reconstruccion` | B |
+| App (`danos`) contra Keycloak y el gateway | Prueba instrumentada y APK nuevo | B |
+| `../../pruebas/ENCARGO-carga-y-caos.md` | Recortado: sin QA-07. Caos lo hace A, carga con k6 lo hace B | A y B |
+| `cierre-y-medidas.md` | Recortado: sin dos regiones | A y B |
+| `notificacion-se8.md` | **Fuera**: es de Gestión de Desastres | — |
+
+A es la integradora: fusiona a `main` y corre la suite y el compose. Orden de fusión: Reconstrucción con identidad →
+gateway → consola con login → mapa → SE-6 → evolución por zona → evaluaciones → app → caos y carga → cierre.
+
 ## Lo que falta, en orden
 
 | # | Encargo | Depende de | Notas |
