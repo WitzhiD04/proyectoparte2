@@ -3,6 +3,13 @@
 > En estos encargos, "el orquestador" es quien coordina el trabajo y fusiona las ramas: la persona del equipo o su
 > agente principal. El estado y el orden de los encargos están en `docs/encargos/LEEME.md`.
 
+## Alcance de esta entrega
+
+Esta entrega implementa **solo Móvil, Evaluación de Daños, Mapa y visualización de desastres, y Reconstrucción**. El
+detalle y el reparto están en la sección "Alcance de esta entrega y reparto" de `docs/encargos/LEEME.md` y en la nota al
+inicio de cada encargo. `docs/decisiones/A_IMPLEMENTAR.md` permite implementar más ítems del enunciado, pero en esta
+entrega no se hace nada fuera de ese alcance: si un encargo lo pide, se reporta en vez de hacerlo.
+
 Lea esto completo antes de empezar. Si algo de su encargo contradice este archivo, gana este archivo; repórtelo.
 
 ## Fuentes de verdad, en orden
@@ -126,7 +133,9 @@ La autorización de nivel 2 (reglas que dependen de datos del dominio, AD-22) va
   - Identidad en el token: `preferred_username` → usuario; `realm_access.roles` → roles; `organizacion`, `ambito`, `territorio`.
   - Usuarios de prueba (clave = nombre de usuario + `_local`): `evaluador.armenia` (evaluador, organizacion `alcaldia-armenia`),
     `ungrd.operador` (autoridad, `ungrd`, NACIONAL), `bomberos.operador` (organismo, `bomberos`), `operador.danos` (operador),
-    `admin.catalogo` (administrador), `auditor.1` (auditor), `ing.perez` (responsable-proyecto).
+    `admin.catalogo` (administrador), `auditor.1` (auditor), `ing.perez` (responsable-proyecto),
+    `alcaldia.armenia` (autoridad, LOCAL, territorio `63001`), `alcaldia.calarca` (autoridad, LOCAL, `63130`) y
+    `gobernacion.quindio` (autoridad, REGIONAL, `63`).
 - **Gateway (YARP)** publicado en el puerto **8080** del host: es la única entrada (consola y API). Las rutas de la API
   conservan su ruta pública (`/v1/descarga`, `/v1/sincronizacion/evaluaciones`, ...). Exige `Authorization: Bearer`.
 - El encabezado `X-Dispositivo` **no es identidad**: la app lo sigue enviando como dato del dispositivo y se permite.
