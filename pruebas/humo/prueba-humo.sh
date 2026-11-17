@@ -124,8 +124,15 @@ esperar "aprobar con datos incompletos" 422 "${AUT[@]}" "${J[@]}" -d '{"accion":
 esperar "asignar presupuesto" 200 "${AUT[@]}" "${J[@]}" -X PATCH -d '{"presupuesto":500000000,"fuenteFinanciacion":"Fondo de reconstrucción","inicio":"2027-01-15","fin":"2027-09-30","justificacion":"Asignación inicial"}' "$B/proyectos/$P/presupuesto"
 esperar "asignar responsable" 200 "${AUT[@]}" "${J[@]}" -X PATCH -d '{"responsable":"ing.perez","justificacion":"Asignación inicial"}' "$B/proyectos/$P/responsable"
 esperar "la autoridad regional no aprueba un proyecto municipal" 403 "${REG[@]}" "${J[@]}" -d '{"accion":"APROBAR"}' "$B/proyectos/$P/transiciones"
-esperar "la autoridad local de otro municipio (Calarcá) no lo aprueba (DA-14)" 403 "${CAL[@]}" "${J[@]}" -d '{"accion":"APROBAR"}' "$B/proyectos/$P/transiciones"
+# Calarcá ni siquiera ve el proyecto de Armenia: responde como si no existiera (404, E-39). La regional sí lo ve (403).
+esperar "la autoridad local de otro municipio (Calarcá) no lo ve para aprobarlo (E-39)" 404 "${CAL[@]}" "${J[@]}" -d '{"accion":"APROBAR"}' "$B/proyectos/$P/transiciones"
 esperar "aprobar" 200 "${AUT[@]}" "${J[@]}" -d '{"accion":"APROBAR"}' "$B/proyectos/$P/transiciones"
+echo "   Jurisdicción de Calarcá sobre el proyecto de Armenia (Cuadro 3 del SRS, E-39)"
+hasta "Calarcá no lo ve en la lista de proyectos" "not any(x['id']=='$P' for x in d)" "${CAL[@]}" "$B/proyectos?desastre=$D"
+esperar "Calarcá no ve el detalle (404)" 404 "${CAL[@]}" "$B/proyectos/$P"
+esperar "Calarcá no ve el historial (404)" 404 "${CAL[@]}" "$B/proyectos/$P/historial"
+esperar "Calarcá no crea un lote con una evaluación de Armenia (403)" 403 "${CAL[@]}" "${J[@]}" -d "{\"idDesastre\":\"$D\",\"idsEvaluaciones\":[\"$EV\"],\"claveIdempotencia\":\"$CLAVE-calarca\"}" "$B/proyectos:lote"
+esperar "Calarcá no lo cancela (404)" 404 "${CAL[@]}" "${J[@]}" -d '{"accion":"CANCELAR","justificacion":"prueba"}' "$B/proyectos/$P/transiciones"
 
 echo "3. Ejecutar"
 esperar "finalizar sin haber iniciado" 409 "${RES[@]}" "${J[@]}" -d '{"accion":"FINALIZAR"}' "$B/proyectos/$P/transiciones"
