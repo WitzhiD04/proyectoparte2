@@ -11,8 +11,12 @@ public static class Datos
     public static readonly Guid IdDesastre = Guid.Parse("11111111-1111-1111-1111-111111111111");
     public static readonly DateTimeOffset Ahora = new(2026, 11, 13, 10, 0, 0, TimeSpan.Zero);
 
-    public static readonly Actor AutoridadLocal = new("alcaldia.armenia", Rol.Autoridad, Ambito.Local);
-    public static readonly Actor AutoridadRegional = new("gobernacion.quindio", Rol.Autoridad, Ambito.Regional);
+    // Territorio DIVIPOLA de cada autoridad (DA-14): Armenia 63001 y Calarcá 63130 son del Quindío (63); Risaralda es 66.
+    public static readonly Actor AutoridadLocal = new("alcaldia.armenia", Rol.Autoridad, Ambito.Local, "63001");
+    public static readonly Actor AutoridadLocalCalarca = new("alcaldia.calarca", Rol.Autoridad, Ambito.Local, "63130");
+    public static readonly Actor AutoridadRegional = new("gobernacion.quindio", Rol.Autoridad, Ambito.Regional, "63");
+    public static readonly Actor AutoridadRegionalRisaralda = new("gobernacion.risaralda", Rol.Autoridad, Ambito.Regional, "66");
+    public static readonly Actor AutoridadNacional = new("ungrd.operador", Rol.Autoridad, Ambito.Nacional);
     public static readonly Actor Responsable = new("ing.perez", Rol.Responsable);
     public static readonly Actor OtroResponsable = new("ing.gomez", Rol.Responsable);
     public static readonly Actor Auditor = new("contraloria", Rol.Auditor);
@@ -33,11 +37,24 @@ public static class Datos
         _ => throw new ArgumentException($"Municipio sin código en las pruebas: {municipio}"),
     };
 
+    /// <summary>
+    /// Proyecto en Formulado con municipios coherentes con su alcance: municipal en Armenia, regional en Armenia y
+    /// Calarcá (Quindío), nacional en Armenia (Quindío) y La Virginia (Risaralda).
+    /// </summary>
     public static ProyectoReconstruccion ProyectoFormulado(AlcanceTerritorial alcance = AlcanceTerritorial.Municipal)
     {
-        EvaluacionOrigen origen = new(Guid.NewGuid(), Guid.NewGuid(), "Escuela", NivelDano.Grave, "63001");
+        string[] municipios = alcance switch
+        {
+            AlcanceTerritorial.Municipal => ["Armenia"],
+            AlcanceTerritorial.Regional => ["Armenia", "Calarcá"],
+            _ => ["Armenia", "La Virginia"],
+        };
+        Guid activo = Guid.NewGuid();
+        EvaluacionOrigen[] origen = municipios
+            .Select(m => new EvaluacionOrigen(Guid.NewGuid(), activo, "Escuela", NivelDano.Grave, CodigoDe(m)))
+            .ToArray();
         ProyectoReconstruccion p = ProyectoReconstruccion.Crear(Guid.NewGuid(), IdDesastre, "Reconstrucción de Escuela La Esperanza",
-            alcance, new[] { origen }, AutoridadLocal, Ahora);
+            alcance, origen, AutoridadLocal, Ahora);
         return p;
     }
 
@@ -184,9 +201,19 @@ public sealed class Memoria : IRepositorioProyectos, IHistorial, IPublicadorHech
 
     public Task AplicarAsync(FilaPrograma fila, CancellationToken ct = default)
     {
-        if (!Filas.TryGetValue(fila.IdProyecto, out FilaPrograma? actual) || fila.Version > actual.Version)
+        // Igual que la proyección real: solo una versión más nueva cambia la fila, y los municipios (que solo trae EV-18)
+        // se conservan o se completan aunque el evento llegue atrasado.
+        if (!Filas.TryGetValue(fila.IdProyecto, out FilaPrograma? actual))
         {
             Filas[fila.IdProyecto] = fila;
+        }
+        else if (fila.Version > actual.Version)
+        {
+            Filas[fila.IdProyecto] = fila with { CodigosMunicipio = fila.CodigosMunicipio ?? actual.CodigosMunicipio };
+        }
+        else if (actual.CodigosMunicipio is null && fila.CodigosMunicipio is not null)
+        {
+            Filas[fila.IdProyecto] = actual with { CodigosMunicipio = fila.CodigosMunicipio };
         }
         return Task.CompletedTask;
     }

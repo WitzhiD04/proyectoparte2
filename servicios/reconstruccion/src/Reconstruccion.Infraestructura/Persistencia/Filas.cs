@@ -131,6 +131,8 @@ public sealed class EvaluacionValidadaFila
 
 public sealed class FilaProgramaFila
 {
+    /// <summary>Municipios DIVIPOLA del proyecto; nulos hasta que llega EV-18 (DA-14).</summary>
+    public string[]? CodigosMunicipio { get; set; }
     public Guid IdProyecto { get; set; }
     public Guid IdDesastre { get; set; }
     public string Nombre { get; set; } = "";

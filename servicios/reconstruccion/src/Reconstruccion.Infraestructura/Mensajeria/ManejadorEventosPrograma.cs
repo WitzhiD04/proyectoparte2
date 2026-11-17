@@ -26,12 +26,13 @@ public sealed class ManejadorEventosPrograma : IManejadorEvento
 
     public Task ManejarAsync(Sobre sobre, CancellationToken ct)
     {
-        (Guid idProyecto, ResumenProyecto resumen) = sobre.Tipo switch
+        // Los municipios (para la jurisdicción, DA-14) solo vienen en EV-18; con EV-19 y EV-20 quedan nulos.
+        (Guid idProyecto, ResumenProyecto resumen, IReadOnlyList<string>? municipios) = sobre.Tipo switch
         {
             "EV-18" => Desde(sobre.LeerDatos<ProyectoCreadoV1>()),
             "EV-19" => Desde(sobre.LeerDatos<PresupuestoCambiadoV1>()),
             "EV-20" => Desde(sobre.LeerDatos<EstadoOAvanceCambiadoV1>()),
-            _ => (Guid.Empty, null!),
+            _ => (Guid.Empty, null!, null),
         };
         if (idProyecto == Guid.Empty)
         {
@@ -39,11 +40,11 @@ public sealed class ManejadorEventosPrograma : IManejadorEvento
             return Task.CompletedTask;
         }
         FilaPrograma fila = new(idProyecto, resumen.IdDesastre, resumen.Nombre, MapeoCanonico.AlDominio(resumen.Estado),
-            resumen.Presupuesto ?? 0, resumen.CostoEjecutado, resumen.Avance, resumen.Version, sobre.InstanteEmision);
+            resumen.Presupuesto ?? 0, resumen.CostoEjecutado, resumen.Avance, resumen.Version, sobre.InstanteEmision, municipios);
         return _actualizar.EjecutarAsync(fila, ct);
     }
 
-    private static (Guid, ResumenProyecto) Desde(ProyectoCreadoV1 d) => (d.IdProyecto, d.Proyecto);
-    private static (Guid, ResumenProyecto) Desde(PresupuestoCambiadoV1 d) => (d.IdProyecto, d.Proyecto);
-    private static (Guid, ResumenProyecto) Desde(EstadoOAvanceCambiadoV1 d) => (d.IdProyecto, d.Proyecto);
+    private static (Guid, ResumenProyecto, IReadOnlyList<string>?) Desde(ProyectoCreadoV1 d) => (d.IdProyecto, d.Proyecto, d.CodigosMunicipio);
+    private static (Guid, ResumenProyecto, IReadOnlyList<string>?) Desde(PresupuestoCambiadoV1 d) => (d.IdProyecto, d.Proyecto, null);
+    private static (Guid, ResumenProyecto, IReadOnlyList<string>?) Desde(EstadoOAvanceCambiadoV1 d) => (d.IdProyecto, d.Proyecto, null);
 }

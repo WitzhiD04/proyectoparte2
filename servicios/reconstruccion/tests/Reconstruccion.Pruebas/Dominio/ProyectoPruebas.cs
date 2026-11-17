@@ -53,6 +53,88 @@ public class ProyectoPruebas
         Assert.Equal(EstadoProyecto.Aprobado, p.Estado);
     }
 
+    // ------------------------------------------------------------------ DA-14: jurisdicción por territorio
+
+    [Fact]
+    public void La_autoridad_local_de_otro_municipio_no_aprueba_un_proyecto_municipal()
+    {
+        ProyectoReconstruccion p = Datos.ProyectoListoParaAprobar(AlcanceTerritorial.Municipal);   // Armenia
+        Assert.Throws<NoAutorizadoException>(() => p.Aprobar(Datos.AutoridadLocalCalarca, Datos.Ahora));
+        Assert.Equal(EstadoProyecto.Formulado, p.Estado);
+    }
+
+    [Fact]
+    public void Un_proyecto_municipal_no_lo_aprueban_la_regional_de_su_departamento_ni_la_nacional()
+    {
+        ProyectoReconstruccion p = Datos.ProyectoListoParaAprobar(AlcanceTerritorial.Municipal);
+        Assert.Throws<NoAutorizadoException>(() => p.Aprobar(Datos.AutoridadRegional, Datos.Ahora));
+        Assert.Throws<NoAutorizadoException>(() => p.Aprobar(Datos.AutoridadNacional, Datos.Ahora));
+        Assert.Equal(EstadoProyecto.Formulado, p.Estado);
+    }
+
+    [Fact]
+    public void Una_autoridad_local_sin_territorio_no_aprueba()
+    {
+        ProyectoReconstruccion p = Datos.ProyectoListoParaAprobar(AlcanceTerritorial.Municipal);
+        Actor sinTerritorio = Datos.AutoridadLocal with { Territorio = null };
+        Assert.Throws<NoAutorizadoException>(() => p.Aprobar(sinTerritorio, Datos.Ahora));
+    }
+
+    [Fact]
+    public void La_regional_de_otro_departamento_no_aprueba_un_proyecto_regional()
+    {
+        ProyectoReconstruccion p = Datos.ProyectoListoParaAprobar(AlcanceTerritorial.Regional);    // Armenia y Calarcá
+        Assert.Throws<NoAutorizadoException>(() => p.Aprobar(Datos.AutoridadRegionalRisaralda, Datos.Ahora));
+        Assert.Throws<NoAutorizadoException>(() => p.Aprobar(Datos.AutoridadNacional, Datos.Ahora));
+        p.Aprobar(Datos.AutoridadRegional, Datos.Ahora);
+        Assert.Equal(EstadoProyecto.Aprobado, p.Estado);
+    }
+
+    [Fact]
+    public void Un_proyecto_de_varios_departamentos_lo_aprueba_solo_la_autoridad_nacional()
+    {
+        ProyectoReconstruccion p = Datos.ProyectoListoParaAprobar(AlcanceTerritorial.Nacional);    // Quindío y Risaralda
+        Assert.Throws<NoAutorizadoException>(() => p.Aprobar(Datos.AutoridadLocal, Datos.Ahora));
+        Assert.Throws<NoAutorizadoException>(() => p.Aprobar(Datos.AutoridadRegional, Datos.Ahora));
+        Assert.Throws<NoAutorizadoException>(() => p.Aprobar(Datos.AutoridadRegionalRisaralda, Datos.Ahora));
+        p.Aprobar(Datos.AutoridadNacional, Datos.Ahora);
+        Assert.Equal(EstadoProyecto.Aprobado, p.Estado);
+    }
+
+    [Theory]
+    [InlineData(new[] { "63001" }, AlcanceTerritorial.Municipal)]
+    [InlineData(new[] { "63001", "63001" }, AlcanceTerritorial.Municipal)]
+    [InlineData(new[] { "63001", "63130" }, AlcanceTerritorial.Regional)]
+    [InlineData(new[] { "63001", "66400" }, AlcanceTerritorial.Nacional)]
+    public void El_alcance_sale_de_los_municipios_y_sus_departamentos(string[] municipios, AlcanceTerritorial esperado)
+    {
+        Assert.Equal(esperado, Jurisdiccion.AlcanceDe(municipios));
+    }
+
+    [Theory]
+    [InlineData("alcaldia.armenia", new[] { "63001" }, true)]
+    [InlineData("alcaldia.armenia", new[] { "63130" }, false)]
+    [InlineData("alcaldia.armenia", new[] { "63001", "66400" }, true)]   // toca su municipio
+    [InlineData("gobernacion.quindio", new[] { "63130" }, true)]
+    [InlineData("gobernacion.quindio", new[] { "66400" }, false)]
+    [InlineData("ungrd.operador", new[] { "66400" }, true)]
+    [InlineData("contraloria", new[] { "66400" }, true)]                  // el auditor no tiene restricción territorial
+    public void Cada_autoridad_ve_los_proyectos_de_su_jurisdiccion(string usuario, string[] municipios, bool ve)
+    {
+        Actor actor = new[] { Datos.AutoridadLocal, Datos.AutoridadRegional, Datos.AutoridadNacional, Datos.Auditor }
+            .Single(a => a.Usuario == usuario);
+        Assert.Equal(ve, Jurisdiccion.Cubre(actor, municipios));
+    }
+
+    [Fact]
+    public void Sin_municipios_conocidos_solo_la_autoridad_nacional_y_el_auditor_ven_el_proyecto()
+    {
+        Assert.False(Jurisdiccion.Cubre(Datos.AutoridadLocal, null));
+        Assert.False(Jurisdiccion.Cubre(Datos.AutoridadRegional, Array.Empty<string>()));
+        Assert.True(Jurisdiccion.Cubre(Datos.AutoridadNacional, null));
+        Assert.True(Jurisdiccion.Cubre(Datos.Auditor, null));
+    }
+
     [Fact]
     public void Asignar_exige_justificacion_y_guarda_valor_anterior_y_nuevo()
     {
@@ -317,6 +399,15 @@ public class ServiciosPruebas
         List<ProyectoReconstruccion> proyectos = CreacionDeProyectos.CrearProyectos(Datos.IdDesastre,
             new[] { Datos.Evaluacion(via, municipio: "Armenia"), Datos.Evaluacion(via, municipio: "Calarcá") }, Datos.AutoridadRegional, Datos.Ahora);
         Assert.Equal(AlcanceTerritorial.Regional, Assert.Single(proyectos).Alcance);
+    }
+
+    [Fact]
+    public void Un_activo_evaluado_en_varios_departamentos_da_un_proyecto_nacional()
+    {
+        Guid via = Guid.NewGuid();
+        List<ProyectoReconstruccion> proyectos = CreacionDeProyectos.CrearProyectos(Datos.IdDesastre,
+            new[] { Datos.Evaluacion(via, municipio: "Armenia"), Datos.Evaluacion(via, municipio: "La Virginia") }, Datos.AutoridadNacional, Datos.Ahora);
+        Assert.Equal(AlcanceTerritorial.Nacional, Assert.Single(proyectos).Alcance);
     }
 
     [Fact]

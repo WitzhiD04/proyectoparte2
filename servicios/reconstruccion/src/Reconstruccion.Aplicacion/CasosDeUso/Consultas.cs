@@ -110,7 +110,10 @@ public sealed class ConsultarHistorial : Interactor, IConsultarHistorialEntrada
 public sealed record SolicitudConsolidado(Actor Actor, Guid IdDesastre);
 public interface IConsultarConsolidadoEntrada : IPuertoEntrada<SolicitudConsolidado, ConsolidadoDto> { }
 
-/// <summary>CU-11. Lee el modelo de lectura del programa, no la base de escritura.</summary>
+/// <summary>
+/// CU-11. Lee el modelo de lectura del programa, no la base de escritura. Una autoridad solo cuenta los proyectos de su
+/// jurisdicción (DA-14 y Cuadro 3 del SRS); el auditor ve todo el desastre.
+/// </summary>
 public sealed class ConsultarConsolidado : Interactor, IConsultarConsolidadoEntrada
 {
     private readonly IProyeccionPrograma _proyeccion;
@@ -121,7 +124,9 @@ public sealed class ConsultarConsolidado : Interactor, IConsultarConsolidadoEntr
         return ProtegerAsync(salida, async () =>
         {
             ExigirAlgunRol(solicitud.Actor, Rol.Autoridad, Rol.Auditor);
-            IReadOnlyList<FilaPrograma> filas = await _proyeccion.DeDesastreAsync(solicitud.IdDesastre, ct);
+            IReadOnlyList<FilaPrograma> filas = (await _proyeccion.DeDesastreAsync(solicitud.IdDesastre, ct))
+                .Where(f => Jurisdiccion.Cubre(solicitud.Actor, f.CodigosMunicipio))
+                .ToList();
             Consolidado c = ConsolidadoPrograma.Calcular(solicitud.IdDesastre, filas);
             Dictionary<string, int> porEstado = new();
             foreach (KeyValuePair<EstadoProyecto, int> par in c.ProyectosPorEstado)

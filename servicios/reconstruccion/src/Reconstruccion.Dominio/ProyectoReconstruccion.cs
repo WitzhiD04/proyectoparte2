@@ -208,12 +208,9 @@ public sealed class ProyectoReconstruccion
         EstadoProyecto destino = MaquinaEstadosProyecto.Destino(Estado, AccionProyecto.Aprobar);
         ExigirCondicionesAprobacion(Presupuesto, FuenteFinanciacion, Responsable, Cronograma);
 
-        // Jurisdicción: local si el proyecto está en un municipio, regional si abarca varios.
-        Ambito requerido = Alcance == AlcanceTerritorial.Municipal ? Ambito.Local : Ambito.Regional;
-        if (actor.Ambito != requerido)
-        {
-            throw new NoAutorizadoException($"Este proyecto lo aprueba la autoridad de ámbito {requerido}.");
-        }
+        // Jurisdicción sobre el territorio del proyecto, no solo el ámbito (DA-14, corrige H-32): la alcaldía de Armenia
+        // no aprueba un proyecto de Calarcá, y la autoridad nacional aprueba los que abarcan varios departamentos.
+        Jurisdiccion.ExigirAprobador(actor, Alcance, CodigosMunicipio);
         CambiarEstado(destino, actor.Usuario, "Aprobación del proyecto", instante);
     }
 

@@ -19,7 +19,7 @@ namespace Reconstruccion.Integracion;
 public class PruebasEventos : IClassFixture<BaseMigrada>
 {
     private static readonly DateTimeOffset Ahora = new(2026, 11, 16, 10, 0, 0, TimeSpan.Zero);
-    private static readonly Actor Autoridad = new("alcaldia.armenia", Rol.Autoridad, Ambito.Local);
+    private static readonly Actor Autoridad = new("alcaldia.armenia", Rol.Autoridad, Ambito.Local, "63001");
     private static readonly Actor Responsable = new("ing.perez", Rol.Responsable);
 
     private readonly BaseMigrada _base;
@@ -128,5 +128,32 @@ public class PruebasEventos : IClassFixture<BaseMigrada>
         Assert.Equal(150_000_000m, fila.CostoEjecutado);
         Assert.Equal(900_000_000m, fila.Presupuesto);
         Assert.Equal(Ahora, fila.ActualizadoEn);
+        // EV-18 llegó al final (orden inverso) y aun así dejó los municipios para la jurisdicción (DA-14).
+        Assert.Equal(["63001"], fila.CodigosMunicipio!);
+    }
+
+    [Fact]
+    public async Task Un_proyecto_de_varios_departamentos_viaja_como_NACIONAL_y_se_guarda()
+    {
+        Actor nacional = new("ungrd.operador", Rol.Autoridad, Ambito.Nacional);
+        Guid activo = Guid.NewGuid();
+        ProyectoReconstruccion p = ProyectoReconstruccion.Crear(Guid.NewGuid(), Guid.NewGuid(), "Reconstrucción de la vía Armenia-Pereira",
+            Jurisdiccion.AlcanceDe(["63001", "66400"]),
+            [new EvaluacionOrigen(Guid.NewGuid(), activo, "Via", NivelDano.Grave, "63001"),
+             new EvaluacionOrigen(Guid.NewGuid(), activo, "Via", NivelDano.Grave, "66400")],
+            nacional, Ahora);
+
+        Sobre creado = PublicadorHechosBandeja.Traducir(HechosDeProyecto.De(p).Single(), "prueba");
+        ValidadorContrato.Instancia.Validar(creado);
+        Assert.Equal(AlcanceProyecto.NACIONAL, creado.LeerDatos<ProyectoCreadoV1>().Alcance);
+
+        // La restricción de la columna alcance admite el valor nuevo (migración AlcanceNacional).
+        await using ReconstruccionDbContext db = new(new DbContextOptionsBuilder<ReconstruccionDbContext>().UseNpgsql(_base.App).Options);
+        RepositorioProyectosEf repositorio = new(db);
+        await repositorio.GuardarAsync(p, default);
+        await db.SaveChangesAsync();
+        await using ReconstruccionDbContext otra = new(new DbContextOptionsBuilder<ReconstruccionDbContext>().UseNpgsql(_base.App).Options);
+        ProyectoReconstruccion? leido = await new RepositorioProyectosEf(otra).BuscarAsync(p.Id, default);
+        Assert.Equal(AlcanceTerritorial.Nacional, leido!.Alcance);
     }
 }

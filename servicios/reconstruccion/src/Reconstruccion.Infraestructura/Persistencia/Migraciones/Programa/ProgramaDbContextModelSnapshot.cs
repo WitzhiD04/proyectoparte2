@@ -61,6 +61,10 @@ namespace Reconstruccion.Infraestructura.Persistencia.Migraciones.Programa
                         .HasColumnType("numeric(5,2)")
                         .HasColumnName("avance");
 
+                    b.PrimitiveCollection<string[]>("CodigosMunicipio")
+                        .HasColumnType("text[]")
+                        .HasColumnName("codigos_municipio");
+
                     b.Property<decimal>("CostoEjecutado")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
