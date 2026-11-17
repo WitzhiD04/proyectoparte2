@@ -168,7 +168,7 @@ public sealed class EntornoAuditoria : IAsyncLifetime
     public const string ImagenRabbit = "rabbitmq:4.4.0-management";
 
     public static readonly string[] Productores =
-        ["gestion-desastres", "evaluacion-danos", "reconstruccion", "adaptador-se2", "adaptador-se7"];
+        ["gestion-desastres", "evaluacion-danos", "reconstruccion", "adaptador-se2", "adaptador-se7", "notificacion", "adaptador-se8"];
 
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder(ImagenPostgres).Build();
     private readonly IContainer _rabbit;
