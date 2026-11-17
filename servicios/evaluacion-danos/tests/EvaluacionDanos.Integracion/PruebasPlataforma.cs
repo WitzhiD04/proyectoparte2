@@ -128,11 +128,32 @@ public class PruebasPlataforma(Entorno api)
         Assert.Equal(2, datos.Version);
         Assert.Equal("Activo creado en campo", datos.ReferenciaActivo);
 
-        // La versión anterior se conserva (AD-30) y el activo sube de versión con autor del servidor.
+        // La versión anterior de la evaluación se conserva (AD-30) y validar no sube la versión del activo.
         await using var db = api.NuevoContexto();
         Assert.Equal(2, await db.EvaluacionVersiones.CountAsync(v => v.EvaluacionId == id));
-        var version = await db.ActivoVersiones.SingleAsync(v => v.ActivoId == op.Evaluacion.ActivoId && v.Numero == 2);
-        Assert.Equal("servidor:validador.1", version.IdDispositivo);
+        Assert.Equal(1, (await db.Activos.SingleAsync(a => a.Id == op.Evaluacion.ActivoId)).Version);
+        Assert.Equal(1, await db.ActivoVersiones.CountAsync(v => v.ActivoId == op.Evaluacion.ActivoId));
+    }
+
+    [Fact]
+    public async Task Validar_no_sube_la_version_del_activo_y_otro_dispositivo_sincroniza_sin_conflicto()
+    {
+        var activoId = Entorno.TomarActivoSembrado();
+        var primera = Crear(activoId, 1, nivel: "MODERADO");
+        var aplicada = await Uno("val-base-A", primera);
+        Assert.Equal(ResultadoOperacion.APLICADA, aplicada.Resultado);
+        Assert.Equal(2, aplicada.NuevaVersionActivo);
+
+        var validacion = await Validador().PostAsJsonAsync($"/v1/evaluaciones/{primera.Evaluacion!.Id}/validacion",
+            new { estado = "VALIDADA", motivo = "Verificada en terreno" });
+        Assert.True(validacion.IsSuccessStatusCode, await validacion.Content.ReadAsStringAsync());
+
+        // Otro dispositivo que descargó el activo antes de la validación (versión 2) sincroniza sin conflicto.
+        var deOtroDispositivo = Crear(activoId, 2, nivel: "GRAVE");
+        var resultadoOtro = await Uno("val-base-B", deOtroDispositivo);
+        Assert.Equal(ResultadoOperacion.APLICADA, resultadoOtro.Resultado);
+        Assert.Equal(EstadoEvaluacion.REGISTRADA, resultadoOtro.EstadoEvaluacion);
+        Assert.Equal(3, resultadoOtro.NuevaVersionActivo);
     }
 
     // ---------- Autorización (AD-22) ----------
@@ -176,11 +197,29 @@ public class PruebasPlataforma(Entorno api)
     {
         var evaluador = api.Cliente("rol-A");
         Assert.Equal(HttpStatusCode.Forbidden, (await evaluador.GetAsync("/v1/conflictos")).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, (await evaluador.GetAsync("/v1/catalogos/tipos-activo")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await api.CreateClient().GetAsync("/v1/catalogos/tipos-activo")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await evaluador.PatchAsJsonAsync("/v1/catalogos/tipos-activo/vivienda",
+            new { nombre = "Vivienda familiar" })).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await api.Operador().GetAsync("/v1/descarga")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await evaluador.PostAsJsonAsync($"/v1/conflictos/{Guid.NewGuid()}/resolucion",
             new { decision = "PREVALECE_VIGENTE", justificacion = "x" })).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await api.Operador().GetAsync("/v1/conflictos")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Un_evaluador_puede_consultar_el_catalogo_de_tipos_de_activo_pero_no_crear_uno()
+    {
+        var evaluador = api.ConRol("evaluador", "evaluador.1");
+        var lectura = await evaluador.GetAsync("/v1/catalogos/tipos-activo");
+        Assert.Equal(HttpStatusCode.OK, lectura.StatusCode);
+        var tipos = await lectura.Content.ReadFromJsonAsync<List<TipoActivoDto>>(JsonEvaluacion.Opciones);
+        Assert.NotNull(tipos);
+        Assert.True(tipos.Count >= 11);
+
+        var criterios = Enum.GetNames<NivelDano>().Select(n => new { nivel = n, criterio = $"Criterio de {n}" }).ToArray();
+        var crear = await evaluador.PostAsJsonAsync("/v1/catalogos/tipos-activo",
+            new { codigo = "bodega_municipal", nombre = "Bodega municipal", criterios });
+        Assert.Equal(HttpStatusCode.Forbidden, crear.StatusCode);
     }
 
     // ---------- Permisos de la base (DT-02) ----------
@@ -277,6 +316,48 @@ public class PruebasPlataforma(Entorno api)
     }
 
     [Fact]
+    public async Task Resolver_con_PREVALECE_ENTRANTE_retira_la_validacion_de_la_vigente_reemplazada_y_deja_EV08_pendiente()
+    {
+        var activoId = Entorno.TomarActivoSembrado();
+        var deB = Crear(activoId, 1, nivel: "LEVE");
+        var deA = Crear(activoId, 1, nivel: "DESTRUCCION_TOTAL");
+        await Uno("res-val-B", deB);
+        var validacion = await Validador().PostAsJsonAsync($"/v1/evaluaciones/{deB.Evaluacion!.Id}/validacion",
+            new { estado = "VALIDADA", motivo = "Inspección inicial aprobada" });
+        Assert.True(validacion.IsSuccessStatusCode, await validacion.Content.ReadAsStringAsync());
+
+        Assert.Equal(ResultadoOperacion.EN_CONFLICTO, (await Uno("res-val-A", deA)).Resultado);
+        Guid idConflicto;
+        await using (var db = api.NuevoContexto())
+        {
+            idConflicto = (await db.Conflictos.SingleAsync(c => c.EvaluacionEntranteId == deA.Evaluacion!.Id)).Id;
+        }
+
+        var resolucion = await api.Operador().PostAsJsonAsync($"/v1/conflictos/{idConflicto}/resolucion",
+            new { decision = "PREVALECE_ENTRANTE", justificacion = "Nuevo colapso reportado con evidencia reciente" });
+        Assert.True(resolucion.IsSuccessStatusCode, await resolucion.Content.ReadAsStringAsync());
+
+        await using (var db = api.NuevoContexto())
+        {
+            var anterior = await db.Evaluaciones.SingleAsync(e => e.Id == deB.Evaluacion.Id);
+            Assert.Equal(EstadoEvaluacion.REGISTRADA, anterior.Estado);
+            Assert.Equal("operador.1", anterior.ValidadoPor);
+            Assert.Equal(3, await db.EvaluacionVersiones.CountAsync(v => v.EvaluacionId == deB.Evaluacion.Id));
+
+            var nuevaVigente = await db.Evaluaciones.SingleAsync(e => e.Id == deA.Evaluacion!.Id);
+            Assert.Equal(EstadoEvaluacion.REGISTRADA, nuevaVigente.Estado);
+        }
+
+        var sobreEv08 = await EventoAsync("EV-08", $"evaluacion:{deB.Evaluacion.Id}:v3:validacion");
+        ValidadorContrato.Instancia.Validar(sobreEv08);
+        var datosEv08 = sobreEv08.LeerDatos<EvaluacionValidadaV1>();
+        Assert.Equal(deB.Evaluacion.Id, datosEv08.IdEvaluacion);
+        Assert.Equal(Canon.EstadoValidacion.PENDIENTE, datosEv08.EstadoValidacion);
+        Assert.Equal(3, datosEv08.Version);
+        Assert.Equal("operador.1", datosEv08.ValidadoPor);
+    }
+
+    [Fact]
     public async Task Resolver_con_PREVALECE_VIGENTE_deja_rechazada_la_entrante_que_nacio_en_conflicto()
     {
         var activoId = Entorno.TomarActivoSembrado();
@@ -343,6 +424,62 @@ public class PruebasPlataforma(Entorno api)
         var descarga = await api.Cliente("fus-A").GetFromJsonAsync<DescargaDto>("/v1/descarga", JsonEvaluacion.Opciones);
         Assert.DoesNotContain(descarga!.Activos, a => a.Id == segundo.Evaluacion.ActivoId);
         Assert.Contains(descarga.Activos, a => a.Id == primero.Evaluacion.ActivoId);
+    }
+
+    [Fact]
+    public async Task Fusionar_eligiendo_ENTRANTE_aplica_su_contenido_marca_la_anterior_como_duplicado_y_deja_EV22()
+    {
+        var (lat, lon) = Entorno.TomarZonaLibre();
+        var primero = CrearConActivoNuevo(lat, lon);
+        var foto = FotoJpeg();
+        primero.Evaluacion!.NivelDano = "LEVE";
+        primero.Evaluacion.Evidencias =
+        [
+            new EvidenciaDeclarada
+            {
+                Id = Guid.NewGuid(), Lat = lat, Lon = lon, InstanteCaptura = DateTimeOffset.UtcNow, Sha256 = Sha256(foto), TamanoBytes = foto.Length
+            }
+        ];
+        var segundo = CrearConActivoNuevo(lat + 10 / 111_195.0, lon);
+        segundo.Evaluacion!.NivelDano = "DESTRUCCION_TOTAL";
+        segundo.Evaluacion.Descripcion = "Colapso total verificado por segunda cuadrilla";
+
+        await Uno("fus-ent-A", primero);
+        Assert.Equal(ResultadoOperacion.POSIBLE_DUPLICADO, (await Uno("fus-ent-B", segundo)).Resultado);
+        await using var db = api.NuevoContexto();
+        var conflicto = await db.Conflictos.AsNoTracking().SingleAsync(c => c.EvaluacionEntranteId == segundo.Evaluacion.Id);
+        Assert.Equal(TipoConflicto.DUPLICADO, conflicto.Tipo);
+
+        var respuesta = await api.Operador().PostAsJsonAsync($"/v1/conflictos/{conflicto.Id}/resolucion",
+            new { decision = "FUSIONAR", vigente = "ENTRANTE", justificacion = "La entrante tiene el diagnóstico definitivo" });
+        Assert.True(respuesta.IsSuccessStatusCode, await respuesta.Content.ReadAsStringAsync());
+
+        var elegida = await db.Evaluaciones.AsNoTracking().SingleAsync(e => e.Id == segundo.Evaluacion.Id);
+        Assert.Equal(EstadoEvaluacion.REGISTRADA, elegida.Estado);
+        Assert.Equal(NivelDano.DESTRUCCION_TOTAL, elegida.NivelDano);
+        Assert.Equal("Colapso total verificado por segunda cuadrilla", elegida.Descripcion);
+        Assert.Null(elegida.DuplicadoDe);
+        Assert.Equal(2, await db.EvaluacionVersiones.CountAsync(v => v.EvaluacionId == elegida.Id));
+
+        var descartada = await db.Evaluaciones.AsNoTracking().SingleAsync(e => e.Id == primero.Evaluacion.Id);
+        Assert.Equal(EstadoEvaluacion.DUPLICADO, descartada.Estado);
+        Assert.Equal(segundo.Evaluacion.Id, descartada.DuplicadoDe);
+        Assert.Equal(2, await db.EvaluacionVersiones.CountAsync(v => v.EvaluacionId == descartada.Id));
+        Assert.Equal(1, await db.Evidencias.CountAsync(e => e.EvaluacionId == descartada.Id));
+
+        var vinculo = await db.EvidenciasVinculadas.SingleAsync(v => v.EvaluacionId == segundo.Evaluacion.Id);
+        Assert.Equal(primero.Evaluacion.Evidencias[0].Id, vinculo.EvidenciaId);
+        Assert.Equal(segundo.Evaluacion.ActivoId, (await db.Activos.AsNoTracking().SingleAsync(a => a.Id == primero.Evaluacion.ActivoId)).FusionadoEn);
+        Assert.Null((await db.Activos.AsNoTracking().SingleAsync(a => a.Id == segundo.Evaluacion.ActivoId)).FusionadoEn);
+
+        var sobre = await EventoAsync("EV-22", conflicto.Id.ToString());
+        ValidadorContrato.Instancia.Validar(sobre);
+        var datos = sobre.LeerDatos<ConflictoResueltoV1>();
+        Assert.Equal(Canon.DecisionConflicto.FUSIONAR, datos.Decision);
+        Assert.Equal(segundo.Evaluacion.Id, datos.IdEvaluacionVigente);
+        Assert.Equal(segundo.Evaluacion.Id, datos.Evaluacion.IdEvaluacion);
+        Assert.Equal(segundo.Evaluacion.ActivoId, datos.Evaluacion.IdActivo);
+        Assert.Equal(Canon.NivelDano.DESTRUCCION_TOTAL, datos.Evaluacion.NivelDano);
     }
 
     // ---------- Actualización, asociación y registro con conexión ----------

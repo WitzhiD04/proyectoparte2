@@ -160,12 +160,12 @@ public class ReglasNuevasTests
     [Fact]
     public void Un_cambio_del_servidor_cuenta_como_otro_dispositivo_para_la_regla_de_conflicto()
     {
-        // La regla (AD-43) no cambió: la validación solo agrega una versión del activo con autor del servidor, y por
-        // eso una edición hecha sin conexión sobre la base anterior queda en conflicto en vez de sobrescribir.
+        // La regla (AD-43) no cambió: un cambio de contenido en el servidor agrega una versión del activo con autor del
+        // servidor, y por eso una edición hecha sin conexión sobre la base anterior queda en conflicto en vez de sobrescribir.
         var versiones = new[]
         {
             new VersionRegistrada(1, "semilla"), new VersionRegistrada(2, "celular-A"),
-            new VersionRegistrada(3, ActivoVersion.AutorServidor("validador.1")),
+            new VersionRegistrada(3, ActivoVersion.AutorServidor("operador.1")),
         };
         Assert.True(ReglaConflicto.Evaluar(2, "celular-A", versiones).HayConflicto);
         Assert.False(ReglaConflicto.Evaluar(3, "celular-A", versiones).HayConflicto);
