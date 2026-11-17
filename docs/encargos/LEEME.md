@@ -29,7 +29,8 @@ de humo.
 | Auditoría | `servicios/auditoria` | QA-13, QA-15, R-02 |
 | Adaptador de SE-7, simulador y KEDA | `adaptadores/adaptador-se7`, `simuladores/sim-se7` | QA-01 con SE-7 |
 | Contrato de Notificación (EV-07, 28 y 29) | `comun/` | E-37 |
-| Keycloak (realm `plataforma`) y adaptador JWT de `IIdentidadActual` | `despliegue/keycloak`, `comun/Plataforma.Comun.Seguridad` | DA-15: con `IDENTIDAD_MODO=Jwt` los servicios validan el token y rechazan los `X-*` (401); la prueba de humo de desastres pasa con tokens. Reconstrucción aún lee su propia identidad |
+| Keycloak (realm `plataforma`) y adaptador JWT de `IIdentidadActual` | `despliegue/keycloak`, `comun/Plataforma.Comun.Seguridad` | DA-15: con `IDENTIDAD_MODO=Jwt` los servicios validan el token y rechazan los `X-*` (401); la prueba de humo de desastres pasa con tokens |
+| Reconstrucción con identidad común y jurisdicción | `servicios/reconstruccion` | DA-15: Reconstrucción y la Consulta del Programa usan `IIdentidadActual`. DA-14: alcance `Nacional`, aprobación por territorio DIVIPOLA y consolidado por jurisdicción; la prueba de humo del escenario E pasa con encabezados y con tokens |
 | App móvil con OIDC | repositorio `danos`, rama `gemini-app-oidc` | H-70 a H-72. Falta correr su prueba instrumentada contra Keycloak (emulador con `adb reverse tcp:8180 tcp:8180`) |
 
 ## Alcance de esta entrega y reparto (fijado el 2026-11-17)
@@ -58,14 +59,14 @@ gateway → consola con login → mapa → SE-6 → evolución por zona → eval
 |---|---|---|---|
 | 1 | `keycloak-jwt.md` | — | **Hecho** |
 | 2 | `gateway.md` | 1 | Lo más grande que queda. Habilita QA-11 medido, AD-19 y los rechazos a Auditoría |
-| 3 | `reconstruccion-identidad.md` | 1 | Puede ir en paralelo con el 2 |
+| 3 | `reconstruccion-identidad.md` | 1 | **Hecho** |
 | 4 | `consola.md` | 1 (y 2 para el recorrido final) | Puede empezar en cuanto exista Keycloak |
-| 5 | `notificacion-se8.md` | — | Independiente; RF-GD-06 lo exige |
+| 5 | `notificacion-se8.md` | — | **Fuera de esta entrega**: es de Gestión de Desastres; se declara como límite del prototipo |
 | 6 | `adaptador-se6.md` | — | Independiente |
 | 7 | `../../pruebas/ENCARGO-carga-y-caos.md` | Compose arriba | Scripts k6 y de caos |
 | 8 | `cierre-y-medidas.md` | Todos | Tabla de medidas, k8s en Minikube y documentación |
 
-**En paralelo:** 2, 3, 5, 6 y 7 se pueden hacer a la vez, cada uno en su rama. Después de cada uno, el orquestador
+**En paralelo:** 2, 6 y 7 se pueden hacer a la vez, cada uno en su rama. Después de cada uno, el orquestador
 fusiona y corre la suite completa.
 
 **Archivos compartidos:** compose, `kustomization.yaml`, `00-base.yaml`, `.env.ejemplo`, `aplicar.sh` y `Plataforma.sln`
@@ -86,5 +87,6 @@ Salieron de los reportes de cada pieza. Recomendación de qué hacer con cada un
 | EV-23 no publica el estado SEMIABIERTO | Adaptador de SE-7 (decisión D2) | Aceptado: evita un evento cada 15 s. Ya documentado |
 | En k8s la entrada de SE-7 corre por `cron` (latencia de EV-24 de ~2 min) | Adaptador de SE-7 (D6) | Aceptado; el README explica cómo dejarla siempre encendida |
 | SE-2 usa su propia base `adaptador_se2` y no `adaptadores` + esquema como dice DA-11 | Paso 2 | Opcional unificar; no cambia ninguna medida |
+| La consola recibe 403 en Reconstrucción en modo Encabezados porque manda `X-Rol` | A1 | Lo resuelve B1 (login) |
 | mTLS entre servicios | §7.1 del SAD, P-06 | Declarado como límite del prototipo (TLS en el borde) |
 | Dos regiones (QA-03) | DA-16 | Opcional, al final (ver `cierre-y-medidas.md`) |
