@@ -14,9 +14,11 @@
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Testcontainers.Keycloak" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Plataforma.Comun.Eventos\Plataforma.Comun.Eventos.csproj" />
     <ProjectReference Include="..\..\Plataforma.Comun.Mensajeria\Plataforma.Comun.Mensajeria.csproj" />
+    <ProjectReference Include="..\..\Plataforma.Comun.Seguridad\Plataforma.Comun.Seguridad.csproj" />
   </ItemGroup>
 </Project>

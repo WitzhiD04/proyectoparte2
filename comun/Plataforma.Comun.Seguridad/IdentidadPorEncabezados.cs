@@ -62,20 +62,31 @@ public static class RegistroSeguridad
     public const string Seccion = "Identidad";
 
     /// <summary>
-    /// Registra <see cref="IIdentidadActual"/>. "Identidad:Modo" elige el adaptador: "Encabezados" (hoy, por omisión).
-    /// El paso del gateway agrega "Jwt".
+    /// Registra <see cref="IIdentidadActual"/>. "Identidad:Modo" elige el adaptador: "Encabezados" (por omisión) o "Jwt" (DA-15).
     /// </summary>
     public static IServiceCollection AgregarIdentidad(this IServiceCollection servicios, IConfiguration configuracion)
     {
-        string modo = configuracion[$"{Seccion}:Modo"] ?? "Encabezados";
+        string modo = (configuracion[$"{Seccion}:Modo"] ?? "Encabezados").Trim();
         servicios.AddHttpContextAccessor();
-        switch (modo)
+        if (modo.Equals("Encabezados", StringComparison.OrdinalIgnoreCase))
         {
-            case "Encabezados":
-                servicios.AddScoped<IIdentidadActual, IdentidadPorEncabezados>();
-                break;
-            default:
-                throw new InvalidOperationException($"Identidad:Modo desconocido: {modo}.");
+            servicios.AddScoped<IIdentidadActual, IdentidadPorEncabezados>();
+        }
+        else if (modo.Equals("Jwt", StringComparison.OrdinalIgnoreCase))
+        {
+            var opciones = new OpcionesIdentidadJwt
+            {
+                Emisor = configuracion[$"{Seccion}:Emisor"] ?? OpcionesIdentidadJwt.EmisorPorOmision,
+                Audiencia = configuracion[$"{Seccion}:Audiencia"] ?? OpcionesIdentidadJwt.AudienciaPorOmision,
+                Metadatos = configuracion[$"{Seccion}:Metadatos"] ?? OpcionesIdentidadJwt.MetadatosPorOmision,
+            };
+            servicios.AddSingleton(opciones);
+            servicios.AddSingleton<ValidadorJwt>();
+            servicios.AddScoped<IIdentidadActual, IdentidadPorJwt>();
+        }
+        else
+        {
+            throw new InvalidOperationException($"Identidad:Modo desconocido: {modo}.");
         }
         return servicios;
     }
