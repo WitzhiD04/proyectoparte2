@@ -52,6 +52,11 @@ también los datos).
 Orden de arranque: PostgreSQL → migrador (roles, esquema, datos de prueba) → bus → servicios (2 réplicas de cada
 uno) → consola. Cada servicio solo está listo cuando su base y su topología del bus responden.
 
+> **Nota temporal.** Si reconstruye solo un servicio (`docker compose -p plataforma up -d --build <servicio>`), recree
+> después la entrada `web` (`docker compose -p plataforma up -d --force-recreate web`): nginx se queda con las IP viejas
+> de los contenedores y puede mandar una ruta al servicio equivocado (por ejemplo, `RUTA_DE_OTRO_SERVICIO`). La nota se
+> quita cuando el gateway reemplace a nginx en la API.
+
 ## Compilar y probar
 
 No hace falta instalar el SDK: `herramientas/dotnet.sh` lo ejecuta en un contenedor (con acceso a Docker para
