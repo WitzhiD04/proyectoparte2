@@ -56,16 +56,51 @@ public class ProyectoPruebas
     // ------------------------------------------------------------------ DA-14: jurisdicción por territorio
 
     [Fact]
-    public void La_autoridad_local_de_otro_municipio_no_aprueba_un_proyecto_municipal()
+    public void La_autoridad_local_de_otro_municipio_ni_siquiera_ve_el_proyecto_para_aprobarlo()
+    {
+        // Antes (A1) era 403. Calarcá no ve el proyecto de Armenia: queda fuera de su jurisdicción (404, E-39).
+        ProyectoReconstruccion p = Datos.ProyectoListoParaAprobar(AlcanceTerritorial.Municipal);   // Armenia
+        Assert.Throws<FueraDeJurisdiccionException>(() => p.Aprobar(Datos.AutoridadLocalCalarca, Datos.Ahora));
+        Assert.Equal(EstadoProyecto.Formulado, p.Estado);
+    }
+
+    [Fact]
+    public void Calarca_no_asigna_ni_cancela_un_proyecto_de_Armenia_y_el_proyecto_no_cambia()
     {
         ProyectoReconstruccion p = Datos.ProyectoListoParaAprobar(AlcanceTerritorial.Municipal);   // Armenia
-        Assert.Throws<NoAutorizadoException>(() => p.Aprobar(Datos.AutoridadLocalCalarca, Datos.Ahora));
-        Assert.Equal(EstadoProyecto.Formulado, p.Estado);
+        p.LimpiarPendientes();
+        int version = p.Version;
+        Assert.Throws<FueraDeJurisdiccionException>(() => p.AsignarPresupuesto(Datos.AutoridadLocalCalarca, new Dinero(1), null, null,
+            "Cambio", Datos.Ahora));
+        Assert.Throws<FueraDeJurisdiccionException>(() => p.AsignarResponsable(Datos.AutoridadLocalCalarca, "ing.gomez", "Cambio", Datos.Ahora));
+        Assert.Throws<FueraDeJurisdiccionException>(() => p.Cancelar(Datos.AutoridadLocalCalarca, "No procede", Datos.Ahora));
+        Assert.Equal(version, p.Version);
+        Assert.Empty(p.EntradasNuevas);
+    }
+
+    [Fact]
+    public void La_jurisdiccion_se_revisa_antes_que_las_demas_reglas()
+    {
+        // Sin justificación sería una regla incumplida (422), pero a quien no ve el proyecto no se le dice.
+        ProyectoReconstruccion p = Datos.ProyectoListoParaAprobar(AlcanceTerritorial.Municipal);
+        Assert.Throws<FueraDeJurisdiccionException>(() => p.Cancelar(Datos.AutoridadLocalCalarca, "", Datos.Ahora));
+        Assert.Throws<FueraDeJurisdiccionException>(() => p.AsignarResponsable(Datos.AutoridadLocalCalarca, "", "", Datos.Ahora));
+    }
+
+    [Fact]
+    public void La_nacional_y_la_autoridad_del_municipio_asignan_y_cancelan()
+    {
+        ProyectoReconstruccion p = Datos.ProyectoListoParaAprobar(AlcanceTerritorial.Municipal);
+        p.AsignarResponsable(Datos.AutoridadNacional, "ing.gomez", "Reasignación", Datos.Ahora);
+        p.AsignarPresupuesto(Datos.AutoridadLocal, new Dinero(600_000_000), null, null, "Adición", Datos.Ahora);
+        p.Cancelar(Datos.AutoridadNacional, "Se reubica el activo", Datos.Ahora);
+        Assert.Equal(EstadoProyecto.Cancelado, p.Estado);
     }
 
     [Fact]
     public void Un_proyecto_municipal_no_lo_aprueban_la_regional_de_su_departamento_ni_la_nacional()
     {
+        // Las dos lo ven (es de su jurisdicción), pero lo aprueba la alcaldía del municipio: 403, no 404.
         ProyectoReconstruccion p = Datos.ProyectoListoParaAprobar(AlcanceTerritorial.Municipal);
         Assert.Throws<NoAutorizadoException>(() => p.Aprobar(Datos.AutoridadRegional, Datos.Ahora));
         Assert.Throws<NoAutorizadoException>(() => p.Aprobar(Datos.AutoridadNacional, Datos.Ahora));
@@ -77,14 +112,15 @@ public class ProyectoPruebas
     {
         ProyectoReconstruccion p = Datos.ProyectoListoParaAprobar(AlcanceTerritorial.Municipal);
         Actor sinTerritorio = Datos.AutoridadLocal with { Territorio = null };
-        Assert.Throws<NoAutorizadoException>(() => p.Aprobar(sinTerritorio, Datos.Ahora));
+        Assert.Throws<FueraDeJurisdiccionException>(() => p.Aprobar(sinTerritorio, Datos.Ahora));
     }
 
     [Fact]
     public void La_regional_de_otro_departamento_no_aprueba_un_proyecto_regional()
     {
         ProyectoReconstruccion p = Datos.ProyectoListoParaAprobar(AlcanceTerritorial.Regional);    // Armenia y Calarcá
-        Assert.Throws<NoAutorizadoException>(() => p.Aprobar(Datos.AutoridadRegionalRisaralda, Datos.Ahora));
+        // Risaralda no ve un proyecto del Quindío; la nacional sí lo ve, pero no es la que lo aprueba (403).
+        Assert.Throws<FueraDeJurisdiccionException>(() => p.Aprobar(Datos.AutoridadRegionalRisaralda, Datos.Ahora));
         Assert.Throws<NoAutorizadoException>(() => p.Aprobar(Datos.AutoridadNacional, Datos.Ahora));
         p.Aprobar(Datos.AutoridadRegional, Datos.Ahora);
         Assert.Equal(EstadoProyecto.Aprobado, p.Estado);
@@ -399,6 +435,61 @@ public class ServiciosPruebas
         List<ProyectoReconstruccion> proyectos = CreacionDeProyectos.CrearProyectos(Datos.IdDesastre,
             new[] { Datos.Evaluacion(via, municipio: "Armenia"), Datos.Evaluacion(via, municipio: "Calarcá") }, Datos.AutoridadRegional, Datos.Ahora);
         Assert.Equal(AlcanceTerritorial.Regional, Assert.Single(proyectos).Alcance);
+    }
+
+    // ------------------------------------------------------------------ jurisdicción al crear y en las candidatas (Cuadro 3 del SRS)
+
+    [Fact]
+    public void Calarca_no_crea_proyectos_con_evaluaciones_de_Armenia()
+    {
+        EvaluacionValidada armenia = Datos.Evaluacion(municipio: "Armenia");
+        NoAutorizadoException e = Assert.Throws<NoAutorizadoException>(() =>
+            CreacionDeProyectos.CrearProyectos(Datos.IdDesastre, new[] { armenia }, Datos.AutoridadLocalCalarca, Datos.Ahora));
+        Assert.Contains("63001", e.Message);
+    }
+
+    [Fact]
+    public void Un_lote_con_una_sola_evaluacion_fuera_de_la_jurisdiccion_no_crea_ninguno()
+    {
+        EvaluacionValidada armenia = Datos.Evaluacion(municipio: "Armenia");
+        EvaluacionValidada calarca = Datos.Evaluacion(municipio: "Calarcá");
+        Assert.Throws<NoAutorizadoException>(() =>
+            CreacionDeProyectos.CrearProyectos(Datos.IdDesastre, new[] { armenia, calarca }, Datos.AutoridadLocal, Datos.Ahora));
+    }
+
+    [Fact]
+    public void La_regional_del_Quindio_crea_con_evaluaciones_de_Armenia_y_Calarca_pero_no_de_Risaralda()
+    {
+        EvaluacionValidada armenia = Datos.Evaluacion(municipio: "Armenia");
+        EvaluacionValidada calarca = Datos.Evaluacion(municipio: "Calarcá");
+        Assert.Equal(2, CreacionDeProyectos.CrearProyectos(Datos.IdDesastre, new[] { armenia, calarca }, Datos.AutoridadRegional, Datos.Ahora).Count);
+        Assert.Throws<NoAutorizadoException>(() => CreacionDeProyectos.CrearProyectos(Datos.IdDesastre,
+            new[] { Datos.Evaluacion(municipio: "La Virginia") }, Datos.AutoridadRegional, Datos.Ahora));
+    }
+
+    [Fact]
+    public void La_nacional_crea_con_evaluaciones_de_cualquier_departamento()
+    {
+        List<ProyectoReconstruccion> proyectos = CreacionDeProyectos.CrearProyectos(Datos.IdDesastre,
+            new[] { Datos.Evaluacion(municipio: "Armenia"), Datos.Evaluacion(municipio: "La Virginia") }, Datos.AutoridadNacional, Datos.Ahora);
+        Assert.Equal(2, proyectos.Count);
+    }
+
+    [Theory]
+    [InlineData("alcaldia.calarca", new[] { "Calarcá" })]
+    [InlineData("alcaldia.armenia", new[] { "Armenia" })]
+    [InlineData("gobernacion.quindio", new[] { "Armenia", "Calarcá" })]
+    [InlineData("ungrd.operador", new[] { "Armenia", "Calarcá", "La Virginia" })]
+    public void Cada_autoridad_ve_las_candidatas_de_su_jurisdiccion(string usuario, string[] municipiosVisibles)
+    {
+        Actor actor = new[] { Datos.AutoridadLocal, Datos.AutoridadLocalCalarca, Datos.AutoridadRegional, Datos.AutoridadNacional }
+            .Single(a => a.Usuario == usuario);
+        EvaluacionValidada[] evaluaciones =
+            [Datos.Evaluacion(municipio: "Armenia"), Datos.Evaluacion(municipio: "Calarcá"), Datos.Evaluacion(municipio: "La Virginia")];
+
+        List<EvaluacionValidada> visibles = CreacionDeProyectos.Candidatas(evaluaciones, new HashSet<Guid>(), actor);
+
+        Assert.Equal(municipiosVisibles.OrderBy(m => m), visibles.Select(e => e.Municipio).OrderBy(m => m));
     }
 
     [Fact]

@@ -32,7 +32,7 @@ public sealed class AdjuntarDocumento : Interactor, IAdjuntarDocumentoEntrada
             ProyectoReconstruccion? proyecto = await _proyectos.BuscarAsync(solicitud.IdProyecto, ct);
             if (proyecto is null)
             {
-                salida.NoEncontrado("El proyecto no existe.");
+                salida.NoEncontrado(MensajeProyectoNoExiste);
                 return;
             }
 

@@ -42,7 +42,11 @@ public sealed class ConsultarProyectos : Interactor, IConsultarProyectosEntrada
             List<ProyectoDto> lista = new();
             foreach (ProyectoReconstruccion p in await _proyectos.DeDesastreAsync(solicitud.IdDesastre, ct))
             {
-                lista.Add(p.ADto());
+                // Una autoridad solo ve los proyectos de su jurisdicción (Cuadro 3 del SRS, DA-14).
+                if (Jurisdiccion.Cubre(solicitud.Actor, p.CodigosMunicipio))
+                {
+                    lista.Add(p.ADto());
+                }
             }
             salida.Exito(lista);
         });
@@ -62,9 +66,10 @@ public sealed class ConsultarProyecto : Interactor, IConsultarProyectoEntrada
         return ProtegerAsync(salida, async () =>
         {
             ProyectoReconstruccion? proyecto = await _proyectos.BuscarAsync(solicitud.IdProyecto, ct);
-            if (proyecto is null)
+            // Fuera de la jurisdicción de la autoridad responde igual que si no existiera: no revela que existe.
+            if (proyecto is null || !Jurisdiccion.Cubre(solicitud.Actor, proyecto.CodigosMunicipio))
             {
-                salida.NoEncontrado("El proyecto no existe.");
+                salida.NoEncontrado(MensajeProyectoNoExiste);
                 return;
             }
             salida.Exito(proyecto.ADto());
@@ -77,21 +82,39 @@ public sealed class ConsultarProyecto : Interactor, IConsultarProyectoEntrada
 public sealed record SolicitudHistorial(Actor Actor, Guid IdProyecto, DateTimeOffset? Fecha);
 public interface IConsultarHistorialEntrada : IPuertoEntrada<SolicitudHistorial, HistorialDto> { }
 
-/// <summary>CU-10. Devuelve las entradas en orden y, si se pide una fecha, el proyecto como estaba en esa fecha.</summary>
+/// <summary>
+/// CU-10. Devuelve las entradas en orden y, si se pide una fecha, el proyecto como estaba en esa fecha. A una autoridad
+/// solo le muestra los proyectos de su jurisdicción; fuera de ella responde como si no existiera (DA-14).
+/// </summary>
 public sealed class ConsultarHistorial : Interactor, IConsultarHistorialEntrada
 {
     private readonly IHistorial _historial;
-    public ConsultarHistorial(IHistorial historial) { _historial = historial; }
+    private readonly IRepositorioProyectos _proyectos;
+
+    public ConsultarHistorial(IHistorial historial, IRepositorioProyectos proyectos)
+    {
+        _historial = historial;
+        _proyectos = proyectos;
+    }
 
     public Task EjecutarAsync(SolicitudHistorial solicitud, IPuertoSalida<HistorialDto> salida, CancellationToken ct = default)
     {
         return ProtegerAsync(salida, async () =>
         {
             ExigirAlgunRol(solicitud.Actor, Rol.Auditor, Rol.Autoridad);
+            if (solicitud.Actor.Rol == Rol.Autoridad)
+            {
+                ProyectoReconstruccion? proyecto = await _proyectos.BuscarAsync(solicitud.IdProyecto, ct);
+                if (proyecto is null || !Jurisdiccion.Cubre(solicitud.Actor, proyecto.CodigosMunicipio))
+                {
+                    salida.NoEncontrado(MensajeProyectoNoExiste);
+                    return;
+                }
+            }
             IReadOnlyList<EntradaHistorial> entradas = await _historial.DeProyectoAsync(solicitud.IdProyecto, solicitud.Fecha, ct);
             if (entradas.Count == 0 && !solicitud.Fecha.HasValue)
             {
-                salida.NoEncontrado("El proyecto no existe.");
+                salida.NoEncontrado(MensajeProyectoNoExiste);
                 return;
             }
             List<EntradaHistorialDto> dto = new();

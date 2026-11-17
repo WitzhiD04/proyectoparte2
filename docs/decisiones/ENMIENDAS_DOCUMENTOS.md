@@ -448,3 +448,31 @@ completos, porque son pocos.
   respuesta dice si fue incremental (`incremental`, `desde`). El nombre del parámetro del desastre sigue siendo
   `desastreId`, el que ya usaba la app.
 - La encontró la revisión de la app (Gemini) como contradicción entre DA-19 y el encargo.
+
+### E-39 · La autoridad solo ve y usa los proyectos y las evaluaciones de su jurisdicción (Diseño RC, CU-01 a CU-11)
+
+- **Texto actual:** el Diseño RC dice "Autoridad (local, regional o nacional): crea, asigna, aprueba y cancela proyectos"
+  y, en CU-01, CU-10 y CU-11, que la autoridad consulta candidatas, historial y consolidado, sin decir de qué territorio.
+- **Texto propuesto:** agregar a las reglas de negocio: "La autoridad solo ve y usa la información de su jurisdicción: la
+  autoridad local, la de su municipio; la regional, la de los municipios de su departamento; la nacional, todo el
+  territorio. Las candidatas, la lista y el detalle de proyectos, el historial y el consolidado se limitan a esa
+  jurisdicción; un proyecto solo se crea con evaluaciones de municipios de ella, y solo se le asigna presupuesto o
+  responsable, se aprueba o se cancela si es de ella. El auditor no tiene restricción territorial."
+- **Fuente:** el Cuadro 3 del SRS ("Actores humanos de la plataforma"), columna "Qué información puede ver": la autoridad
+  local ve "la información de su jurisdicción, incluidos recursos, personas afectadas y proyectos"; la regional, "la
+  información de los municipios de su región"; la nacional, "todos los desastres, en todo el territorio".
+- **Cómo se aplica (DA-14):** el territorio es el código DIVIPOLA de la autoridad (5 dígitos el municipio, 2 el
+  departamento). Un proyecto es de la jurisdicción si alguno de sus municipios lo es; una evaluación, si su municipio lo
+  es. Fuera de la jurisdicción, el detalle, el historial y las acciones de la autoridad (asignar presupuesto, fuente y
+  cronograma; asignar responsable; aprobar; cancelar) responden **404**, igual que un proyecto que no existe, para no
+  revelar que existe. Esa revisión va antes que cualquier otra regla: un dato inválido o una transición imposible
+  tampoco se le dicen a quien no ve el proyecto. Un lote con alguna evaluación ajena se rechaza entero con **403**: ahí
+  la autoridad pide crear con evaluaciones, no pregunta por un proyecto.
+- **Aprobar: 404 o 403.** Quien no ve el proyecto recibe 404 (Calarcá con un proyecto de Armenia). Quien sí lo ve pero
+  no es la autoridad que lo aprueba según E-20 recibe **403** (la gobernación del Quindío con un proyecto municipal de
+  Armenia, o la nacional con uno regional). En la primera versión de DA-14 Calarcá recibía 403; se cambió a 404 porque
+  un 403 le confirmaba que el proyecto existe.
+- **Alternativa descartada:** responder 403 en el detalle, el historial y las acciones sobre un proyecto ajeno. Confirma
+  que el proyecto existe a quien no tiene por qué saberlo.
+- **Costo aceptado:** una autoridad no ve proyectos de su región que no tocan su municipio, aunque compartan desastre;
+  para eso está la autoridad regional.

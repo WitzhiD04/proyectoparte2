@@ -36,7 +36,8 @@ public sealed class ConsultarCandidatas : Interactor, IConsultarCandidatasEntrad
             IReadOnlyList<EvaluacionValidada> evaluaciones = await _copias.EvaluacionesDeDesastreAsync(desastre.Id, ct);
             IReadOnlySet<Guid> vinculadas = await _proyectos.EvaluacionesVinculadasAsync(desastre.Id, ct);
             List<CandidataDto> candidatas = new();
-            foreach (EvaluacionValidada e in CreacionDeProyectos.Candidatas(evaluaciones, vinculadas))
+            // Solo las de municipios de su jurisdicción (Cuadro 3 del SRS, DA-14); la nacional ve todas.
+            foreach (EvaluacionValidada e in CreacionDeProyectos.Candidatas(evaluaciones, vinculadas, solicitud.Actor))
             {
                 candidatas.Add(new CandidataDto(e.Id, e.IdActivo, e.NombreActivo, e.TipoActivo, e.NivelDano.ToString(), e.Municipio));
             }
@@ -49,7 +50,7 @@ public sealed record SolicitudLote(Actor Actor, Guid IdDesastre, IReadOnlyList<G
 public interface ICrearProyectosPorLoteEntrada : IPuertoEntrada<SolicitudLote, ResultadoLoteDto> { }
 
 /// <summary>CU-02. Crea un proyecto por activo. Si una evaluación falla no crea ninguno.
-/// Reenviar el mismo lote devuelve el resultado original.</summary>
+/// Reenviar el mismo lote devuelve el resultado original. Una autoridad solo usa evaluaciones de su jurisdicción (403).</summary>
 public sealed class CrearProyectosPorLote : Interactor, ICrearProyectosPorLoteEntrada
 {
     private readonly ICopiasLocales _copias;
@@ -94,6 +95,10 @@ public sealed class CrearProyectosPorLote : Interactor, ICrearProyectosPorLoteEn
                 vinculadas = new HashSet<Guid>(await _proyectos.EvaluacionesVinculadasAsync(desastre.Id, ct));
             }
 
+            // La jurisdicción va antes que las demás reglas: a una autoridad no se le cuenta nada (vinculada, no validada...)
+            // de evaluaciones de otro territorio. Las que no existen las reporta ValidarLote.
+            Jurisdiccion.ExigirJurisdiccionSobre(solicitud.Actor,
+                solicitud.IdsEvaluaciones.Where(conocidas.ContainsKey).Select(id => conocidas[id].CodigoMunicipio));
             List<string> errores = CreacionDeProyectos.ValidarLote(desastre, solicitud.IdsEvaluaciones, conocidas, vinculadas);
             if (errores.Count > 0)
             {

@@ -223,7 +223,7 @@ public class OperacionesPruebas
 
         SalidaDePrueba<HistorialDto> antes = new();
         SalidaDePrueba<HistorialDto> completo = new();
-        ConsultarHistorial consulta = new(_memoria);
+        ConsultarHistorial consulta = new(_memoria, _memoria);
         await consulta.EjecutarAsync(new SolicitudHistorial(Datos.Auditor, p.Id, Datos.Ahora.AddDays(1)), antes);
         await consulta.EjecutarAsync(new SolicitudHistorial(Datos.Auditor, p.Id, null), completo);
 
@@ -236,7 +236,7 @@ public class OperacionesPruebas
     public async Task El_responsable_no_consulta_el_historial()
     {
         SalidaDePrueba<HistorialDto> salida = new();
-        await new ConsultarHistorial(_memoria).EjecutarAsync(new SolicitudHistorial(Datos.Responsable, Guid.NewGuid(), null), salida);
+        await new ConsultarHistorial(_memoria, _memoria).EjecutarAsync(new SolicitudHistorial(Datos.Responsable, Guid.NewGuid(), null), salida);
         Assert.Equal("no_autorizado", salida.Resultado);
     }
 

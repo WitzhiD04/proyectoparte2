@@ -145,6 +145,7 @@ public sealed class ProyectoReconstruccion
     public void AsignarPresupuesto(Actor actor, Dinero? presupuesto, string? fuente, Cronograma? cronograma,
         string justificacion, DateTimeOffset instante)
     {
+        Jurisdiccion.ExigirQueLoVe(actor, CodigosMunicipio);
         ExigirRol(actor, Rol.Autoridad, "Solo la autoridad asigna presupuesto.");
         MaquinaEstadosProyecto.Destino(Estado, AccionProyecto.Asignar);
         ExigirJustificacion(justificacion);
@@ -185,6 +186,7 @@ public sealed class ProyectoReconstruccion
 
     public void AsignarResponsable(Actor actor, string responsable, string justificacion, DateTimeOffset instante)
     {
+        Jurisdiccion.ExigirQueLoVe(actor, CodigosMunicipio);
         ExigirRol(actor, Rol.Autoridad, "Solo la autoridad asigna el responsable.");
         MaquinaEstadosProyecto.Destino(Estado, AccionProyecto.Asignar);
         ExigirJustificacion(justificacion);
@@ -204,6 +206,8 @@ public sealed class ProyectoReconstruccion
 
     public void Aprobar(Actor actor, DateTimeOffset instante)
     {
+        // Primero si lo ve (si no, "no existe"); después si es la autoridad que lo aprueba (403, DA-14).
+        Jurisdiccion.ExigirQueLoVe(actor, CodigosMunicipio);
         ExigirRol(actor, Rol.Autoridad, "Solo la autoridad aprueba proyectos.");
         EstadoProyecto destino = MaquinaEstadosProyecto.Destino(Estado, AccionProyecto.Aprobar);
         ExigirCondicionesAprobacion(Presupuesto, FuenteFinanciacion, Responsable, Cronograma);
@@ -324,6 +328,7 @@ public sealed class ProyectoReconstruccion
 
     public void Cancelar(Actor actor, string justificacion, DateTimeOffset instante)
     {
+        Jurisdiccion.ExigirQueLoVe(actor, CodigosMunicipio);
         ExigirRol(actor, Rol.Autoridad, "Solo la autoridad cancela proyectos.");
         EstadoProyecto destino = MaquinaEstadosProyecto.Destino(Estado, AccionProyecto.Cancelar);
         ExigirJustificacion(justificacion);

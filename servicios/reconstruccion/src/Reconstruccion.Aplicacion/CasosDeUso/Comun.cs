@@ -12,11 +12,19 @@ public class ConflictoDeConcurrenciaException : Exception
 /// <summary>Base de los interactors: convierte las excepciones del dominio en llamadas al puerto de salida.</summary>
 public abstract class Interactor
 {
+    /// <summary>Respuesta a un proyecto que no existe o que la autoridad no ve: la misma, para no distinguirlos (E-39).</summary>
+    public const string MensajeProyectoNoExiste = "El proyecto no existe.";
+
     protected static async Task ProtegerAsync<T>(IPuertoSalida<T> salida, Func<Task> accion)
     {
         try
         {
             await accion();
+        }
+        catch (FueraDeJurisdiccionException)
+        {
+            // Quien no ve el proyecto recibe lo mismo que si no existiera (E-39).
+            salida.NoEncontrado(MensajeProyectoNoExiste);
         }
         catch (NoAutorizadoException e)
         {
