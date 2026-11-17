@@ -10,7 +10,11 @@ Es el último encargo. Lea `docs/encargos/convenciones.md` y `docs/encargos/LEEM
    - QA-14 (`EvaluacionDanos.Integracion`);
    - QA-15 (`Auditoria.Integracion`);
    - QA-11 (gateway);
-   - QA-06, como referencia (`ConsultaDanos.Integracion`, categoría `Rendimiento`).
+   - QA-06, como referencia (`ConsultaDanos.Integracion`, categoría `Rendimiento`);
+   - QA-13 (d): el rastro de 10 000 entradas de Auditoría con p95 < 10 s, con k6 sobre `/v1/auditoria`;
+   - QA-14 **a través del gateway** con el simulador (`simuladores/simulador-qa14`), apuntado al puerto 8080 con tokens;
+   - la prueba instrumentada de la app (`ContratoServidorTest`, repositorio `danos`) contra el gateway y Keycloak, con el
+     emulador y `adb reverse tcp:8180 tcp:8180`.
 
    Agregue a `docs/decisiones/REVISION_ARQUITECTURA.md` una **tabla de medidas**:
 

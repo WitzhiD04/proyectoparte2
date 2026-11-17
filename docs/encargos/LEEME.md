@@ -51,3 +51,20 @@ fusiona y corre la suite completa.
 **Archivos compartidos:** compose, `kustomization.yaml`, `00-base.yaml`, `.env.ejemplo`, `aplicar.sh` y `Plataforma.sln`
 generan conflictos al fusionar. Se resuelven conservando los dos lados. Para la solución, conviene volver a registrar
 los proyectos con `dotnet sln add`.
+
+## Pendientes menores documentados (no tienen encargo propio)
+
+Salieron de los reportes de cada pieza. Recomendación de qué hacer con cada uno:
+
+| Pendiente | Origen | Recomendación |
+|---|---|---|
+| Evolución **por zona** además de por activo (`GET /v1/consulta-danos/zonas/{codigo}/evolucion`) | RF-ED-15 dice "un activo o una zona"; DA-08 solo definió la de activo | **Hacerlo**: es un requisito, aditivo y pequeño en `servicios/consulta-danos` (la proyección `p_dano_por_zona` ya existe) |
+| Registro de auditoría cuando se dispara la alarma de la bandeja (R-08) | DA-09 lo pide; Consulta de Daños no publica eventos | **Hacerlo** junto con el evento de rechazos del gateway (mismo patrón: evento nuevo aditivo + interpretación en Auditoría). Hay que dar permiso de publicar al usuario `consulta-danos` en `despliegue/bus/generar_definiciones.py` |
+| Auditoría filtra por la jurisdicción de la autoridad | DA-14; hoy toda autoridad ve todo el rastro | Opcional. Si no se hace, se declara: QA-13 no lo exige |
+| `ETag` en la descarga | DA-19 | Opcional; la descarga ya es incremental y comprimida. Declararlo |
+| Un cliente incremental no se entera de que un activo se fusionó | Paso 2 | Opcional: que la descarga incremental incluya los activos marcados `fusionadoEn`. Declararlo si no se hace |
+| EV-23 no publica el estado SEMIABIERTO | Adaptador de SE-7 (decisión D2) | Aceptado: evita un evento cada 15 s. Ya documentado |
+| En k8s la entrada de SE-7 corre por `cron` (latencia de EV-24 de ~2 min) | Adaptador de SE-7 (D6) | Aceptado; el README explica cómo dejarla siempre encendida |
+| SE-2 usa su propia base `adaptador_se2` y no `adaptadores` + esquema como dice DA-11 | Paso 2 | Opcional unificar; no cambia ninguna medida |
+| mTLS entre servicios | §7.1 del SAD, P-06 | Declarado como límite del prototipo (TLS en el borde) |
+| Dos regiones (QA-03) | DA-16 | Opcional, al final (ver `cierre-y-medidas.md`) |

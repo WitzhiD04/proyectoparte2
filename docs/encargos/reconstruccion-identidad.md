@@ -5,7 +5,9 @@ la configuración de compose y k8s que le corresponden.
 
 ## Qué falta
 
-Reconstrucción es el único servicio que todavía lee la identidad a su manera:
+Reconstrucción es el único servicio que todavía lee la identidad a su manera. Eso incluye su segundo rol, la Consulta
+del Programa (`consulta-programa` en compose: la misma imagen con `Reconstruccion__Rol=consulta`), que también debe
+pasar a `IIdentidadActual` y recibir las variables `Identidad__*` en compose y k8s:
 - encabezados `X-Usuario`, `X-Rol` (`Autoridad`, `Responsable`, `Auditor`) y `X-Ambito`;
 - el armado está en `ControladorBase` o similar, en `src/Reconstruccion.Api`.
 
