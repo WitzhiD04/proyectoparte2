@@ -31,6 +31,7 @@ de humo.
 | Contrato de Notificación (EV-07, 28 y 29) | `comun/` | E-37 |
 | Keycloak (realm `plataforma`) y adaptador JWT de `IIdentidadActual` | `despliegue/keycloak`, `comun/Plataforma.Comun.Seguridad` | DA-15: con `IDENTIDAD_MODO=Jwt` los servicios validan el token y rechazan los `X-*` (401); la prueba de humo de desastres pasa con tokens |
 | Reconstrucción con identidad común y jurisdicción | `servicios/reconstruccion` | DA-15: Reconstrucción y la Consulta del Programa usan `IIdentidadActual`. DA-14: alcance `Nacional`, aprobación por territorio DIVIPOLA y consolidado por jurisdicción; la prueba de humo del escenario E pasa con encabezados y con tokens |
+| Jurisdicción en lecturas, creación y acciones de la autoridad | `servicios/reconstruccion`, E-39 | Cuadro 3 del SRS: la autoridad solo ve candidatas, proyectos, detalle, historial y consolidado de su jurisdicción; un lote con evaluaciones ajenas da 403 y no crea ninguno; detalle, historial, asignar, aprobar y cancelar dan 404 fuera de ella (aprobar conserva el 403 para quien lo ve pero no lo aprueba). Prueba de humo con Calarcá en los dos modos |
 | App móvil con OIDC | repositorio `danos`, rama `gemini-app-oidc` | H-70 a H-72. Falta correr su prueba instrumentada contra Keycloak (emulador con `adb reverse tcp:8180 tcp:8180`) |
 
 ## Alcance de esta entrega y reparto (fijado el 2026-11-17)
