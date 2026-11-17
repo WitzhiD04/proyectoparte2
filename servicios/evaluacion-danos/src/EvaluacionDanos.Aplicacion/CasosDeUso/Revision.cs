@@ -49,9 +49,6 @@ public sealed class ValidarEvaluacion(IAlmacenEvaluaciones almacen, IPublicadorH
         string detalle = string.IsNullOrWhiteSpace(solicitud.Motivo) ? nuevo.ToString() : $"{nuevo}: {solicitud.Motivo.Trim()}";
         int numero = await CambioEnServidor.NuevaVersionAsync(almacen, codificador, evaluacion, MotivoVersion.VALIDACION,
             usuario, detalle, ahora, cancelar);
-        var vigente = await almacen.EvaluacionVigenteDelActivoAsync(activo.Id, cancelar);
-        CambioEnServidor.SubirVersionDelActivo(almacen, activo, ActivoVersion.AutorServidor(usuario),
-            vigente == evaluacion.Id ? evaluacion.Id : null, ahora);
 
         hechos.Registrar(new ValidacionCambiada(InstantaneaEvaluacion.De(evaluacion, activo, numero), desastre!.Id,
             evaluacion.Evaluador, evaluacion.Organizacion, CambioEnServidor.Referencia(activo), nuevo, usuario, ahora));
@@ -61,7 +58,8 @@ public sealed class ValidarEvaluacion(IAlmacenEvaluaciones almacen, IPublicadorH
     }
 }
 
-public sealed record SolicitudResolucion(Guid IdConflicto, string? Decision, string? Justificacion, Actor Actor);
+public sealed record SolicitudResolucion(Guid IdConflicto, string? Decision, string? Justificacion, Actor Actor,
+    string? Vigente = null);
 
 /// <summary>
 /// Resolución humana de un conflicto o de un posible duplicado (AD-32, AD-33, RF-ED-09, corrige H-11). La plataforma
@@ -70,7 +68,7 @@ public sealed record SolicitudResolucion(Guid IdConflicto, string? Decision, str
 /// <list type="bullet">
 /// <item>PREVALECE_ENTRANTE: el contenido en conflicto pasa a ser el de la evaluación entrante, que queda vigente.</item>
 /// <item>PREVALECE_VIGENTE: la vigente sigue; la entrante vuelve a su estado anterior o, si nació en conflicto, queda rechazada.</item>
-/// <item>FUSIONAR (E-14): la entrante queda como DUPLICADO de la vigente y sus evidencias se vinculan también a ella.</item>
+/// <item>FUSIONAR (E-14): se elige cuál queda vigente (por omisión VIGENTE); la otra queda como DUPLICADO de la elegida y sus evidencias se vinculan también a ella.</item>
 /// <item>RECHAZAR_DUPLICADO: no eran el mismo activo; la entrante queda como una evaluación normal de su activo.</item>
 /// </list>
 /// </summary>
@@ -85,6 +83,16 @@ public sealed class ResolverConflicto(IAlmacenEvaluaciones almacen, IPublicadorH
                 "(PREVALECE_ENTRANTE, PREVALECE_VIGENTE, FUSIONAR o RECHAZAR_DUPLICADO)");
         }
         var decision = Enum.Parse<DecisionConflicto>(solicitud.Decision);
+        var eleccion = EleccionVigente.VIGENTE;
+        if (solicitud.Vigente is not null)
+        {
+            if (!ValidadorEvaluacion.EsNombreDeEnum<EleccionVigente>(solicitud.Vigente))
+            {
+                return Resultado<ResolucionDto>.Falla(TipoFallo.Invalido,
+                    $"vigente '{solicitud.Vigente}' no válido (VIGENTE o ENTRANTE)");
+            }
+            eleccion = Enum.Parse<EleccionVigente>(solicitud.Vigente);
+        }
 
         var conflicto = await almacen.ConflictoAsync(solicitud.IdConflicto, cancelar);
         if (conflicto is null)
@@ -137,6 +145,23 @@ public sealed class ResolverConflicto(IAlmacenEvaluaciones almacen, IPublicadorH
                         entrante.Evaluador, entrante.Organizacion, CambioEnServidor.Referencia(activo), EstadoValidacion.PENDIENTE,
                         usuario, ahora));
                 }
+                // Si la vigente reemplazada era otra evaluación que estaba validada, pierde la validación y emite
+                // EV-08 con PENDIENTE para que Reconstrucción retire el candidato.
+                if (vigente is not null && vigente.Id != entrante.Id && vigente.Estado == EstadoEvaluacion.VALIDADA)
+                {
+                    bool otroPendienteVigente = await almacen.TieneConflictoPendienteComoEntranteAsync(vigente.Id, conflicto.Id, cancelar);
+                    vigente.Estado = otroPendienteVigente ? EstadoEvaluacion.EN_CONFLICTO : vigente.EstadoSinRevision();
+                    vigente.ValidadoPor = CambioEnServidor.Recortar(usuario, Limites.Nombre);
+                    vigente.InstanteValidacion = ahora;
+                    int versionVigente = await CambioEnServidor.NuevaVersionAsync(almacen, codificador, vigente,
+                        MotivoVersion.RESOLUCION, usuario, detalle, ahora, cancelar);
+                    if (vigente.DesastreId is Guid idDesastreVigente)
+                    {
+                        hechos.Registrar(new ValidacionCambiada(InstantaneaEvaluacion.De(vigente, activo, versionVigente),
+                            idDesastreVigente, vigente.Evaluador, vigente.Organizacion, CambioEnServidor.Referencia(activo),
+                            EstadoValidacion.PENDIENTE, usuario, ahora));
+                    }
+                }
                 prevalece = entrante;
                 break;
             }
@@ -158,25 +183,74 @@ public sealed class ResolverConflicto(IAlmacenEvaluaciones almacen, IPublicadorH
             }
             case DecisionConflicto.FUSIONAR:
             {
-                entrante.Estado = EstadoEvaluacion.DUPLICADO;
-                entrante.DuplicadoDe = vigente!.Id;
-                foreach (Guid idEvidencia in await almacen.IdsEvidenciasAsync(entrante.Id, cancelar))
+                Evaluacion elegida;
+                Evaluacion descartada;
+                string? contenidoElegidaJson = null;
+
+                if (eleccion == EleccionVigente.ENTRANTE)
+                {
+                    var versionEnConflicto = await Exigir(almacen.VersionAsync(conflicto.VersionEntranteId, cancelar), "la versión en conflicto");
+                    var activoElegida = await Exigir(almacen.ActivoAsync(entrante.ActivoId, cancelar), "el activo");
+                    var estadoPrevio = conflicto.EstadoPrevioEntrante;
+                    var desastrePrevio = entrante.DesastreId;
+
+                    AplicarContenido(codificador.Deserializar<EvaluacionEntrante>(versionEnConflicto.ContenidoJson), entrante, ahora);
+                    entrante.Estado = otroPendiente ? EstadoEvaluacion.EN_CONFLICTO : entrante.EstadoSinRevision();
+                    CambioEnServidor.SubirVersionDelActivo(almacen, activoElegida, entrante.IdDispositivo, entrante.Id, ahora);
+                    contenidoElegidaJson = versionEnConflicto.ContenidoJson;
+
+                    if (ReglasRevision.TeniaValidacion(estadoPrevio) && desastrePrevio is Guid idDesastreEntrante)
+                    {
+                        entrante.ValidadoPor = CambioEnServidor.Recortar(usuario, Limites.Nombre);
+                        entrante.InstanteValidacion = ahora;
+                    }
+                    elegida = entrante;
+                    descartada = vigente!;
+                }
+                else
+                {
+                    elegida = vigente!;
+                    descartada = entrante;
+                }
+
+                bool descartadaEstabaValidada = descartada.Estado == EstadoEvaluacion.VALIDADA;
+                descartada.Estado = EstadoEvaluacion.DUPLICADO;
+                descartada.DuplicadoDe = elegida.Id;
+                foreach (Guid idEvidencia in await almacen.IdsEvidenciasAsync(descartada.Id, cancelar))
                 {
                     almacen.Agregar(new EvidenciaVinculada
                     {
-                        EvaluacionId = vigente.Id, EvidenciaId = idEvidencia, ConflictoId = conflicto.Id, Instante = ahora
+                        EvaluacionId = elegida.Id, EvidenciaId = idEvidencia, ConflictoId = conflicto.Id, Instante = ahora
                     });
                 }
                 // El activo duplicado no se borra: se anota en cuál quedó y deja de ofrecerse en la descarga.
-                var activoDuplicado = await Exigir(almacen.ActivoAsync(entrante.ActivoId, cancelar), "el activo duplicado");
-                activoDuplicado.FusionadoEn = vigente.ActivoId;
+                var activoDuplicado = await Exigir(almacen.ActivoAsync(descartada.ActivoId, cancelar), "el activo duplicado");
+                activoDuplicado.FusionadoEn = elegida.ActivoId;
                 CambioEnServidor.SubirVersionDelActivo(almacen, activoDuplicado, ActivoVersion.AutorServidor(usuario), null, ahora);
 
-                await CambioEnServidor.NuevaVersionAsync(almacen, codificador, entrante, MotivoVersion.RESOLUCION, usuario,
-                    $"{detalle} (duplicado de {vigente.Id})", ahora, cancelar);
-                versionPrevalece = await CambioEnServidor.NuevaVersionAsync(almacen, codificador, vigente, MotivoVersion.RESOLUCION,
-                    usuario, $"{detalle} (absorbe a {entrante.Id})", ahora, cancelar);
-                prevalece = vigente;
+                int versionDescartada = await CambioEnServidor.NuevaVersionAsync(almacen, codificador, descartada,
+                    MotivoVersion.RESOLUCION, usuario, $"{detalle} (duplicado de {elegida.Id})", ahora, cancelar);
+                if (descartadaEstabaValidada && descartada.DesastreId is Guid idDesastreDescartada)
+                {
+                    descartada.ValidadoPor = CambioEnServidor.Recortar(usuario, Limites.Nombre);
+                    descartada.InstanteValidacion = ahora;
+                    hechos.Registrar(new ValidacionCambiada(InstantaneaEvaluacion.De(descartada, activoDuplicado, versionDescartada),
+                        idDesastreDescartada, descartada.Evaluador, descartada.Organizacion,
+                        CambioEnServidor.Referencia(activoDuplicado), EstadoValidacion.PENDIENTE, usuario, ahora));
+                }
+
+                versionPrevalece = await CambioEnServidor.NuevaVersionAsync(almacen, codificador, elegida, MotivoVersion.RESOLUCION,
+                    usuario, $"{detalle} (absorbe a {descartada.Id})", ahora, cancelar, contenidoElegidaJson);
+                if (eleccion == EleccionVigente.ENTRANTE
+                    && ReglasRevision.TeniaValidacion(conflicto.EstadoPrevioEntrante)
+                    && entrante.DesastreId is Guid idDesastreEntrante2)
+                {
+                    var activoElegida = await Exigir(almacen.ActivoAsync(entrante.ActivoId, cancelar), "el activo");
+                    hechos.Registrar(new ValidacionCambiada(InstantaneaEvaluacion.De(entrante, activoElegida, versionPrevalece),
+                        idDesastreEntrante2, entrante.Evaluador, entrante.Organizacion, CambioEnServidor.Referencia(activoElegida),
+                        EstadoValidacion.PENDIENTE, usuario, ahora));
+                }
+                prevalece = elegida;
                 break;
             }
             default:   // RECHAZAR_DUPLICADO

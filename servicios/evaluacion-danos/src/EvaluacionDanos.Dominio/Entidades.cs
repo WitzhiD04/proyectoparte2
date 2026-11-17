@@ -50,7 +50,7 @@ public class Activo
 /// <summary>Qué dispositivo produjo cada versión del activo. Es lo que mira la regla de conflictos.</summary>
 public class ActivoVersion
 {
-    /// <summary>Prefijo del autor de una versión hecha en el servidor (validación, actualización con conexión).</summary>
+    /// <summary>Prefijo del autor de una versión de contenido hecha en el servidor (actualización, asociación o fusión).</summary>
     public const string PrefijoServidor = "servidor:";
 
     public Guid ActivoId { get; set; }

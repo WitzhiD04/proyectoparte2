@@ -14,7 +14,7 @@ public sealed record SolicitudValidacionHttp(string? Estado, string? Motivo);
 
 public sealed record SolicitudAsociacionHttp(Guid? DesastreId);
 
-public sealed record SolicitudResolucionHttp(string? Decision, string? Justificacion);
+public sealed record SolicitudResolucionHttp(string? Decision, string? Justificacion, string? Vigente = null);
 
 public sealed record SolicitudTipoActivoHttp(string? Codigo, string? Nombre, List<CriterioSolicitado>? Criterios);
 
@@ -104,13 +104,13 @@ public class ConflictosController(
     /// <summary>Decisión humana (AD-32, AD-33): prevalece una versión, se fusiona o se rechaza el duplicado. Publica EV-22.</summary>
     [HttpPost("{id:guid}/resolucion")]
     public async Task<IActionResult> Resolver(Guid id, SolicitudResolucionHttp solicitud, CancellationToken cancelar) =>
-        Presentar(await resolver.EjecutarAsync(new SolicitudResolucion(id, solicitud.Decision, solicitud.Justificacion, Actor), cancelar));
+        Presentar(await resolver.EjecutarAsync(
+            new SolicitudResolucion(id, solicitud.Decision, solicitud.Justificacion, Actor, solicitud.Vigente), cancelar));
 }
 
 /// <summary>Administración del catálogo de tipos de activo en ejecución (AD-28, DA-18, QA-10).</summary>
 [ApiController]
 [Route("v1/catalogos/tipos-activo")]
-[RequiereRol(RolesPlataforma.Administrador)]
 public class CatalogosController(
     ICasoDeUso<bool, List<TipoActivoDto>> consultar,
     CrearTipoActivo crear,
@@ -118,14 +118,17 @@ public class CatalogosController(
     IIdentidadActual identidad) : ControladorBase(identidad)
 {
     [HttpGet]
+    [RequiereRol]
     public async Task<IActionResult> Listar(CancellationToken cancelar) => Presentar(await consultar.EjecutarAsync(true, cancelar));
 
     [HttpPost]
+    [RequiereRol(RolesPlataforma.Administrador)]
     public async Task<IActionResult> Crear(SolicitudTipoActivoHttp solicitud, CancellationToken cancelar) =>
         Presentar(await crear.EjecutarAsync(new SolicitudTipoActivo(solicitud.Codigo, solicitud.Nombre, solicitud.Criterios), cancelar),
             tipo => StatusCode(StatusCodes.Status201Created, tipo));
 
     [HttpPatch("{codigo}")]
+    [RequiereRol(RolesPlataforma.Administrador)]
     public async Task<IActionResult> Modificar(string codigo, SolicitudTipoActivoHttp solicitud, CancellationToken cancelar) =>
         Presentar(await modificar.EjecutarAsync(new SolicitudTipoActivo(codigo, solicitud.Nombre, solicitud.Criterios), cancelar));
 }

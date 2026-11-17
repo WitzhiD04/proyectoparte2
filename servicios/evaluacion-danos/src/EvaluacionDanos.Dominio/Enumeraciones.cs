@@ -67,6 +67,13 @@ public enum DecisionConflicto
     RECHAZAR_DUPLICADO
 }
 
+/// <summary>Cuál de las dos evaluaciones queda vigente al fusionar un posible duplicado (E-14).</summary>
+public enum EleccionVigente
+{
+    VIGENTE,
+    ENTRANTE
+}
+
 /// <summary>Por qué existe una versión del historial de una evaluación (AD-30).</summary>
 public enum MotivoVersion
 {

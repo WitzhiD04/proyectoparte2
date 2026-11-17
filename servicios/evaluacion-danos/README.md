@@ -62,8 +62,9 @@ o como migrador (`migrar [--sembrar]`, DT-19).
 | POST | `/v1/evaluaciones/{id}/validacion` | autoridad, organismo | `{estado, motivo}`; la organización debe participar en el desastre; EV-08 |
 | POST | `/v1/evaluaciones/{id}/asociacion` | operador, evaluador | `{desastreId}`; EV-26 |
 | GET | `/v1/conflictos?estado=` | operador | Ambas versiones completas |
-| POST | `/v1/conflictos/{id}/resolucion` | operador | `{decision, justificacion}`; EV-22 |
-| GET, POST, PATCH | `/v1/catalogos/tipos-activo[/{codigo}]` | administrador | EV-25 en cada cambio |
+| POST | `/v1/conflictos/{id}/resolucion` | operador | `{decision, justificacion[, vigente]}`; EV-22 |
+| GET | `/v1/catalogos/tipos-activo` | cualquier identidad | Catálogo con criterios por nivel |
+| POST, PATCH | `/v1/catalogos/tipos-activo[/{codigo}]` | administrador | EV-25 en cada cambio |
 | GET | `/v1/mapa-calor`, página `/mapa` | cualquier identidad | **Obsoletos**: los reemplaza Consulta de Daños (DA-08) |
 | GET | `/salud`, `/salud/vivo`, `/salud/listo` | — | `/salud` es el que prueba la app |
 
@@ -75,11 +76,11 @@ Errores: `{ "error": "..." }`. 400 dato inválido, 401 sin identidad, 403 sin el
 - **Sin la capa de municipios no se sincroniza.** EV-09 exige `codigoMunicipio`. Mientras no llegue completa la capa
   (las 33 partes de EV-21), `/salud/listo` falla y la réplica no recibe tráfico. Si aun así llega un lote, responde 503
   sin procesar nada: la app lo conserva en su cola y lo reenvía. Nunca se marca una operación como inválida por esto.
-- **Un cambio hecho en el servidor es una versión del activo.** La validación, la actualización con conexión, la
-  asociación y la resolución suben la versión del activo con autor `servidor:<usuario>`. La regla de conflicto no
-  cambió: una edición hecha sin conexión sobre una base anterior queda en conflicto y va a revisión, en vez de
-  sobrescribir en silencio lo que cambió el servidor (AD-32).
-- **Si cambia el contenido de una evaluación validada, la validación se retira** y se publica EV-08 con `PENDIENTE`.
+- **Un cambio de contenido hecho en el servidor es una versión del activo.** La actualización con conexión, la
+  asociación y la resolución de un conflicto suben la versión del activo (validar y rechazar no la suben). La regla de
+  conflicto no cambió: una edición hecha sin conexión sobre una base anterior queda en conflicto y va a revisión, en vez
+  de sobrescribir en silencio lo que cambió el servidor (AD-32).
+- **Si cambia el contenido de una evaluación validada, u otra la reemplaza al resolver un conflicto, la validación se retira** y se publica EV-08 con `PENDIENTE`.
 - **Transición hasta el gateway (se elimina con DA-15).** La app actual no envía `X-Roles`: una petición sin roles que
   trae `X-Dispositivo` se trata como `evaluador` (`RolesEfectivos` en `Api/Seguridad/Autorizacion.cs`). Los
   encabezados se pueden falsificar; es la misma simplificación del Anexo A del SAD.
