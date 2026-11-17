@@ -88,7 +88,9 @@ public sealed class PruebasSalidaQa01(EntornoSe7 entorno) : IAsyncLifetime
         Assert.Equal(EstadoIntegracion.CERRADO, monitor.Estado);
 
         // Los dos EV-23 llegaron a los consumidores (q.consulta-programa los proyecta para la consola).
-        List<Sobre> enConsulta = (await entorno.VaciarAsync("q.consulta-programa")).Where(s => s.Tipo == "EV-23").ToList();
+        // (Entrega al menos una vez: una copia republicada del mismo evento se cuenta una vez, por su idEvento.)
+        List<Sobre> enConsulta = (await entorno.VaciarAsync("q.consulta-programa")).Where(s => s.Tipo == "EV-23")
+            .DistinctBy(s => s.IdEvento).ToList();
         Assert.Equal([EstadoIntegracion.ABIERTO, EstadoIntegracion.CERRADO],
             enConsulta.Select(s => s.LeerDatos<EstadoIntegracionCambiadoV1>().EstadoNuevo));
         Assert.All(enConsulta, s => Assert.Equal("adaptador-se7", s.Productor));
@@ -187,11 +189,14 @@ public sealed class PruebasEntrada(EntornoSe7 entorno) : IAsyncLifetime
             List<string> enBandeja = await db.Bandeja.Where(f => f.Tipo == "EV-24").Select(f => f.ClaveIdempotencia).ToListAsync();
             Assert.Equal(esperadas.Order(), enBandeja.Order());
         }
-        // Reconstrucción (q.reconstruccion) recibe exactamente un EV-24 por cambio, válido según el contrato.
+        // Reconstrucción (q.reconstruccion) recibe un solo evento por cambio, válido según el contrato. La entrega del
+        // bus es "al menos una vez": si un proceso se detiene después de publicar y antes de marcar la fila de la
+        // bandeja, el relevo de comun republica el MISMO evento (mismo idEvento y clave) y el consumidor lo descarta.
         List<Sobre> recibidos = (await entorno.VaciarAsync("q.reconstruccion")).Where(s => s.Tipo == "EV-24").ToList();
-        Assert.Equal(esperadas.Order(), recibidos.Select(s => s.ClaveIdempotencia).Order());
+        Assert.Equal(esperadas.Order(), recibidos.Select(s => s.ClaveIdempotencia).Distinct().Order());
+        Assert.All(recibidos.GroupBy(s => s.ClaveIdempotencia), copias => Assert.Single(copias.Select(s => s.IdEvento).Distinct()));
         Assert.All(recibidos, ValidadorContrato.Instancia.Validar);
-        ReporteExternoProyectoV1 contratista = recibidos.Single(s => s.ClaveIdempotencia == "se7:contratista:9").LeerDatos<ReporteExternoProyectoV1>();
+        ReporteExternoProyectoV1 contratista = recibidos.First(s => s.ClaveIdempotencia == "se7:contratista:9").LeerDatos<ReporteExternoProyectoV1>();
         Assert.Equal(a, contratista.IdProyecto);
         Assert.Equal("Constructora 001 S.A.S.", contratista.Contratista);
         Assert.Equal("9", contratista.MarcaAvance);
