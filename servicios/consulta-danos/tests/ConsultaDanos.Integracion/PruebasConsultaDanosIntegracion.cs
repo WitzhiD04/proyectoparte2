@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Npgsql;
 using Plataforma.Comun.Eventos;
 using Plataforma.Comun.Eventos.Datos;
+using Xunit.Abstractions;
 using static ConsultaDanos.Integracion.Eventos;
 
 namespace ConsultaDanos.Integracion;
@@ -13,7 +14,13 @@ public class PruebasConsultaDanosIntegracion : IClassFixture<EntornoConsultaDano
 {
     private static readonly DateTimeOffset T0 = new(2026, 11, 16, 10, 0, 0, TimeSpan.Zero);
     private readonly EntornoConsultaDanos _e;
-    public PruebasConsultaDanosIntegracion(EntornoConsultaDanos e) { _e = e; }
+    private readonly ITestOutputHelper _salida;
+
+    public PruebasConsultaDanosIntegracion(EntornoConsultaDanos e, ITestOutputHelper salida)
+    {
+        _e = e;
+        _salida = salida;
+    }
 
     private Task<JsonElement> GetAsync(string ruta) => _e.Cliente.GetFromJsonAsync<JsonElement>(ruta);
 
@@ -198,6 +205,36 @@ public class PruebasConsultaDanosIntegracion : IClassFixture<EntornoConsultaDano
         Assert.Equal(30, consolidado.GetProperty("total").GetProperty("distribucion").GetProperty("GRAVE").GetInt32());
         JsonElement mapa = await GetAsync($"/v1/consulta-danos/mapa?desastre={desastre}&soloValidadas=true");
         Assert.Equal(30, Zona(mapa, "63001").GetProperty("properties").GetProperty("activos").GetInt32());
+    }
+
+    /// <summary>
+    /// Referencia para QA-06 (criterio de salida de F-4): el mapa de un desastre con 5 000 activos, con los puntos, se arma
+    /// desde PostGIS en menos de 2 s, y desde la caché en mucho menos. No reemplaza la prueba de carga (k6): mide una
+    /// petición sola, sin concurrencia. Mide tiempo absoluto: en una máquina lenta se excluye con
+    /// <c>--filter "Categoria!=Rendimiento"</c>.
+    /// </summary>
+    [Fact]
+    [Trait("Categoria", "Rendimiento")]
+    public async Task El_mapa_de_5000_activos_se_arma_en_menos_de_2_s_QA06()
+    {
+        Guid desastre = Guid.NewGuid();
+        await Parallel.ForEachAsync(Enumerable.Range(0, 5000), new ParallelOptions { MaxDegreeOfParallelism = 8 }, async (i, _) =>
+            await _e.EntregarAsync(Sincronizada(Guid.NewGuid(), Guid.NewGuid(), desastre, (NivelDano)(i % 5), 1, 1, T0,
+                i % 2 == 0 ? "63001" : "63130", lon: -75.70 + i % 100 * 0.001)));
+        string ruta = $"/v1/consulta-danos/mapa?desastre={desastre}&puntos=true";
+
+        System.Diagnostics.Stopwatch reloj = System.Diagnostics.Stopwatch.StartNew();
+        JsonElement mapa = await GetAsync(ruta);
+        long desdeLaBase = reloj.ElapsedMilliseconds;
+        reloj.Restart();
+        await GetAsync(ruta);
+        long desdeLaCache = reloj.ElapsedMilliseconds;
+
+        Assert.Equal(5000, Features(mapa, "activo").Count());
+        Assert.Equal(5000, mapa.GetProperty("resumen").GetProperty("activos").GetInt32());
+        Assert.True(desdeLaBase < 2000, $"Desde la base: {desdeLaBase} ms");
+        Assert.True(desdeLaCache < desdeLaBase, $"Desde la caché: {desdeLaCache} ms; desde la base: {desdeLaBase} ms");
+        _salida.WriteLine($"QA-06 (referencia): mapa de 5000 activos con puntos, desde la base {desdeLaBase} ms, desde la caché {desdeLaCache} ms");
     }
 
     [Fact]
