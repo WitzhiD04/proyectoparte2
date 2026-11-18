@@ -563,6 +563,9 @@ services:
     command: ["migrar"]
     depends_on:
       db: { condition: service_healthy }
+      # SE-6 y SE-7 comparten la base "adaptadores" (esquemas separados): si los dos migradores la crean a la vez,
+      # uno falla con 42P04. El de SE-6 espera al de SE-7.
+      adaptador-se7-migrador: { condition: service_completed_successfully }
     environment:
       ConnectionStrings__AdaptadorSe6Dueno: "Host=db;Port=5432;Database=adaptadores;Username=postgres;Password=${POSTGRES_CLAVE:-postgres_local}"
       Migracion__ClaveAdaptadorSe6App: ${ADAPTADOR_SE6_APP_CLAVE:-adaptador_se6_local}
