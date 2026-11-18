@@ -47,6 +47,8 @@
   <div class="lateral">
     @if (idActivo(); as id) {
       <app-panel-activo [idActivo]="id" (cerrar)="idActivo.set(null)" />
+    } @else if (codigoZona(); as codigo) {
+      <app-panel-zona [codigo]="codigo" [desastre]="idDesastre()" (cerrar)="codigoZona.set(null)" />
     } @else {
       <section class="panel" aria-labelledby="titulo-capas">
         <h2 id="titulo-capas">Capas</h2>
@@ -119,6 +121,27 @@
   />
 }
 
+@if (zonasDano().length > 0) {
+  <details class="panel activos">
+    <summary>Lista de municipios ({{ zonasDano().length }})</summary>
+    <div class="tabla-ancha">
+      <table>
+        <thead><tr><th>Municipio</th><th class="numero">Índice</th><th class="numero">Activos</th><th><span class="oculto">Acción</span></th></tr></thead>
+        <tbody>
+          @for (z of zonasDano(); track z.properties.codigoMunicipio) {
+            <tr>
+              <td>{{ z.properties.nombre ?? z.properties.codigoMunicipio }}</td>
+              <td class="numero">{{ z.properties.indiceDano === null ? 'Sin dato' : numero(z.properties.indiceDano) }}</td>
+              <td class="numero">{{ z.properties.activos }}</td>
+              <td><button type="button" class="secundario" [attr.aria-label]="'Ver evolución de ' + (z.properties.nombre ?? z.properties.codigoMunicipio)" (click)="abrirZona(z.properties.codigoMunicipio)">Ver evolución</button></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+}
+
 @if (activos().length > 0) {
   <details class="panel activos">
     <summary>Lista de activos ({{ activos().length }})</summary>
@@ -138,7 +161,7 @@
               <td>{{ nombreNivel(a.properties.nivelDano) }}</td>
               <td>{{ validacion(a.properties.estadoValidacion) }}</td>
               <td>{{ a.properties.conflictoPendiente ? 'Pendiente' : 'No' }}</td>
-              <td><button type="button" class="secundario" (click)="idActivo.set(a.properties.idActivo)">Ver evolución</button></td>
+              <td><button type="button" class="secundario" (click)="abrirActivo(a.properties.idActivo)">Ver evolución</button></td>
             </tr>
           }
         </tbody>

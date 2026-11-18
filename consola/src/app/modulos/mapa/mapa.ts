@@ -22,6 +22,7 @@ import {
   ZonaDibujo,
 } from './modelos-mapa';
 import { PanelActivo } from './panel-activo';
+import { PanelZona } from './panel-zona';
 
 interface Lectura<T> {
   datos: T | null;
@@ -41,7 +42,7 @@ const MAXIMO_FILAS = 100;
  */
 @Component({
   selector: 'app-mapa',
-  imports: [BarraTiempo, FechaHoraPipe, PanelActivo],
+  imports: [BarraTiempo, FechaHoraPipe, PanelActivo, PanelZona],
   templateUrl: './mapa.html',
   styleUrl: './mapa.css',
 })
@@ -70,6 +71,7 @@ export class PantallaMapa {
   readonly soloValidadas = signal(false);
   readonly visibles = signal<Record<NombreCapa, boolean>>({ coropleta: true, activos: true, zona: true });
   readonly idActivo = signal<string | null>(null);
+  readonly codigoZona = signal<string | null>(null);
   readonly indice = signal(0);
 
   readonly danos = signal(sinLectura<MapaDanos>());
@@ -145,7 +147,7 @@ export class PantallaMapa {
     const destruir = inject(DestroyRef);
     afterNextRender(() => {
       const lienzo = this.fabricaLienzo();
-      lienzo.montar(this.contenedor().nativeElement, (id) => this.idActivo.set(id));
+      lienzo.montar(this.contenedor().nativeElement, (id) => this.abrirActivo(id), (codigo) => this.abrirZona(codigo));
       this.lienzo.set(lienzo);
       destruir.onDestroy(() => lienzo.destruir());
     });
@@ -249,8 +251,19 @@ export class PantallaMapa {
     });
   }
 
+  abrirActivo(id: string): void {
+    this.codigoZona.set(null);
+    this.idActivo.set(id);
+  }
+
+  abrirZona(codigo: string): void {
+    this.idActivo.set(null);
+    this.codigoZona.set(codigo);
+  }
+
   elegirDesastre(id: string): void {
     this.idActivo.set(null);
+    this.codigoZona.set(null);
     this.indice.set(0);
     this.danos.set(sinLectura());
     this.zonas.set(sinLectura());

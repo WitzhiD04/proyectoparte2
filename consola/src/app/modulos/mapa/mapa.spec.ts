@@ -261,9 +261,59 @@ describe('mapa de daños', () => {
     expect(html.querySelector('app-panel-activo .aviso.error')!.textContent).toContain('No hay evaluaciones del activo.');
   });
 
+  const zona = {
+    zona: { codigo: '63001', nombre: 'ARMENIA', tipo: 'MUNICIPIO' }, idDesastre: 'd1', datoAl: T3,
+    evaluaciones: [
+      { instante: T1, idActivo: 'a1', tipoActivo: 'ESCUELA', nivelDano: 'LEVE', origen: 'SINCRONIZACION', estadoValidacion: null, autor: 'evaluador.armenia', codigoMunicipio: '63001' },
+      { instante: T2, idActivo: 'a1', tipoActivo: 'ESCUELA', nivelDano: 'GRAVE', origen: 'VALIDACION', estadoValidacion: 'VALIDADA', autor: 'bomberos.operador', codigoMunicipio: '63001' },
+    ],
+    porDia: [{ fecha: '2026-11-16', activos: 1, distribucion }],
+  };
+
+  it('al hacer clic en un municipio muestra su evolución en el desastre elegido', async () => {
+    await abrirConDatos();
+    lienzo.alElegirZona('63001');
+    await estable();
+    const r = pedido('/v1/consulta-danos/zonas/63001/evolucion');
+    expect(r.request.params.get('desastre')).toBe('d1');
+    r.flush(zona);
+    await estable();
+    expect(html.querySelector('#titulo-zona')!.textContent).toContain('ARMENIA');
+    expect(texto()).toContain('16/11/2026');
+    expect(texto()).toContain('Grave: 1');
+    const secuencia = [...html.querySelectorAll('app-panel-zona .secuencia li')].map((l) => l.textContent ?? '');
+    expect(secuencia.length).toBe(2);
+    expect(secuencia[0]).toContain('Validación');
+    boton('Volver a las capas').click();
+    await estable();
+    expect(html.querySelector('#titulo-capas')).not.toBeNull();
+  });
+
+  it('elegir un activo reemplaza el panel del municipio', async () => {
+    await abrirConDatos();
+    lienzo.alElegirZona('63001');
+    await estable();
+    pedido('/v1/consulta-danos/zonas/63001/evolucion').flush(zona);
+    await estable();
+    lienzo.alElegir('a1');
+    await estable();
+    expect(html.querySelector('app-panel-zona')).toBeNull();
+    pedido('/v1/consulta-danos/activos/a1/evolucion').flush({ codigo: 'NO_ENCONTRADO', mensaje: 'x' }, { status: 404, statusText: 'No encontrado' });
+    await estable();
+  });
+
+  it('la lista de municipios abre la evolución sin usar el mapa y muestra el 404 del servicio', async () => {
+    await abrirConDatos();
+    (html.querySelector('button[aria-label="Ver evolución de Armenia"]') as HTMLButtonElement).click();
+    await estable();
+    pedido('/v1/consulta-danos/zonas/63001/evolucion').flush({ codigo: 'NO_ENCONTRADO', mensaje: 'La zona 63001 no tiene evaluaciones.' }, { status: 404, statusText: 'No encontrado' });
+    await estable();
+    expect(html.querySelector('app-panel-zona .aviso.error')!.textContent).toContain('no tiene evaluaciones');
+  });
+
   it('la lista de activos abre la misma evolución sin usar el mapa', async () => {
     await abrirConDatos();
-    boton('Ver evolución').click();
+    ([...html.querySelectorAll('details.activos')].at(-1)!.querySelector('tbody button') as HTMLButtonElement).click();
     await estable();
     expect(lienzo.marcado).toBe('a1');
     pedido('/v1/consulta-danos/activos/a1/evolucion').flush({ codigo: 'NO_ENCONTRADO', mensaje: 'x' }, { status: 404, statusText: 'No encontrado' });
