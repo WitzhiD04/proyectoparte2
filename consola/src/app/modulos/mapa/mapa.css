@@ -1,0 +1,73 @@
+h1 { margin-bottom: 1.25rem; }
+
+.aviso.degradado { border-color: var(--senal); }
+
+.mandos {
+  display: grid;
+  grid-template-columns: minmax(14rem, 2fr) minmax(11rem, 1fr) auto;
+  gap: 0.9rem 1.25rem;
+  align-items: end;
+  margin-bottom: 1.25rem;
+}
+.mandos .campo { margin: 0; }
+.mandos > .marca { padding-bottom: 0.5rem; }
+
+.marca { display: flex; gap: 0.5rem; align-items: center; margin: 0; font-size: 1rem; cursor: pointer; }
+.marca input { flex: none; width: 1.05rem; height: 1.05rem; accent-color: var(--tinta); }
+
+.tablero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 19rem;
+  gap: 1.25rem;
+  align-items: start;
+  margin-bottom: 1.5rem;
+}
+
+.lienzo {
+  height: clamp(26rem, 72vh, 46rem);
+  isolation: isolate;
+  background: var(--linea);
+  border: 2px solid var(--tinta);
+}
+
+.lateral .panel { margin-bottom: 1.25rem; padding: 1rem; }
+.lateral .panel:last-child { margin-bottom: 0; }
+.capa { padding: 0.65rem 0; border-top: 1px solid var(--linea); }
+.capa .marca { font-weight: 600; }
+.capa p { margin: 0.15rem 0 0 1.55rem; font-size: 0.92rem; }
+
+.leyenda ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; font-size: 0.92rem; }
+.leyenda li { display: flex; gap: 0.55rem; align-items: center; }
+.leyenda p { margin: 0.5rem 0 0.75rem; font-size: 0.85rem; }
+.caja { width: 1.5rem; height: 0.9rem; border: 1px solid var(--tinta); }
+.punto {
+  width: 0.85rem;
+  height: 0.85rem;
+  margin-inline: 0.325rem;
+  border: 2px solid var(--tinta);
+  border-radius: 50%;
+  background: #dd6430;
+}
+.punto.sin-validar { border: 2px dashed var(--tinta); }
+.punto.con-conflicto { outline: 3px solid var(--senal); outline-offset: 1px; }
+.linea { width: 1.5rem; border-top: 3px solid var(--tinta); }
+.linea.anterior { border-top: 2px dashed var(--tinta); }
+
+.activos summary { font-family: var(--titulo); font-stretch: 75%; font-weight: 700; font-size: 1.5rem; cursor: pointer; }
+.activos table { margin-top: 0.75rem; }
+.activos button { padding: 0.2rem 0.55rem; font-size: 0.85rem; white-space: nowrap; }
+.oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+/* Mapa base en grises, como un plano: el color queda solo para el daño. */
+.lienzo ::ng-deep .leaflet-tile-pane { filter: grayscale(1) contrast(0.92) brightness(1.04); }
+.lienzo ::ng-deep .leaflet-container { font-family: var(--texto); }
+.lienzo ::ng-deep .leaflet-tooltip { border: 0; border-left: 4px solid var(--tinta); border-radius: 0; box-shadow: none; color: var(--tinta); font: 0.85rem/1.35 var(--texto); padding: 0.35rem 0.55rem; }
+.lienzo ::ng-deep .leaflet-bar { border: 2px solid var(--tinta); border-radius: 0; box-shadow: none; }
+.lienzo ::ng-deep .leaflet-bar a { border-radius: 0 !important; color: var(--tinta); }
+.lienzo ::ng-deep .leaflet-control-attribution { font-size: 0.72rem; color: var(--tinta); }
+
+@media (max-width: 62rem) {
+  .tablero { grid-template-columns: 1fr; }
+  .mandos { grid-template-columns: 1fr; }
+  .mandos > .marca { padding-bottom: 0; }
+}

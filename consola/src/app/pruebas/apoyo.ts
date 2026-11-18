@@ -4,6 +4,8 @@ import { EventTypes, OidcSecurityService, PublicEventsService } from 'angular-au
 import { Observable, Subject, of } from 'rxjs';
 import { vi } from 'vitest';
 import { RolRealm, Sesion } from '../nucleo/sesion';
+import { LienzoMapa } from '../modulos/mapa/lienzo-mapa';
+import { ActivoMapa, NombreCapa, ZonaDano, ZonaDibujo } from '../modulos/mapa/modelos-mapa';
 
 /** Claims de un token como los de Keycloak, vigente por una hora. */
 export function tokenDe(usuario: string, roles: RolRealm[], extra: Record<string, unknown> = {}): Record<string, unknown> {
@@ -53,4 +55,26 @@ export async function iniciarSesionComo(oidc: OidcFalso, claims: Record<string, 
   const sesion = TestBed.inject(Sesion);
   await sesion.iniciar();
   return sesion;
+}
+
+/** Sustituye a Leaflet: jsdom no tiene canvas ni tamaños, y el mapa real se comprueba en el navegador. */
+export class LienzoFalso implements LienzoMapa {
+  alElegir: (id: string) => void = () => undefined;
+  coropleta: readonly ZonaDano[] = [];
+  activos: readonly ActivoMapa[] = [];
+  zona: ZonaDibujo | null = null;
+  anteriores: readonly ZonaDibujo[] = [];
+  marcado: string | null = null;
+  visibles: Partial<Record<NombreCapa, boolean>> = {};
+  encuadres = 0;
+  destruido = false;
+
+  montar(_elemento: HTMLElement, alElegirActivo: (id: string) => void): void { this.alElegir = alElegirActivo; }
+  pintarCoropleta(zonas: readonly ZonaDano[]): void { this.coropleta = zonas; }
+  pintarActivos(activos: readonly ActivoMapa[]): void { this.activos = activos; }
+  pintarZona(vigente: ZonaDibujo | null, anteriores: readonly ZonaDibujo[]): void { this.zona = vigente; this.anteriores = anteriores; }
+  marcarActivo(id: string | null): void { this.marcado = id; }
+  mostrar(capa: NombreCapa, visible: boolean): void { this.visibles[capa] = visible; }
+  encuadrar(): void { this.encuadres++; }
+  destruir(): void { this.destruido = true; }
 }

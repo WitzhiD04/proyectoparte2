@@ -4,8 +4,9 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { App } from './app';
 import { routes } from './app.routes';
+import { FABRICA_LIENZO } from './modulos/mapa/lienzo-mapa';
 import { RolRealm } from './nucleo/sesion';
-import { OidcFalso, iniciarSesionComo, proveedoresOidc, tokenDe } from './pruebas/apoyo';
+import { LienzoFalso, OidcFalso, iniciarSesionComo, proveedoresOidc, tokenDe } from './pruebas/apoyo';
 
 describe('App', () => {
   let oidc: OidcFalso;
@@ -15,7 +16,13 @@ describe('App', () => {
     oidc = new OidcFalso();
     TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter(routes), provideHttpClient(), provideHttpClientTesting(), ...proveedoresOidc(oidc)],
+      providers: [
+        provideRouter(routes),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        ...proveedoresOidc(oidc),
+        { provide: FABRICA_LIENZO, useValue: () => new LienzoFalso() },
+      ],
     });
     servidor = TestBed.inject(HttpTestingController);
   });
@@ -71,7 +78,7 @@ describe('App', () => {
     const { html } = await abrir('/mapa', comoRol('organismo'));
     expect(html.querySelector('.modulo')?.textContent).toContain('Mapa');
     expect(html.querySelector('#desastre')).toBeNull();
-    expect(html.textContent).toContain('todavía no tiene contenido');
+    expect(html.querySelector('h1')?.textContent).toContain('Mapa de daños');
     servidor.expectNone('/v1/reconstruccion/desastres');
   });
 
