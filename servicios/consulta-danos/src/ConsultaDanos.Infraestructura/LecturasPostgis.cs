@@ -66,6 +66,10 @@ public sealed class RegistroHistorial
     public string CodigoMunicipio { get; set; } = "";
     public string? Autor { get; set; }
     public string? Detalle { get; set; }
+
+    public EntradaHistorial AEntrada() => new(IdActivo, IdEvaluacion, VersionEvaluacion, Origen, Instante, Enum.Parse<NivelDano>(Nivel),
+        TipoActivo, EstadoEvaluacion, EstadoValidacion is null ? null : Enum.Parse<EstadoValidacion>(EstadoValidacion), EnConflicto,
+        IdDesastre, CodigoMunicipio, Autor, Detalle);
 }
 
 public sealed class RegistroBandeja
@@ -83,6 +87,12 @@ public sealed class LecturasPostgis : ILecturasDanos
 {
     // Que el activo tenga un conflicto pendiente se calcula al consultar: así EV-10 y EV-22 pueden llegar en cualquier orden.
     private const string Conflicto = "EXISTS (SELECT 1 FROM p_conflictos c WHERE c.id_activo = v.id_activo AND c.estado = 'PENDIENTE')";
+
+    private const string ColumnasHistorial = @"
+        h.id_activo AS ""IdActivo"", h.id_evaluacion AS ""IdEvaluacion"", h.version_evaluacion AS ""VersionEvaluacion"", h.origen AS ""Origen"",
+        h.instante AS ""Instante"", h.nivel_dano AS ""Nivel"", h.tipo_activo AS ""TipoActivo"", h.estado_evaluacion AS ""EstadoEvaluacion"",
+        h.estado_validacion AS ""EstadoValidacion"", h.en_conflicto AS ""EnConflicto"", h.id_desastre AS ""IdDesastre"",
+        h.codigo_municipio AS ""CodigoMunicipio"", h.autor AS ""Autor"", h.detalle AS ""Detalle""";
 
     private readonly ConsultaDanosDbContext _db;
     public LecturasPostgis(ConsultaDanosDbContext db) { _db = db; }
@@ -175,21 +185,43 @@ public sealed class LecturasPostgis : ILecturasDanos
         {
             return null;
         }
-        List<RegistroHistorial> historial = await _db.Database.SqlQuery<RegistroHistorial>($@"
-            SELECT id_activo AS ""IdActivo"", id_evaluacion AS ""IdEvaluacion"", version_evaluacion AS ""VersionEvaluacion"", origen AS ""Origen"",
-                   instante AS ""Instante"", nivel_dano AS ""Nivel"", tipo_activo AS ""TipoActivo"", estado_evaluacion AS ""EstadoEvaluacion"",
-                   estado_validacion AS ""EstadoValidacion"", en_conflicto AS ""EnConflicto"", id_desastre AS ""IdDesastre"",
-                   codigo_municipio AS ""CodigoMunicipio"", autor AS ""Autor"", detalle AS ""Detalle""
-            FROM p_historial_activo WHERE id_activo = {idActivo}
-            ORDER BY instante, version_evaluacion, origen").ToListAsync(ct);
-        List<EntradaHistorial> entradas = historial.Select(h => new EntradaHistorial(h.IdActivo, h.IdEvaluacion, h.VersionEvaluacion, h.Origen,
-            h.Instante, Enum.Parse<NivelDano>(h.Nivel), h.TipoActivo, h.EstadoEvaluacion,
-            h.EstadoValidacion is null ? null : Enum.Parse<EstadoValidacion>(h.EstadoValidacion), h.EnConflicto, h.IdDesastre,
-            h.CodigoMunicipio, h.Autor, h.Detalle)).ToList();
+        List<RegistroHistorial> historial = await _db.Database.SqlQueryRaw<RegistroHistorial>($@"
+            SELECT {ColumnasHistorial}
+            FROM p_historial_activo h WHERE h.id_activo = {{0}}
+            ORDER BY h.instante, h.version_evaluacion, h.origen", idActivo).ToListAsync(ct);
+        List<EntradaHistorial> entradas = historial.Select(h => h.AEntrada()).ToList();
         RegistroActivo a = fila[0];
         DateTimeOffset datoAl = entradas.Count == 0 || a.ActualizadoAl > entradas.Max(e => e.Instante)
             ? a.ActualizadoAl : entradas.Max(e => e.Instante);
         return new EvolucionActivo(idActivo, a.AEstado(), a.Conflicto, entradas, datoAl);
+    }
+
+    public async Task<string?> NombreMunicipioAsync(string codigo, CancellationToken ct) =>
+        (await _db.Database.SqlQuery<string>($@"SELECT nombre AS ""Value"" FROM p_municipios WHERE codigo = {codigo}")
+            .ToListAsync(ct)).FirstOrDefault();
+
+    public async Task<bool> DepartamentoEnCapaAsync(string codigo, CancellationToken ct) =>
+        (await _db.Database.SqlQuery<bool>($@"
+            SELECT EXISTS (SELECT 1 FROM p_municipios m WHERE COALESCE(m.codigo_departamento, left(m.codigo, 2)) = {codigo}) AS ""Value""")
+            .ToListAsync(ct)).Single();
+
+    /// <summary>
+    /// El departamento de cada entrada se resuelve como en el mapa: el de la capa y, si el municipio aún no está en ella,
+    /// los dos primeros dígitos de su código.
+    /// </summary>
+    public async Task<IReadOnlyList<EntradaHistorial>> HistorialZonaAsync(string codigo, TipoZona tipo, Guid? desastre, CancellationToken ct)
+    {
+        string zona = tipo == TipoZona.MUNICIPIO
+            ? "h.codigo_municipio = {0}"
+            : "COALESCE(m.codigo_departamento, left(h.codigo_municipio, 2)) = {0}";
+        string delDesastre = desastre is null ? "" : "AND h.id_desastre = {1}";
+        object[] parametros = desastre is null ? [codigo] : [codigo, desastre.Value];
+        List<RegistroHistorial> filas = await _db.Database.SqlQueryRaw<RegistroHistorial>($@"
+            SELECT {ColumnasHistorial}
+            FROM p_historial_activo h LEFT JOIN p_municipios m ON m.codigo = h.codigo_municipio
+            WHERE {zona} {delDesastre}
+            ORDER BY h.instante, h.id_activo, h.version_evaluacion, h.origen", parametros).ToListAsync(ct);
+        return filas.Select(h => h.AEntrada()).ToList();
     }
 
     public async Task<BandejaLeida> BandejaAsync(CancellationToken ct)

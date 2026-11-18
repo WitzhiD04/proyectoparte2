@@ -69,6 +69,8 @@ public sealed class EntornoConsultaDanos : IAsyncLifetime
             [
                 new Division("63001", "Armenia", "63", Poligono(-75.75, 4.50, 0.1)),
                 new Division("63130", "Calarcá", "63", Poligono(-75.65, 4.50, 0.1)),
+                new Division("76001", "Cali", "76", Poligono(-76.50, 3.40, 0.1)),
+                new Division("76109", "Buenaventura", "76", Poligono(-77.00, 3.90, 0.1)),
             ], "SE-2", 1, 1), new DateTimeOffset(2026, 11, 1, 0, 0, 0, TimeSpan.Zero)));
     }
 

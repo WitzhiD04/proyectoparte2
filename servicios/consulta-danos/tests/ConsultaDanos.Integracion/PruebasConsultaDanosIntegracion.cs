@@ -331,6 +331,112 @@ public class PruebasConsultaDanosIntegracion : IClassFixture<EntornoConsultaDano
     public async Task Un_activo_sin_evaluaciones_responde_404() =>
         Assert.Equal(HttpStatusCode.NotFound, (await _e.Cliente.GetAsync($"/v1/consulta-danos/activos/{Guid.NewGuid()}/evolucion")).StatusCode);
 
+    // Evolución por zona (RF-ED-15, E-40). Solo estas pruebas usan el departamento 76, así que su historial es exacto.
+    [Fact]
+    public async Task La_evolucion_de_una_zona_ordena_por_instante_filtra_por_desastre_y_agrega_por_dia()
+    {
+        Guid desastre = Guid.NewGuid(), otro = Guid.NewGuid();
+        Guid a1 = Guid.NewGuid(), a2 = Guid.NewGuid(), a3 = Guid.NewGuid(), a4 = Guid.NewGuid();
+        Guid e1 = Guid.NewGuid(), e2 = Guid.NewGuid();
+        // Llegan en desorden, como con dos réplicas en la misma cola.
+        await _e.EntregarAsync(Validada(a1, e2, desastre, NivelDano.GRAVE, 2, EstadoValidacion.VALIDADA, T0.AddDays(1), "76001"));
+        await _e.EntregarAsync(Sincronizada(a1, e2, desastre, NivelDano.GRAVE, 2, 2, T0.AddHours(2), "76001"));
+        await _e.EntregarAsync(Sincronizada(a3, Guid.NewGuid(), desastre, NivelDano.DESTRUCCION_TOTAL, 1, 1, T0.AddHours(1), "76109"));
+        await _e.EntregarAsync(Sincronizada(a2, Guid.NewGuid(), desastre, NivelDano.MODERADO, 1, 1, T0.AddMinutes(30), "76001"));
+        await _e.EntregarAsync(Sincronizada(a4, Guid.NewGuid(), otro, NivelDano.SIN_DANO, 1, 1, T0.AddMinutes(10), "76001"));
+        await _e.EntregarAsync(Sincronizada(a1, e1, desastre, NivelDano.LEVE, 1, 1, T0, "76001"));
+
+        JsonElement municipio = await GetAsync("/v1/consulta-danos/zonas/76001/evolucion");
+        Assert.Equal("76001", municipio.GetProperty("zona").GetProperty("codigo").GetString());
+        Assert.Equal("Cali", municipio.GetProperty("zona").GetProperty("nombre").GetString());
+        Assert.Equal("MUNICIPIO", municipio.GetProperty("zona").GetProperty("tipo").GetString());
+        Assert.Equal(T0.AddDays(1), municipio.GetProperty("datoAl").GetDateTimeOffset());
+        Assert.Equal([a1, a4, a2, a1, a1], Evaluaciones(municipio).Select(x => x.GetProperty("idActivo").GetGuid()));
+        Assert.Equal([T0, T0.AddMinutes(10), T0.AddMinutes(30), T0.AddHours(2), T0.AddDays(1)],
+            Evaluaciones(municipio).Select(x => x.GetProperty("instante").GetDateTimeOffset()));
+
+        JsonElement validacion = Evaluaciones(municipio).Last();
+        Assert.Equal("VALIDACION", validacion.GetProperty("origen").GetString());
+        Assert.Equal("VALIDADA", validacion.GetProperty("estadoValidacion").GetString());
+        Assert.Equal("ungrd.operador", validacion.GetProperty("autor").GetString());
+        Assert.Equal("GRAVE", validacion.GetProperty("nivelDano").GetString());
+        Assert.Equal("VIVIENDA", validacion.GetProperty("tipoActivo").GetString());
+        Assert.Equal("SINCRONIZACION", Evaluaciones(municipio).First().GetProperty("origen").GetString());
+
+        // El primer día a1 cuenta una sola vez, en GRAVE (su último nivel de ese día, no LEVE).
+        JsonElement[] dias = PorDia(municipio);
+        Assert.Equal(["2026-11-16", "2026-11-17"], dias.Select(d => d.GetProperty("fecha").GetString()));
+        AfirmarDia(dias[0], activos: 3, sinDano: 1, moderado: 1, grave: 1);
+        AfirmarDia(dias[1], activos: 1, grave: 1);
+
+        JsonElement filtrado = await GetAsync($"/v1/consulta-danos/zonas/76001/evolucion?desastre={desastre}");
+        Assert.Equal(desastre, filtrado.GetProperty("idDesastre").GetGuid());
+        Assert.Equal([a1, a2, a1, a1], Evaluaciones(filtrado).Select(x => x.GetProperty("idActivo").GetGuid()));
+        Assert.All(Evaluaciones(filtrado), x => Assert.Equal(desastre, x.GetProperty("idDesastre").GetGuid()));
+        AfirmarDia(PorDia(filtrado)[0], activos: 2, moderado: 1, grave: 1);
+
+        JsonElement delOtro = await GetAsync($"/v1/consulta-danos/zonas/76001/evolucion?desastre={otro}");
+        Assert.Equal(T0.AddMinutes(10), delOtro.GetProperty("datoAl").GetDateTimeOffset());
+        AfirmarDia(Assert.Single(PorDia(delOtro)), activos: 1, sinDano: 1);
+
+        JsonElement departamento = await GetAsync($"/v1/consulta-danos/zonas/76/evolucion?desastre={desastre}");
+        Assert.Equal("VALLE DEL CAUCA", departamento.GetProperty("zona").GetProperty("nombre").GetString());
+        Assert.Equal("DEPARTAMENTO", departamento.GetProperty("zona").GetProperty("tipo").GetString());
+        Assert.Equal(["76001", "76109"], Evaluaciones(departamento).Select(x => x.GetProperty("codigoMunicipio").GetString()).Distinct().Order());
+        Assert.Equal([a1, a2, a3, a1, a1], Evaluaciones(departamento).Select(x => x.GetProperty("idActivo").GetGuid()));
+        AfirmarDia(PorDia(departamento)[0], activos: 3, moderado: 1, grave: 1, destruccion: 1);
+
+        JsonElement otroMunicipio = await GetAsync("/v1/consulta-danos/zonas/76109/evolucion");
+        Assert.Equal("Buenaventura", otroMunicipio.GetProperty("zona").GetProperty("nombre").GetString());
+        Assert.Equal(a3, Assert.Single(Evaluaciones(otroMunicipio)).GetProperty("idActivo").GetGuid());
+    }
+
+    private static IEnumerable<JsonElement> Evaluaciones(JsonElement evolucion) => evolucion.GetProperty("evaluaciones").EnumerateArray();
+
+    private static JsonElement[] PorDia(JsonElement evolucion) => evolucion.GetProperty("porDia").EnumerateArray().ToArray();
+
+    private static void AfirmarDia(JsonElement dia, int activos, int sinDano = 0, int moderado = 0, int grave = 0, int destruccion = 0)
+    {
+        JsonElement d = dia.GetProperty("distribucion");
+        Assert.Equal(activos, dia.GetProperty("activos").GetInt32());
+        Assert.Equal(sinDano, d.GetProperty("SIN_DANO").GetInt32());
+        Assert.Equal(0, d.GetProperty("LEVE").GetInt32());
+        Assert.Equal(moderado, d.GetProperty("MODERADO").GetInt32());
+        Assert.Equal(grave, d.GetProperty("GRAVE").GetInt32());
+        Assert.Equal(destruccion, d.GetProperty("DESTRUCCION_TOTAL").GetInt32());
+    }
+
+    [Theory]
+    [InlineData("7600")]
+    [InlineData("760011")]
+    [InlineData("7600a")]
+    [InlineData("76001?desastre=no-es-un-guid")]
+    public async Task Un_codigo_o_un_desastre_invalidos_en_la_zona_responden_400_con_el_formato_del_servicio(string resto)
+    {
+        HttpResponseMessage r = await _e.Cliente.GetAsync(resto.Contains('?') ? $"/v1/consulta-danos/zonas/{resto.Replace("?", "/evolucion?")}" : $"/v1/consulta-danos/zonas/{resto}/evolucion");
+        Assert.Equal(HttpStatusCode.BadRequest, r.StatusCode);
+        JsonElement error = await r.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("DATO_INVALIDO", error.GetProperty("codigo").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(error.GetProperty("mensaje").GetString()));
+    }
+
+    [Theory]
+    [InlineData("99999", "")]                                                     // el municipio no está en la capa
+    [InlineData("11", "")]                                                        // el departamento tampoco
+    [InlineData("76109", "?desastre=33333333-3333-3333-3333-333333333333")]       // está, pero sin evaluaciones de ese desastre
+    public async Task Una_zona_inexistente_o_sin_evaluaciones_responde_404_con_el_formato_del_servicio(string codigo, string filtro)
+    {
+        HttpResponseMessage r = await _e.Cliente.GetAsync($"/v1/consulta-danos/zonas/{codigo}/evolucion{filtro}");
+        Assert.Equal(HttpStatusCode.NotFound, r.StatusCode);
+        JsonElement error = await r.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("NO_ENCONTRADO", error.GetProperty("codigo").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(error.GetProperty("mensaje").GetString()));
+    }
+
+    [Fact]
+    public async Task La_evolucion_de_una_zona_exige_identidad() =>
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _e.SinIdentidad().GetAsync("/v1/consulta-danos/zonas/76001/evolucion")).StatusCode);
+
     [Theory]
     [InlineData("DELETE FROM p_evaluacion_vigente")]
     [InlineData("DELETE FROM p_dano_por_zona")]

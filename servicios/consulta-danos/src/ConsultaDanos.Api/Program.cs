@@ -43,6 +43,7 @@ builder.Services.AddScoped<ActualizarProyecciones>();
 builder.Services.AddScoped<ConsultarMapa>();
 builder.Services.AddScoped<ConsultarConsolidado>();
 builder.Services.AddScoped<ConsultarEvolucion>();
+builder.Services.AddScoped<ConsultarEvolucionZona>();
 builder.Services.AddScoped<ConsultarIndicadores>();
 
 WebApplication app = builder.Build();
@@ -123,6 +124,52 @@ v1.MapGet("/activos/{id:guid}/evolucion", async (Guid id, ConsultarEvolucion cas
             nivelDano = h.Nivel.ToString(), peso = IndiceDano.Peso(h.Nivel), tipoActivo = h.TipoActivo, estadoEvaluacion = h.EstadoEvaluacion,
             estadoValidacion = h.Validacion?.ToString(), enConflicto = h.EnConflicto, idDesastre = h.IdDesastre,
             codigoMunicipio = h.CodigoMunicipio, autor = h.Autor, detalle = h.Detalle,
+        }),
+    });
+});
+
+// Evolución de una zona (RF-ED-15, E-40): la secuencia de evaluaciones del municipio o departamento y su agregado por día.
+v1.MapGet("/zonas/{codigo}/evolucion", async (string codigo, string? desastre, ConsultarEvolucionZona caso, CancellationToken ct) =>
+{
+    if (CodigoZona.TipoDe(codigo) is null)
+    {
+        return Invalido($"'{codigo}' no es un código DIVIPOLA: 5 dígitos para un municipio o 2 para un departamento.");
+    }
+    Guid? idDesastre = null;
+    if (!string.IsNullOrWhiteSpace(desastre))
+    {
+        if (!Guid.TryParse(desastre, out Guid leido))
+        {
+            return Invalido($"desastre '{desastre}' no es un identificador válido.");
+        }
+        idDesastre = leido;
+    }
+    EvolucionZona? e = await caso.EjecutarAsync(codigo, idDesastre, ct);
+    if (e is null)
+    {
+        return Results.NotFound(new { codigo = "NO_ENCONTRADO", mensaje = $"La zona {codigo} no existe en la capa de municipios." });
+    }
+    if (e.Entradas.Count == 0)
+    {
+        string alcance = idDesastre is null ? "" : $" para el desastre {idDesastre}";
+        return Results.NotFound(new { codigo = "NO_ENCONTRADO", mensaje = $"La zona {codigo} no tiene evaluaciones{alcance}." });
+    }
+    return Results.Ok(new
+    {
+        zona = new { codigo = e.Zona.Codigo, nombre = e.Zona.Nombre, tipo = e.Zona.Tipo.ToString() },
+        idDesastre,
+        datoAl = e.DatoAl,
+        evaluaciones = e.Entradas.Select(h => new
+        {
+            instante = h.Instante, idActivo = h.IdActivo, tipoActivo = h.TipoActivo, nivelDano = h.Nivel.ToString(),
+            peso = IndiceDano.Peso(h.Nivel), origen = h.Origen, estadoValidacion = h.Validacion?.ToString(), autor = h.Autor,
+            idEvaluacion = h.IdEvaluacion, versionEvaluacion = h.VersionEvaluacion, enConflicto = h.EnConflicto,
+            idDesastre = h.IdDesastre, codigoMunicipio = h.CodigoMunicipio,
+        }),
+        porDia = e.PorDia.Select(d => new
+        {
+            fecha = d.Fecha, activos = d.Distribucion.Total,
+            distribucion = Distribucion.Niveles.ToDictionary(n => n.ToString(), n => d.Distribucion[n]),
         }),
     });
 });

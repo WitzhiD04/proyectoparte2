@@ -208,6 +208,79 @@ public sealed class ConsultarEvolucion
     public Task<EvolucionActivo?> EjecutarAsync(Guid idActivo, CancellationToken ct) => _lecturas.EvolucionAsync(idActivo, ct);
 }
 
+/// <summary>
+/// Evolución de una zona (RF-ED-15, E-40): las evaluaciones registradas en un municipio o un departamento, en orden de
+/// tiempo, y cuántos activos hubo en cada nivel por día. La zona se valida contra la capa EV-21, como en el mapa.
+/// </summary>
+public sealed class ConsultarEvolucionZona
+{
+    /// <summary>Colombia está todo el año en UTC-5: no tiene horario de verano.</summary>
+    private static readonly TimeSpan HoraColombia = TimeSpan.FromHours(-5);
+
+    private readonly ILecturasDanos _lecturas;
+    public ConsultarEvolucionZona(ILecturasDanos lecturas) { _lecturas = lecturas; }
+
+    /// <summary>Nulo si la zona no está en la capa. Si está y no tiene evaluaciones, la evolución viene sin entradas.</summary>
+    /// <exception cref="ArgumentException">El código no es DIVIPOLA: la ruta lo revisa antes con <see cref="CodigoZona"/>.</exception>
+    public async Task<EvolucionZona?> EjecutarAsync(string codigo, Guid? desastre, CancellationToken ct)
+    {
+        TipoZona tipo = CodigoZona.TipoDe(codigo) ?? throw new ArgumentException($"'{codigo}' no es un código DIVIPOLA.", nameof(codigo));
+        try
+        {
+            if (await ZonaAsync(codigo, tipo, ct) is not { } zona)
+            {
+                return null;
+            }
+            IReadOnlyList<EntradaHistorial> entradas = await _lecturas.HistorialZonaAsync(codigo, tipo, desastre, ct);
+            return new EvolucionZona(zona, entradas.Count == 0 ? null : entradas.Max(e => e.Instante), entradas, PorDia(entradas));
+        }
+        catch (Exception e) when (!ct.IsCancellationRequested)
+        {
+            throw new DatosNoDisponiblesException("La base de consulta no responde.", e);
+        }
+    }
+
+    private async Task<ZonaConsultada?> ZonaAsync(string codigo, TipoZona tipo, CancellationToken ct)
+    {
+        if (tipo == TipoZona.DEPARTAMENTO)
+        {
+            return await _lecturas.DepartamentoEnCapaAsync(codigo, ct)
+                ? new ZonaConsultada(codigo, tipo, Departamentos.NombreDe(codigo))
+                : null;
+        }
+        return await _lecturas.NombreMunicipioAsync(codigo, ct) is { } nombre ? new ZonaConsultada(codigo, tipo, nombre) : null;
+    }
+
+    /// <summary>
+    /// Por cada día en hora de Colombia, los activos con alguna entrada ese día, cada uno una sola vez y en el último nivel que tuvo. Una
+    /// evaluación rechazada hasta ese día no cuenta: igual que en el mapa, no describe el daño del activo.
+    /// </summary>
+    private static List<ConteoDia> PorDia(IReadOnlyList<EntradaHistorial> entradas)
+    {
+        Dictionary<Guid, EstadoValidacion> validaciones = [];
+        List<ConteoDia> dias = [];
+        foreach (IGrouping<DateOnly, EntradaHistorial> dia in entradas.GroupBy(e => DateOnly.FromDateTime(e.Instante.ToOffset(HoraColombia).DateTime)).OrderBy(g => g.Key))
+        {
+            foreach (EntradaHistorial e in dia.Where(e => e.Validacion is not null))
+            {
+                validaciones[e.IdEvaluacion] = e.Validacion!.Value;
+            }
+            Distribucion distribucion = new();
+            foreach (IGrouping<Guid, EntradaHistorial> activo in dia.GroupBy(e => e.IdActivo))
+            {
+                EntradaHistorial? ultima = activo.LastOrDefault(e =>
+                    !validaciones.TryGetValue(e.IdEvaluacion, out EstadoValidacion v) || v != EstadoValidacion.RECHAZADA);
+                if (ultima is not null)
+                {
+                    distribucion.Sumar(ultima.Nivel, 1);
+                }
+            }
+            dias.Add(new ConteoDia(dia.Key, distribucion));
+        }
+        return dias;
+    }
+}
+
 /// <summary>Indicadores de revisión y alarma de R-08 (DA-09, E-09): se leen de <c>p_bandeja</c> y se comparan con los umbrales.</summary>
 public sealed class ConsultarIndicadores
 {
