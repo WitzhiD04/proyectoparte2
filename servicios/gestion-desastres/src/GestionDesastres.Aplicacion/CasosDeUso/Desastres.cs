@@ -65,7 +65,7 @@ internal static class Perfiles
 public sealed record SolicitudRegistro(
     Actor Actor, string Tipo, string Nombre, string Descripcion, DateTimeOffset InstanteInicio, double Lat, double Lon,
     Severidad Severidad, string Responsable, IReadOnlyList<Participante> Participantes,
-    string? GeometriaZona, IReadOnlyList<string> MunicipiosZona, FuenteDelimitacion FuenteZona);
+    string? GeometriaZona, IReadOnlyList<string> MunicipiosZona, FuenteDelimitacion FuenteZona, Guid? Id = null);
 
 public interface IRegistrarDesastreEntrada : IPuertoEntrada<SolicitudRegistro, DesastreDto> { }
 
@@ -75,9 +75,11 @@ public sealed class RegistrarDesastre : Interactor, IRegistrarDesastreEntrada
     private readonly ICapaMunicipios _capa;
     private readonly GuardadoDeDesastres _guardado;
     private readonly IReloj _reloj;
+    private readonly IRepositorioDesastres _desastres;
 
-    public RegistrarDesastre(ICatalogo catalogo, ICapaMunicipios capa, GuardadoDeDesastres guardado, IReloj reloj)
+    public RegistrarDesastre(ICatalogo catalogo, ICapaMunicipios capa, GuardadoDeDesastres guardado, IReloj reloj, IRepositorioDesastres desastres)
     {
+        _desastres = desastres;
         _catalogo = catalogo;
         _capa = capa;
         _guardado = guardado;
@@ -88,13 +90,23 @@ public sealed class RegistrarDesastre : Interactor, IRegistrarDesastreEntrada
     {
         return ProtegerAsync(salida, async () =>
         {
+            // Reenvío desde la app de campo: el mismo identificador del mismo autor devuelve el desastre ya registrado.
+            if (s.Id is Guid idCliente && await _desastres.BuscarAsync(idCliente, ct) is Desastre existente)
+            {
+                if (!existente.Fuentes.Contains("usuario:" + s.Actor.Usuario))
+                {
+                    throw new ReglaDeNegocioException("ID_EXISTE", $"El identificador {idCliente} ya pertenece a otro desastre.");
+                }
+                salida.Exito(Mapeos.ADto(existente, await _catalogo.PerfilAsync(existente.CodigoPerfil, ct)));
+                return;
+            }
             TipoDesastre tipo = await _catalogo.TipoAsync(s.Tipo, ct)
                 ?? throw new ReglaDeNegocioException("TIPO_DESCONOCIDO", $"El tipo {s.Tipo} no está en el catálogo (RF-GD-04).");
             PerfilCicloVida perfilTipo = await Perfiles.ExigirAsync(_catalogo, tipo.CodigoPerfil, ct);
             PerfilCicloVida perfilMinimo = await Perfiles.MinimoAsync(_catalogo, s.Severidad, ct);
             (string? geometria, IReadOnlyList<string> municipios) = await _capa.CompletarAsync(s.GeometriaZona, s.MunicipiosZona, ct);
 
-            Desastre desastre = Desastre.Registrar(Guid.NewGuid(), tipo, perfilTipo, perfilMinimo, s.Nombre, s.Descripcion, s.InstanteInicio,
+            Desastre desastre = Desastre.Registrar(s.Id ?? Guid.NewGuid(), tipo, perfilTipo, perfilMinimo, s.Nombre, s.Descripcion, s.InstanteInicio,
                 new Ubicacion(s.Lat, s.Lon), s.Severidad, s.Responsable, s.Participantes, geometria, municipios, s.FuenteZona, s.Actor, _reloj.Ahora);
             await _guardado.GuardarAsync(desastre, ct);
             salida.Exito(Mapeos.ADto(desastre, await _catalogo.PerfilAsync(desastre.CodigoPerfil, ct)));

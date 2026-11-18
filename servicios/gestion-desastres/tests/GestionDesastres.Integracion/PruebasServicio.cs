@@ -84,6 +84,27 @@ public class PruebasServicio : IClassFixture<Entorno>
     }
 
     [Fact]
+    public async Task El_reenvio_con_el_mismo_id_desde_campo_no_duplica_el_desastre()
+    {
+        Guid id = Guid.NewGuid();
+        object cuerpo = new
+        {
+            id, tipo = "INUNDACION", nombre = "Creciente del río Quindío", descripcion = "Registro desde la app de campo",
+            instanteInicio = DateTimeOffset.UtcNow.AddHours(-1), lat = 4.5339, lon = -75.6811, severidad = "NIVEL_2",
+            responsable = "bomberos", participantes = Array.Empty<object>(),
+            zona = new { geometria = PoligonoArmenia, codigosMunicipio = Array.Empty<string>(), fuente = "EVALUACION_CAMPO" },
+        };
+        JsonElement primero = await RegistrarAsync(cuerpo);
+        JsonElement reenvio = await RegistrarAsync(cuerpo);
+        Assert.Equal(id, primero.GetProperty("id").GetGuid());
+        Assert.Equal(id, reenvio.GetProperty("id").GetGuid());
+        Assert.Equal(primero.GetProperty("version").GetInt32(), reenvio.GetProperty("version").GetInt32());
+
+        HttpResponseMessage otroAutor = await _e.Cliente.SendAsync(_e.Peticion(HttpMethod.Post, "/v1/desastres", cuerpo, usuario: "otro.usuario"));
+        Assert.Equal(HttpStatusCode.Conflict, otroAutor.StatusCode);
+    }
+
+    [Fact]
     public async Task Un_organismo_no_responsable_recibe_403_en_cada_ruta_de_modificacion_QA11()
     {
         Guid id = (await RegistrarAsync(Registro())).GetProperty("id").GetGuid();

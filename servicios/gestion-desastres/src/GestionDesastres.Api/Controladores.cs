@@ -9,8 +9,10 @@ namespace GestionDesastres.Api;
 // Cuerpos de las peticiones. La geometría viaja como objeto GeoJSON (Polygon o MultiPolygon, WGS 84).
 public sealed record CuerpoParticipante(string Organismo, string Responsabilidad);
 public sealed record CuerpoZona(JsonElement? Geometria, List<string>? CodigosMunicipio, string? Fuente, string? Justificacion);
+/// <param name="Id">Identificador opcional generado por el cliente. La app de campo lo envía para que el reenvío de un
+/// registro hecho sin conexión no cree un segundo desastre (AD-44, RF-ED-12).</param>
 public sealed record CuerpoRegistro(string Tipo, string Nombre, string Descripcion, DateTimeOffset InstanteInicio, double Lat, double Lon,
-    string Severidad, string Responsable, List<CuerpoParticipante>? Participantes, CuerpoZona Zona);
+    string Severidad, string Responsable, List<CuerpoParticipante>? Participantes, CuerpoZona Zona, Guid? Id = null);
 public sealed record CuerpoSeveridad(string Severidad, string Justificacion);
 public sealed record CuerpoTransicion(string Estado, string? Justificacion);
 public sealed record CuerpoOrganismos(string Responsable, List<CuerpoParticipante> Participantes, string Justificacion);
@@ -35,7 +37,7 @@ public sealed class DesastresController : ControladorBase
         if (!LeerFuente(c.Zona.Fuente, out FuenteDelimitacion fuente)) return Invalido("fuente debe ser SISTEMA_GIS, EVALUACION_CAMPO o DECISION_AUTORIDAD.");
         PresentadorHttp<DesastreDto> p = new(StatusCodes.Status201Created);
         await caso.EjecutarAsync(new SolicitudRegistro(actor, c.Tipo, c.Nombre, c.Descripcion, c.InstanteInicio, c.Lat, c.Lon, severidad,
-            c.Responsable, Participantes(c.Participantes), Geometria(c.Zona.Geometria), c.Zona.CodigosMunicipio ?? [], fuente), p, ct);
+            c.Responsable, Participantes(c.Participantes), Geometria(c.Zona.Geometria), c.Zona.CodigosMunicipio ?? [], fuente, c.Id), p, ct);
         return p.Resultado;
     }
 

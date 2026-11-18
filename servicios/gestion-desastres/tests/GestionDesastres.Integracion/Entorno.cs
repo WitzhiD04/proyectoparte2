@@ -98,10 +98,10 @@ public sealed class Entorno : IAsyncLifetime
 
     /// <summary>Una petición con la identidad de transición (encabezados, hasta el gateway).</summary>
     public HttpRequestMessage Peticion(HttpMethod metodo, string ruta, object? cuerpo = null, string organizacion = "ungrd",
-        string roles = "autoridad", string? ambito = null)
+        string roles = "autoridad", string? ambito = null, string usuario = "usuario.prueba")
     {
         HttpRequestMessage m = new(metodo, ruta);
-        m.Headers.Add("X-Usuario", "usuario.prueba");
+        m.Headers.Add("X-Usuario", usuario);
         m.Headers.Add("X-Roles", roles);
         m.Headers.Add("X-Organizacion", organizacion);
         if (ambito is not null)
