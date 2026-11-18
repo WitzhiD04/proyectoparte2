@@ -33,6 +33,7 @@ de humo.
 | Reconstrucción con identidad común y jurisdicción | `servicios/reconstruccion` | DA-15: Reconstrucción y la Consulta del Programa usan `IIdentidadActual`. DA-14: alcance `Nacional`, aprobación por territorio DIVIPOLA y consolidado por jurisdicción; la prueba de humo del escenario E pasa con encabezados y con tokens |
 | Jurisdicción en lecturas, creación y acciones de la autoridad | `servicios/reconstruccion`, E-39 | Cuadro 3 del SRS: la autoridad solo ve candidatas, proyectos, detalle, historial y consolidado de su jurisdicción; un lote con evaluaciones ajenas da 403 y no crea ninguno; detalle, historial, asignar, aprobar y cancelar dan 404 fuera de ella (aprobar conserva el 403 para quien lo ve pero no lo aprueba). Prueba de humo con Calarcá en los dos modos |
 | API Gateway (YARP), catálogo de rutas, priorización, correlación y QA-11 | `gateway/`, `pruebas/humo/prueba-qa11.py` | AD-04, DA-12 (55 rutas, R-07 al arrancar), DA-15 (JWT nivel 1 y reenvío sin `X-*`), DA-20 (`traceparent` y `X-Id-Correlacion`), AD-19 y DA-16 (priorización por clase con degradación de `/v1/consulta*`), QA-11 medido al 100 % (198/198 rechazados) y renovación de conexiones (`PooledConnectionLifetime`) |
+| Consola con inicio de sesión (B1) | `consola/`, `despliegue/keycloak/temas/plataforma` | DA-13 y DT-12: OIDC con PKCE contra Keycloak (cliente `consola`), interceptor con Bearer y renovación, menú por los roles del token sin selector de perfil, módulo `reconstruccion` migrado y `mapa` y `evaluaciones` como módulos diferidos vacíos (B2 y B3). La pantalla de Keycloak usa un tema con la identidad de la consola |
 | App móvil con OIDC | repositorio `danos`, rama `gemini-app-oidc` | H-70 a H-72. Falta correr su prueba instrumentada contra Keycloak (emulador con `adb reverse tcp:8180 tcp:8180`) |
 
 ## Alcance de esta entrega y reparto (fijado el 2026-11-17)
@@ -89,6 +90,5 @@ Salieron de los reportes de cada pieza. Recomendación de qué hacer con cada un
 | EV-23 no publica el estado SEMIABIERTO | Adaptador de SE-7 (decisión D2) | Aceptado: evita un evento cada 15 s. Ya documentado |
 | En k8s la entrada de SE-7 corre por `cron` (latencia de EV-24 de ~2 min) | Adaptador de SE-7 (D6) | Aceptado; el README explica cómo dejarla siempre encendida |
 | SE-2 usa su propia base `adaptador_se2` y no `adaptadores` + esquema como dice DA-11 | Paso 2 | Opcional unificar; no cambia ninguna medida |
-| La consola recibe 403 en Reconstrucción en modo Encabezados porque manda `X-Rol` | A1 | Lo resuelve B1 (login) |
 | mTLS entre servicios | §7.1 del SAD, P-06 | Declarado como límite del prototipo (TLS en el borde) |
 | Dos regiones (QA-03) | DA-16 | Opcional, al final (ver `cierre-y-medidas.md`) |
