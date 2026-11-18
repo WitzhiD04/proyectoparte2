@@ -1,7 +1,7 @@
 # Servicio Consulta de Daños
 
 Modelo de lectura de la evaluación de daños (DA-08, AD-34): el mapa de daños por zona, el consolidado con la
-priorización, la evolución de un activo y los indicadores de la bandeja de revisión (R-08). Es la ruta de lectura de
+priorización, la evolución de un activo o de una zona y los indicadores de la bandeja de revisión (R-08). Es la ruta de lectura de
 mayor volumen del módulo y está separada de la sincronización (párrafo del CU-3 del SAD): se escala sola, sin escalar a
 Evaluación de Daños (AD-18, QA-05). No lee el almacén de Evaluación de Daños (AD-01): todo llega por eventos.
 
@@ -12,8 +12,8 @@ o como migrador (`migrar`, DT-19).
 
 | Carpeta | Anillo | Contenido |
 |---|---|---|
-| `src/ConsultaDanos.Dominio` | Entidades y reglas | Niveles y `Distribucion`, `IndiceDano`, `Priorizacion`, `EstadoActivo` (reglas de versión de cada aspecto) y `Consolidacion` (incrementos del consolidado), `IndicadoresRevision`. Sin paquetes. |
-| `src/ConsultaDanos.Aplicacion` | Casos de uso y puertos | `ActualizarProyecciones` (un método por hecho del bus), `ConsultarMapa`, `ConsultarConsolidado`, `ConsultarEvolucion`, `ConsultarIndicadores`; puertos `IAlmacenProyecciones`, `ILecturasDanos`, `ICacheDanos`, `IInvalidacionMapa`, `IFormatoDanos`. Sin paquetes y sin conocer el bus. |
+| `src/ConsultaDanos.Dominio` | Entidades y reglas | Niveles y `Distribucion`, `IndiceDano`, `Priorizacion`, `EstadoActivo` (reglas de versión de cada aspecto) y `Consolidacion` (incrementos del consolidado), `IndicadoresRevision`, `CodigoZona` y `Departamentos`. Sin paquetes. |
+| `src/ConsultaDanos.Aplicacion` | Casos de uso y puertos | `ActualizarProyecciones` (un método por hecho del bus), `ConsultarMapa`, `ConsultarConsolidado`, `ConsultarEvolucion`, `ConsultarEvolucionZona`, `ConsultarIndicadores`; puertos `IAlmacenProyecciones`, `ILecturasDanos`, `ICacheDanos`, `IInvalidacionMapa`, `IFormatoDanos`. Sin paquetes y sin conocer el bus. |
 | `src/ConsultaDanos.Infraestructura` | Adaptadores | EF Core con PostGIS y su migración, `AlmacenProyeccionesPostgis` (SQL con bloqueos en orden fijo), `LecturasPostgis`, `CacheRedis`, `InterceptorInvalidacion`, `FormatoJson` (GeoJSON), `ManejadorEventosConsultaDanos` (sobre → hecho). Usa `comun/`. |
 | `src/ConsultaDanos.Api` | Adaptador de entrada | `Program.cs`: rutas, identidad con `IIdentidadActual`, parámetros de despliegue. |
 | `tests/ConsultaDanos.Pruebas` | | Índice, priorización, reglas de versión, todos los órdenes de llegada (en memoria), caché y degradación con puertos en memoria, arquitectura. |
@@ -29,7 +29,7 @@ o como migrador (`migrar`, DT-19).
 | `p_dano_por_zona`, solo validadas (RF-ED-10) | `Consolidacion.Deltas`: -1 en el grupo donde contaba, +1 donde cuenta; `AlmacenProyeccionesPostgis.GuardarActivosAsync` |
 | Índice de daño de la zona (DA-08, P-05) | `Dominio/Dano.cs` (`IndiceDano`: pesos 0, 0,25, 0,5, 0,75 y 1, ponderados por cantidad) |
 | Priorización (DA-08, P-05) | `Dominio/Priorizacion.cs`; tipos críticos en `ConsultaDanos:TiposCriticos` |
-| `p_historial_activo` y evolución (RF-ED-15) | Tabla de solo inserción; `LecturasPostgis.EvolucionAsync` |
+| `p_historial_activo` y evolución de un activo o una zona (RF-ED-15, E-40) | Tabla de solo inserción; `LecturasPostgis.EvolucionAsync` y `HistorialZonaAsync`; `ConsultarEvolucionZona` valida la zona y agrega por día |
 | `p_bandeja` y alarma de R-08 (DA-09, E-09, E-13) | `RecalcularBandejaAsync` bajo el bloqueo de la fila; `Dominio/Revision.cs`; umbrales `ConsultaDanos:UmbralConflictos` y `ConsultaDanos:UmbralHoras` |
 | Capa de municipios simplificada al proyectar (EV-21, AD-17) | `AlmacenProyeccionesPostgis.GuardarCapaAsync` (`ST_SimplifyPreserveTopology`, ~50 m) |
 | Nombres de tipos (EV-25) y estado de integraciones (EV-23, R-10) | `p_tipos_activo`, `p_integraciones`; salen en el consolidado |
@@ -50,6 +50,7 @@ el consolidado llevan además `degradado` (y el encabezado `X-Degradado`).
 | GET | `/v1/consulta-danos/mapa?desastre=&nivelMinimo=&soloValidadas=&puntos=` | GeoJSON (`application/geo+json`). Una feature `tipo: "zona"` por municipio con `activos`, `indiceDano`, `distribucion` y `conConflicto`; con `puntos=true`, una `tipo: "activo"` por activo con `nivelDano`, `validada`, `estadoValidacion` y `conflictoPendiente`. `desastre` es obligatorio. `soloValidadas` por omisión `false` (todas menos las rechazadas). Los filtros se aplican a la coropleta y a los puntos |
 | GET | `/v1/consulta-danos/consolidado?desastre=` | Impacto por zona y por tipo (solo validadas), `zonas` en el orden de la priorización (`prioridad`, `criticosGraves`, `indiceDano`), `porTipo`, `tiposCriticos` e `integraciones` |
 | GET | `/v1/consulta-danos/activos/{id}/evolucion` | `vigente` y `evaluaciones` (sincronización, actualización, asociación, resolución y validación) en orden de tiempo. 404 si no hay nada del activo |
+| GET | `/v1/consulta-danos/zonas/{codigo}/evolucion?desastre=` | `codigo`: DIVIPOLA de 5 dígitos (municipio) o 2 (departamento), validado contra la capa de municipios; `desastre` es opcional. Devuelve `zona` (`codigo`, `nombre`, `tipo`), `datoAl`, `evaluaciones` en orden de tiempo (activo, tipo, nivel, origen, estado de validación, autor) y `porDia` (`fecha` UTC, `activos`, `distribucion`). En `porDia` cada activo cuenta una vez, en su último nivel del día, sin evaluaciones rechazadas. 400 si el código o el desastre no son válidos; 404 si la zona no está en la capa o no tiene evaluaciones |
 | GET | `/v1/consulta-danos/indicadores-revision` | `conflictosPendientes`, `masViejoDesde`, `antiguedadHoras`, umbrales, `superaTamano`, `superaAntiguedad`, `alarma` |
 | GET | `/salud/vivo`, `/salud/listo` | La caché caída deja `listo` en *Degraded* (200) |
 
