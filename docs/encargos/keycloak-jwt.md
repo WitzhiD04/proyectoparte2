@@ -85,7 +85,7 @@ Lea primero, completos:
 
   Puede usar el compose: nadie más lo está usando. **Nunca `down -v`.**
 
-## Parte 4 · El emisor en la app (repo `danos`, rama `gemini-app-oidc`)
+## Parte 4 · El emisor en la app (repo `danos`, hoy en la rama `main`)
 
 - Cambie el emisor por omisión a `http://localhost:8180/realms/plataforma`. El emulador llega a él con
   `adb reverse tcp:8180 tcp:8180`, así el `iss` coincide con el que validan los servicios.
