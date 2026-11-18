@@ -1,8 +1,11 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from '../../app.routes';
-import { OidcFalso, iniciarSesionComo, proveedoresOidc, tokenDe } from '../../pruebas/apoyo';
+import { FABRICA_LIENZO } from '../../modulos/mapa/lienzo-mapa';
+import { LienzoFalso, OidcFalso, iniciarSesionComo, proveedoresOidc, tokenDe } from '../../pruebas/apoyo';
 import { RolRealm } from '../sesion';
 
 describe('rutas protegidas', () => {
@@ -11,7 +14,15 @@ describe('rutas protegidas', () => {
   beforeEach(() => {
     sessionStorage.clear();
     oidc = new OidcFalso();
-    TestBed.configureTestingModule({ providers: [provideRouter(routes), ...proveedoresOidc(oidc)] });
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter(routes),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        ...proveedoresOidc(oidc),
+        { provide: FABRICA_LIENZO, useValue: () => new LienzoFalso() },
+      ],
+    });
   });
 
   async function ir(url: string, roles?: RolRealm[]): Promise<string> {
@@ -47,8 +58,8 @@ describe('rutas protegidas', () => {
     expect(await ir('/', ['evaluador'])).toBe('/sin-acceso');
   });
 
-  it('los módulos reservados cargan para los roles que los ven', async () => {
-    expect(await ir('/evaluaciones', ['operador'])).toBe('/evaluaciones');
+  it('evaluaciones lleva a cada rol a su apartado', async () => {
+    expect(await ir('/evaluaciones', ['operador'])).toBe('/evaluaciones/conflictos');
   });
 
   it('con sesión, el ingreso sigue al destino y no acepta uno externo', async () => {
