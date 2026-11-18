@@ -451,21 +451,6 @@
           "reglaDominio": "ninguna"
         }
       },
-      "ed-mapa-calor": {
-        "ClusterId": "evaluacion-danos",
-        "Match": {
-          "Path": "/v1/mapa-calor",
-          "Methods": [
-            "GET"
-          ]
-        },
-        "Metadata": {
-          "servicio": "evaluacion-danos",
-          "roles": "*",
-          "claseTrafico": "consola",
-          "reglaDominio": "ninguna"
-        }
-      },
       "cs-desastres": {
         "ClusterId": "consulta",
         "Match": {

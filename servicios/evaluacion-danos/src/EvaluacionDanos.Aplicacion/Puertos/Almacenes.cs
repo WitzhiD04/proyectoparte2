@@ -103,11 +103,6 @@ public interface IAlmacenSincronizacion : IAlmacenEvaluaciones
 /// <summary>Filtros de la descarga previa (DA-19, E-26).</summary>
 public sealed record FiltroDescarga(Guid? DesastreId, string? Zona, DateTime? Desde);
 
-public sealed record FilaVigente(Guid ActivoId, string TipoActivoCodigo, double Lat, double Lon, NivelDano NivelDano);
-
-public sealed record DatosMapaCalor(List<FilaVigente> Vigentes, IReadOnlySet<Guid> ActivosEnConflicto,
-    DateTime? InstanteDato, int ConflictosPendientes);
-
 /// <summary>Puerto de salida de solo lectura: las consultas del servicio.</summary>
 public interface IConsultasEvaluaciones
 {
@@ -123,7 +118,4 @@ public interface IConsultasEvaluaciones
     Task<List<ConflictoDto>> ConflictosAsync(EstadoConflicto estado, CancellationToken cancelar);
 
     Task<List<EvaluacionResumenDto>> EvaluacionesDeDispositivoAsync(string idDispositivo, CancellationToken cancelar);
-
-    /// <summary>Datos del mapa de calor de un desastre, o null si el desastre no existe.</summary>
-    Task<DatosMapaCalor?> MapaCalorAsync(Guid desastreId, CancellationToken cancelar);
 }

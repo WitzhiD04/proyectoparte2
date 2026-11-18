@@ -108,48 +108,6 @@ public sealed class ConsultasEf(EvaluacionDanosDbContext db) : IConsultasEvaluac
         return consulta.ToListAsync(cancelar);
     }
 
-    public async Task<DatosMapaCalor?> MapaCalorAsync(Guid desastreId, CancellationToken cancelar)
-    {
-        bool existe = await (from d in db.Desastres where d.Id == desastreId && d.Registrado select d.Id).AnyAsync(cancelar);
-        if (!existe)
-        {
-            return null;
-        }
-
-        // Última versión aplicada de cada activo que tenga evaluación.
-        var ultimas =
-            from v in db.ActivoVersiones
-            where v.EvaluacionId != null
-            group v by v.ActivoId into g
-            select new { ActivoId = g.Key, Numero = g.Max(x => x.Numero) };
-
-        var vigentes = await (
-            from u in ultimas
-            join v in db.ActivoVersiones on new { u.ActivoId, u.Numero } equals new { v.ActivoId, v.Numero }
-            join e in db.Evaluaciones on v.EvaluacionId equals e.Id
-            join a in db.Activos on u.ActivoId equals a.Id
-            where e.DesastreId == desastreId
-            select new FilaVigente(a.Id, a.TipoActivoCodigo, a.Lat, a.Lon, e.NivelDano)).ToListAsync(cancelar);
-
-        var activosEnConflicto = await (
-            from c in db.Conflictos
-            where c.Estado == EstadoConflicto.PENDIENTE
-            select c.ActivoId).Distinct().ToListAsync(cancelar);
-
-        var instanteDato = await (
-            from e in db.Evaluaciones
-            where e.DesastreId == desastreId
-            select (DateTime?)e.InstanteServidor).MaxAsync(cancelar);
-
-        int pendientes = await (
-            from c in db.Conflictos
-            join e in db.Evaluaciones on c.EvaluacionEntranteId equals e.Id
-            where c.Estado == EstadoConflicto.PENDIENTE && e.DesastreId == desastreId
-            select c.Id).CountAsync(cancelar);
-
-        return new DatosMapaCalor(vigentes, activosEnConflicto.ToHashSet(), instanteDato, pendientes);
-    }
-
     private static VersionEvaluacionDto ADto(EvaluacionVersion v) =>
         new(v.Id, v.EvaluacionId, v.NumeroVersion, v.Autor, v.IdDispositivo, v.VersionActivoBase, v.EnConflicto,
             v.Instante, v.ContenidoJson, v.Motivo, v.Detalle);

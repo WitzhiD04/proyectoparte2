@@ -65,7 +65,6 @@ o como migrador (`migrar [--sembrar]`, DT-19).
 | POST | `/v1/conflictos/{id}/resolucion` | operador | `{decision, justificacion[, vigente]}`; EV-22 |
 | GET | `/v1/catalogos/tipos-activo` | cualquier identidad | Catálogo con criterios por nivel |
 | POST, PATCH | `/v1/catalogos/tipos-activo[/{codigo}]` | administrador | EV-25 en cada cambio |
-| GET | `/v1/mapa-calor`, página `/mapa` | cualquier identidad | **Obsoletos**: los reemplaza Consulta de Daños (DA-08) |
 | GET | `/salud`, `/salud/vivo`, `/salud/listo` | — | `/salud` es el que prueba la app |
 
 Errores: `{ "error": "..." }`. 400 dato inválido, 401 sin identidad, 403 sin el rol o sin autorización de nivel 2,
@@ -81,11 +80,11 @@ Errores: `{ "error": "..." }`. 400 dato inválido, 401 sin identidad, 403 sin el
   conflicto no cambió: una edición hecha sin conexión sobre una base anterior queda en conflicto y va a revisión, en vez
   de sobrescribir en silencio lo que cambió el servidor (AD-32).
 - **Si cambia el contenido de una evaluación validada, u otra la reemplaza al resolver un conflicto, la validación se retira** y se publica EV-08 con `PENDIENTE`.
-- **Transición hasta el gateway (se elimina con DA-15).** La app actual no envía `X-Roles`: una petición sin roles que
-  trae `X-Dispositivo` se trata como `evaluador` (`RolesEfectivos` en `Api/Seguridad/Autorizacion.cs`). Los
-  encabezados se pueden falsificar; es la misma simplificación del Anexo A del SAD.
-- **Descarga.** Sin filtros entrega todos los activos (lo que la app actual pide). El catálogo y los desastres van
-  siempre completos; `desde` solo reduce los activos, con un traslape de 60 s.
+- **Identidad.** En compose el servicio corre con `Identidad__Modo=Jwt`: la app (v2.1.0) entra por el gateway con el
+  token OIDC de Keycloak y `X-Dispositivo`. El modo por encabezados (`RolesEfectivos` en `Api/Seguridad/Autorizacion.cs`
+  trata como `evaluador` una petición sin roles que trae `X-Dispositivo`) queda solo para las pruebas de integración.
+- **Descarga.** La app envía `zona` (municipio DIVIPOLA) y `desde` (descarga incremental). Sin filtros entrega todos los
+  activos. El catálogo y los desastres van siempre completos; `desde` solo reduce los activos, con un traslape de 60 s.
 
 ## Probar
 

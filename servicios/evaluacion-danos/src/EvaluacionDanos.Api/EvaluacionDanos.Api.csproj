@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <!--
     Adaptadores de entrada (controllers, presentación, autorización de nivel 1) y el punto donde se conecta cada
-    puerto con su implementación. La página Razor del mapa de calor es del prototipo y está obsoleta (DA-08).
+    puerto con su implementación. El mapa lo sirve Consulta de Daños (DA-08).
   -->
   <ItemGroup>
     <ProjectReference Include="..\EvaluacionDanos.Aplicacion\EvaluacionDanos.Aplicacion.csproj" />
