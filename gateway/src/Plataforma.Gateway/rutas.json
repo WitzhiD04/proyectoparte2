@@ -586,6 +586,21 @@
           "reglaDominio": "ninguna"
         }
       },
+      "cd-evolucion-zona": {
+        "ClusterId": "consulta-danos",
+        "Match": {
+          "Path": "/v1/consulta-danos/zonas/{codigo}/evolucion",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "consulta-danos",
+          "roles": "*",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
       "cd-indicadores": {
         "ClusterId": "consulta-danos",
         "Match": {
