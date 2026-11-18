@@ -36,6 +36,8 @@ echo "1. Imágenes, construidas dentro de Minikube (no hace falta un registro)"
 minikube image build -t plataforma/reconstruccion:local -f servicios/reconstruccion/Dockerfile "$raiz"
 minikube image build -t plataforma/evaluacion-danos:local -f servicios/evaluacion-danos/Dockerfile "$raiz"
 minikube image build -t plataforma/adaptador-se2:local -f adaptadores/adaptador-se2/Dockerfile "$raiz"
+minikube image build -t plataforma/adaptador-se6:local -f adaptadores/adaptador-se6/Dockerfile "$raiz"
+minikube image build -t plataforma/sim-se6:local -f simuladores/sim-se6/Dockerfile "$raiz"
 minikube image build -t plataforma/adaptador-se7:local -f adaptadores/adaptador-se7/Dockerfile "$raiz"
 minikube image build -t plataforma/sim-se7:local -f simuladores/sim-se7/Dockerfile "$raiz"
 minikube image build -t plataforma/auditoria:local -f servicios/auditoria/Dockerfile "$raiz"
@@ -65,6 +67,9 @@ k -n plataforma rollout status deployment/reconstruccion --timeout=300s
 k -n plataforma rollout status deployment/consulta-programa --timeout=300s
 k -n plataforma wait --for=condition=complete job/adaptador-se2-migrador --timeout=600s
 k -n plataforma rollout status deployment/adaptador-se2 --timeout=300s
+k -n plataforma rollout status deployment/sim-se6 --timeout=300s
+k -n plataforma wait --for=condition=complete job/adaptador-se6-migrador --timeout=600s
+k -n plataforma wait --for=condition=Ready scaledobject/adaptador-se6 --timeout=180s
 k -n plataforma rollout status deployment/sim-se7 --timeout=300s
 k -n plataforma wait --for=condition=complete job/adaptador-se7-migrador --timeout=600s
 # Los adaptadores de SE-7 los escala KEDA (pueden estar en cero): se comprueba que sus ScaledObject estén listos.

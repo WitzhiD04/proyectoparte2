@@ -51,6 +51,12 @@ x-adaptador-se2: &adaptador-se2
     context: ../..
     dockerfile: adaptadores/adaptador-se2/Dockerfile
 
+x-adaptador-se6: &adaptador-se6
+  image: plataforma/adaptador-se6:local
+  build:
+    context: ../..
+    dockerfile: adaptadores/adaptador-se6/Dockerfile
+
 x-adaptador-se7: &adaptador-se7
   image: plataforma/adaptador-se7:local
   build:
@@ -524,6 +530,66 @@ services:
       Bus__Usuario: adaptador-se2
       Bus__Clave: ${BUS_CLAVE_ADAPTADOR_SE2:-adaptador_se2_local}
       Bus__Productor: adaptador-se2
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  # Simulador de SE-6, sistema financiero externo (DA-11). Sin puerto publicado: la caída de QA-01 se provoca con
+  #   docker compose -f despliegue/compose/docker-compose.yml exec sim-se6 \
+  #     curl -s -X POST localhost:8080/admin/caida -H 'Content-Type: application/json' -d '{"modo":"on"}'
+  # (modos on, off y lento; GET localhost:8080/admin/estado muestra los proyectos y movimientos recibidos).
+  sim-se6:
+    image: plataforma/sim-se6:local
+    build:
+      context: ../..
+      dockerfile: simuladores/sim-se6/Dockerfile
+    environment:
+      Simulador__RetrasoLentoMs: "10000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/vivo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  # Adaptador de SE-6 (DA-11). Migrador de su esquema se6 en la base compartida "adaptadores" (DT-19).
+  adaptador-se6-migrador:
+    <<: *adaptador-se6
+    command: ["migrar"]
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      ConnectionStrings__AdaptadorSe6Dueno: "Host=db;Port=5432;Database=adaptadores;Username=postgres;Password=${POSTGRES_CLAVE:-postgres_local}"
+      Migracion__ClaveAdaptadorSe6App: ${ADAPTADOR_SE6_APP_CLAVE:-adaptador_se6_local}
+    restart: "no"
+
+  # Salida por lotes: EV-18, EV-19 y EV-20 de q.salida.se6 hacia SE-6. En Kubernetes KEDA la escala de 0 a N por el
+  # largo de la cola (DT-10, AD-25); en compose queda siempre encendida, con 2 réplicas que compiten por la cola.
+  adaptador-se6:
+    <<: *adaptador-se6
+    command: ["salida"]
+    deploy:
+      replicas: 2
+    depends_on:
+      adaptador-se6-migrador: { condition: service_completed_successfully }
+      sim-se6: { condition: service_healthy }
+      bus1: { condition: service_healthy }
+      bus2: { condition: service_healthy }
+      bus3: { condition: service_healthy }
+    environment:
+      ConnectionStrings__AdaptadorSe6: "Host=db;Port=5432;Database=adaptadores;Username=adaptador_se6_app;Password=${ADAPTADOR_SE6_APP_CLAVE:-adaptador_se6_local}"
+      Bus__Nodos__0: bus1
+      Bus__Nodos__1: bus2
+      Bus__Nodos__2: bus3
+      Bus__Usuario: adaptador-se6
+      Bus__Clave: ${BUS_CLAVE_ADAPTADOR_SE6:-adaptador_se6_local}
+      Bus__Productor: adaptador-se6
+      Se6__Url: "http://sim-se6:8080/"
+      Se6__TamanoLote: ${ADAPTADOR_SE6_TAMANO_LOTE:-10}
+      Se6__VentanaLoteSegundos: ${ADAPTADOR_SE6_VENTANA_LOTE_SEGUNDOS:-2}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
       interval: 5s

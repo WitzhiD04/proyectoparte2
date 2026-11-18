@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Pruebas de integración del adaptador de SE-6 (requieren Docker): PostgreSQL 18 y RabbitMQ 4.4 reales con la
+    topología de despliegue/bus (Testcontainers) y el simulador de SE-6 en memoria (WebApplicationFactory).
+    QA-01: con SE-6 caído los movimientos esperan en q.salida.se6 y se entregan todos al volver, sin duplicados;
+    EV-23 sale al abrirse y al cerrarse el circuito; el lote respeta el tamaño y el tiempo; de EV-20 solo se envía
+    el costo y el cierre.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AdaptadorSe6\AdaptadorSe6.csproj" />
+    <ProjectReference Include="..\..\..\..\simuladores\sim-se6\SimSe6.csproj" />
+  </ItemGroup>
+</Project>

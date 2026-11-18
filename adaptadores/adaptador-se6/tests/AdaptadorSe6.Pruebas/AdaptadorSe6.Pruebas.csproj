@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Pruebas unitarias del adaptador de SE-6, sin Docker: traducción EV-18/EV-19/EV-20 -> SE-6 contra el contrato y
+    filtrado de EV-20 (solo costo y cierre), EV-23, resiliencia ("3 de 3" abre el circuito), acumulación en lotes por
+    tamaño y por tiempo, salida sin cola de mensajes muertos con SE-6 caído e idempotencia por elemento en el simulador.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AdaptadorSe6\AdaptadorSe6.csproj" />
+    <ProjectReference Include="..\..\..\..\simuladores\sim-se6\SimSe6.csproj" />
+  </ItemGroup>
+</Project>
