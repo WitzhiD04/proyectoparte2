@@ -40,9 +40,22 @@ spec:
             limits: { memory: 1Gi }
           volumeMounts:
             - { name: realm, mountPath: /opt/keycloak/data/import, readOnly: true }
+            - { name: tema, mountPath: /opt/keycloak/themes/plataforma/login, readOnly: true }
       volumes:
         - name: realm
           configMap: { name: keycloak-realm }
+        # Tema de la pantalla de inicio de sesión (despliegue/keycloak/temas): un ConfigMap no guarda carpetas.
+        - name: tema
+          configMap:
+            name: keycloak-tema
+            items:
+              - { key: theme.properties, path: theme.properties }
+              - { key: messages_es.properties, path: messages/messages_es.properties }
+              - { key: plataforma.css, path: resources/css/plataforma.css }
+              - { key: ibm-plex-sans-latin-400-normal.woff2, path: resources/fonts/ibm-plex-sans-latin-400-normal.woff2 }
+              - { key: ibm-plex-sans-latin-500-normal.woff2, path: resources/fonts/ibm-plex-sans-latin-500-normal.woff2 }
+              - { key: ibm-plex-sans-latin-600-normal.woff2, path: resources/fonts/ibm-plex-sans-latin-600-normal.woff2 }
+              - { key: archivo-latin-wdth-normal.woff2, path: resources/fonts/archivo-latin-wdth-normal.woff2 }
 ---
 apiVersion: v1
 kind: Service

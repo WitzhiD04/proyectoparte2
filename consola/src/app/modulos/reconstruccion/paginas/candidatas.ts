@@ -1,8 +1,8 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Api, leerError } from '../nucleo/api';
-import { Candidata, ErrorApi, NOMBRE_DANO } from '../nucleo/modelos';
-import { Sesion } from '../nucleo/sesion';
+import { Api, leerError } from '../../../nucleo/api';
+import { Candidata, ErrorApi, NOMBRE_DANO } from '../../../nucleo/modelos';
+import { Sesion } from '../../../nucleo/sesion';
 
 /** CU-01 y CU-02: consultar las evaluaciones candidatas y crear proyectos con las elegidas. */
 @Component({
@@ -97,7 +97,7 @@ export class Candidatas {
     this.enviando.set(true);
     this.error.set(null);
     this.api.crearLote(this.sesion.idDesastre(), [...this.elegidas()], this.clave).subscribe({
-      next: () => this.router.navigate(['/proyectos']),
+      next: () => this.router.navigate(['/reconstruccion/proyectos']),
       error: (r) => { this.error.set(leerError(r)); this.enviando.set(false); },
     });
   }

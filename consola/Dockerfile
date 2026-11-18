@@ -1,4 +1,4 @@
-# Consola web: se compila con Node y se sirve con nginx, que también reparte las peticiones /v1 a los dos servicios.
+# Consola web: se compila con Node y se sirve con nginx, detrás del API Gateway.
 FROM node:22-alpine AS compilacion
 WORKDIR /fuente
 COPY package.json package-lock.json ./

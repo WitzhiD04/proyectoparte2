@@ -1,4 +1,4 @@
-<p class="volver"><a routerLink="/proyectos">Volver a los proyectos</a></p>
+<p class="volver"><a routerLink="/reconstruccion/proyectos">Volver a los proyectos</a></p>
 
 @if (error(); as e) {
   <div class="aviso error" role="alert">
@@ -12,7 +12,7 @@
 
 @if (proyecto(); as p) {
   <h1>{{ p.nombre }}</h1>
-  <p class="suave">Alcance {{ p.alcance.toLowerCase() }}. Lo aprueba la autoridad {{ p.alcance === 'Municipal' ? 'local' : 'regional' }}.</p>
+  <p class="suave">Alcance {{ p.alcance.toLowerCase() }}. Lo aprueba la autoridad {{ aprobador() }}.</p>
 
   <section class="recorrido" aria-label="Recorrido del proyecto">
     <app-linea-estados [estado]="p.estado" />

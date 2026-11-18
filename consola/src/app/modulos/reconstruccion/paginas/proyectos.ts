@@ -1,9 +1,9 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Api, leerError } from '../nucleo/api';
-import { PesosPipe } from '../nucleo/formato';
-import { ErrorApi, NOMBRE_ESTADO, Proyecto } from '../nucleo/modelos';
-import { Sesion } from '../nucleo/sesion';
+import { Api, leerError } from '../../../nucleo/api';
+import { PesosPipe } from '../../../nucleo/formato';
+import { ErrorApi, NOMBRE_ESTADO, Proyecto } from '../../../nucleo/modelos';
+import { Sesion } from '../../../nucleo/sesion';
 
 @Component({
   selector: 'app-proyectos',
@@ -25,7 +25,7 @@ import { Sesion } from '../nucleo/sesion';
           <tbody>
             @for (p of visibles(); track p.id) {
               <tr>
-                <td><a [routerLink]="['/proyectos', p.id]">{{ p.nombre }}</a><br /><span class="suave">{{ p.alcance }}</span></td>
+                <td><a [routerLink]="['/reconstruccion/proyectos', p.id]">{{ p.nombre }}</a><br /><span class="suave">{{ p.alcance }}</span></td>
                 <td><span class="estado" [class]="p.estado">{{ estados[p.estado] }}</span></td>
                 <td>{{ p.responsable ?? 'Sin asignar' }}</td>
                 <td class="numero">{{ p.presupuesto | pesos }}</td>
@@ -39,7 +39,7 @@ import { Sesion } from '../nucleo/sesion';
     } @else if (cargado() && !error()) {
       <p class="vacio">
         @if (sesion.esAutoridad()) {
-          Todavía no hay proyectos en este desastre. <a routerLink="/candidatas">Cree los primeros a partir de las evaluaciones candidatas.</a>
+          Todavía no hay proyectos en este desastre. <a routerLink="/reconstruccion/candidatas">Cree los primeros a partir de las evaluaciones candidatas.</a>
         } @else if (sesion.esResponsable()) {
           No tiene proyectos asignados en este desastre.
         } @else {
@@ -64,8 +64,8 @@ export class Proyectos {
   protected readonly cargado = signal(false);
 
   protected readonly visibles = computed(() => {
-    const perfil = this.sesion.perfil();
-    return perfil.rol === 'Responsable' ? this.proyectos().filter((p) => p.responsable === perfil.usuario) : this.proyectos();
+    const usuario = this.sesion.usuario();
+    return this.sesion.esResponsable() ? this.proyectos().filter((p) => p.responsable === usuario) : this.proyectos();
   });
 
   constructor() {
