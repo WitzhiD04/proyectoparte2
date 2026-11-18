@@ -50,6 +50,17 @@ Fecha: 16 de noviembre de 2026.
 | E-30 | SAD | Cuadro 16 (campos adicionales de EV-03, EV-06, EV-10, EV-18, EV-19 y EV-20) | Aditiva | Paso 1 |
 | E-31 | SAD | §5.2 y AD-45 (la secuencia del productor la asigna el relevo, sin huecos) | Aclaratoria | Paso 1, hallazgo 1 |
 | E-32 | SAD | Cuadro 5 (límite de entregas: lo aplica el consumidor) | Aclaratoria | Paso 1 |
+| E-33 | SAD | Cuadro 16 (EV-18 lleva el autor de la creación) | Aditiva | Paso 3 |
+| E-34 | SAD y ATAM | AD-21 (Auditoría registra los tipos de evento que no conoce). R-03 | Aditiva | Paso 4 |
+| E-35 | SAD y SRS | Cuadro 15 y RN-3 (rutas de configuración del ciclo de vida y perfil mínimo por nivel) | Aditiva | Paso 5 |
+| E-36 | SAD y Diseño RC | Cuadro 16 (Reconstrucción consume EV-21) | Aditiva | Paso 5 |
+| E-37 | SAD | Cuadro 16 y AD-13 (Notificación: EV-07, EV-28 y EV-29) | Aditiva | Notificación |
+| E-38 | SAD | Cuadro 15 (el marcador `desde` es un instante del servidor) | Correctiva | DA-19 |
+| E-39 | Diseño RC | CU-01 a CU-11 (jurisdicción de la autoridad) | Aclaratoria | DA-14 |
+| E-40 | SAD | Cuadro 15 y DA-08 (evolución por zona) | Aditiva | A4 |
+| E-41 | SAD | DA-13 (tablero de daños en Razor Pages) | Excepción acotada | C1 |
+| E-42 | SRS y SAD | RF-GD-02 y Cuadro 15 (registro del desastre en campo con id del cliente, AD-48) | Aditiva | Cierre |
+| E-43 | SAD | Vistas lógica y física (Proveedor de identidad, AD-49) | Aditiva | DA-15 |
 
 ---
 
@@ -524,3 +535,25 @@ completos, porque son pocos.
   - Un proyecto web aparte que llame por HTTP a la API: duplica un despliegue y no demuestra dos interfaces sobre los mismos
     casos de uso.
   - Permitir `POST` público en el catálogo: debilita una regla de seguridad para un caso que `GET` resuelve.
+
+### E-42 · Registro del desastre en campo desde el cliente móvil (RF-GD-02, AD-48)
+
+- **Texto actual:** RF-GD-02 asigna el registro manual al organismo de respuesta y a la autoridad, sin decir desde dónde.
+  El Cuadro 15 define `POST /v1/desastres` sin identificador del cliente.
+- **Texto propuesto (SRS):** "El sistema deberá permitir que un usuario autorizado registre un evento de desastre indicando
+  los atributos mínimos del Cuadro 7, desde la consola o desde el cliente móvil en campo, aun sin conexión."
+- **Texto propuesto (SAD, Cuadro 15):** "`POST /v1/desastres` acepta un `id` opcional generado por el cliente. El reenvío del
+  mismo `id` por el mismo autor devuelve el desastre ya registrado; si el `id` pertenece a otro autor responde 409
+  `ID_EXISTE`." Nueva decisión AD-48.
+- **Tipo:** aditiva. El registro desde la consola no cambia.
+- **Implementación:** `servicios/gestion-desastres` (`RegistrarDesastre`, prueba
+  `El_reenvio_con_el_mismo_id_desde_campo_no_duplica_el_desastre`) y repositorio `danos` (pantallas Desastres y Registrar
+  desastre, tabla Room `registro_desastre`, `EnviadorDesastres`, `ContratoServidorTest`).
+
+### E-43 · El Proveedor de identidad en las vistas (DA-15, AD-49)
+
+- **Texto actual:** las vistas lógica y física del SAD no tienen un elemento para la identidad federada, aunque DA-15, AD-04
+  y AD-22 la usan.
+- **Texto propuesto:** agregar el componente externo "Proveedor de identidad" (OIDC con PKCE) en la vista lógica, su nodo en
+  la vista física y la decisión AD-49: el token se valida en el gateway (nivel 1) y en cada microservicio (nivel 2).
+- **Tipo:** aditiva. La tecnología (Keycloak 26) va en AD-58.
