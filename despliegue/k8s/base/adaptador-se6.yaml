@@ -1,0 +1,141 @@
+# Adaptador de SE-6, sistema financiero externo (DA-11), con KEDA (DT-10, AD-25: nodo de ejecución bajo demanda).
+#   - sim-se6: el simulador de SE-6 (una réplica, estado en memoria).
+#   - adaptador-se6-migrador: esquema se6 en la base compartida "adaptadores" (DT-19).
+#   - adaptador-se6: consume q.salida.se6 en lotes y los entrega a SE-6. KEDA lo escala de 0 a N por el largo de la cola.
+# Los adaptadores no llevan PodDisruptionBudget: son efímeros y pueden estar en cero (AD-25). Su estado (bandeja,
+# mensajes procesados) vive en la base; los movimientos pendientes, en la cola.
+# Requiere KEDA instalado (lo instala aplicar.sh). Sin KEDA, el Deployment queda con su réplica fija.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sim-se6
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: sim-se6 }
+  template:
+    metadata:
+      labels: { app: sim-se6 }
+    spec:
+      containers:
+        - name: simulador
+          image: plataforma/sim-se6:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: Simulador__RetrasoLentoMs, value: "10000" }
+          ports: [{ containerPort: 8080 }]
+          readinessProbe:
+            httpGet: { path: /salud/vivo, port: 8080 }
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 20m, memory: 64Mi }
+            limits: { memory: 192Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sim-se6
+spec:
+  selector: { app: sim-se6 }
+  ports: [{ port: 8080 }]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: adaptador-se6-migrador
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrador
+          image: plataforma/adaptador-se6:local
+          imagePullPolicy: IfNotPresent
+          args: ["migrar"]
+          env:
+            - name: ConnectionStrings__AdaptadorSe6Dueno
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-adaptador-se6-dueno } }
+            - name: Migracion__ClaveAdaptadorSe6App
+              valueFrom: { secretKeyRef: { name: credenciales, key: adaptador-se6-app } }
+---
+# Salida por lotes. "replicas" es el valor inicial: con KEDA instalado, el ScaledObject manda (de 0 a 4).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: adaptador-se6
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: adaptador-se6 }
+  template:
+    metadata:
+      labels: { app: adaptador-se6 }
+    spec:
+      # Al bajar a cero, el consumidor deja de tomar mensajes y el lote en curso vuelve a la cola sin confirmarse.
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: adaptador
+          image: plataforma/adaptador-se6:local
+          imagePullPolicy: IfNotPresent
+          args: ["salida"]
+          env:
+            - { name: Bus__Nodos__0, value: bus }
+            - { name: Bus__Usuario, value: adaptador-se6 }
+            - { name: Bus__Productor, value: adaptador-se6 }
+            - name: Bus__Clave
+              valueFrom: { secretKeyRef: { name: credenciales, key: bus-adaptador-se6 } }
+            - name: ConnectionStrings__AdaptadorSe6
+              valueFrom: { secretKeyRef: { name: credenciales, key: cadena-adaptador-se6 } }
+            - { name: Se6__Url, value: "http://sim-se6:8080/" }
+            - { name: Se6__TamanoLote, value: "10" }
+            - { name: Se6__VentanaLoteSegundos, value: "2" }
+          ports: [{ containerPort: 8080 }]
+          readinessProbe:
+            httpGet: { path: /salud/listo, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /salud/vivo, port: 8080 }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 320Mi }
+---
+# Credenciales con las que KEDA mide la cola: el usuario del adaptador, que puede leer q.salida.se6 (mínimo privilegio).
+# El operador de KEDA corre en su propio namespace, por eso la URL del secreto usa el nombre completo del servicio.
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: bus-adaptador-se6
+spec:
+  secretTargetRef:
+    - parameter: host
+      name: credenciales
+      key: amqp-adaptador-se6
+---
+# Salida bajo demanda (DT-10): 0 réplicas con la cola vacía, una más por cada 20 mensajes listos, hasta 4.
+# KEDA mide por AMQP los mensajes listos (no los que están en curso). Con SE-6 caído el adaptador pausa el consumo y
+# devuelve el lote en curso a la cola (CompuertaLotesSe6): los pendientes siguen contándose como listos y queda al
+# menos una réplica sondeando SE-6, que los entrega cuando el circuito se cierra (Cuadro 5, AD-36).
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: adaptador-se6
+spec:
+  scaleTargetRef:
+    name: adaptador-se6
+  minReplicaCount: 0
+  maxReplicaCount: 4
+  pollingInterval: 10
+  cooldownPeriod: 120
+  triggers:
+    - type: rabbitmq
+      metadata:
+        protocol: amqp
+        queueName: q.salida.se6
+        mode: QueueLength
+        value: "20"
+        activationValue: "0"
+      authenticationRef:
+        name: bus-adaptador-se6

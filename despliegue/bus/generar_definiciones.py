@@ -29,6 +29,7 @@ COLAS = {
     "q.gestion-desastres": ["ev18", "ev20", "ev21"],
     "q.evaluacion-danos": ["ev03", "ev05", "ev06", "ev21", "ev27"],
     "q.auditoria": ["#"],
+    "q.salida.se6": ["ev18", "ev19", "ev20"],
     "q.salida.se7": ["ev18", "ev20"],
     # Notificación (AD-13, RF-GD-06, RF-GD-15): desastre creado, severidad cambiada y acuses de SE-8 (E-37).
     "q.notificacion": ["ev03", "ev04", "ev29"],
@@ -44,6 +45,7 @@ USUARIOS = {
     "gestion-desastres": {"lee": ["q.gestion-desastres"], "publica": True},
     "consulta": {"lee": ["q.consulta"], "publica": False},
     "auditoria": {"lee": ["q.auditoria"], "publica": False},
+    "adaptador-se6": {"lee": ["q.salida.se6"], "publica": True},
     "adaptador-se7": {"lee": ["q.salida.se7"], "publica": True},
     "notificacion": {"lee": ["q.notificacion"], "publica": True},
     "adaptador-se8": {"lee": ["q.salida.se8"], "publica": True},

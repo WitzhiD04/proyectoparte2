@@ -21,6 +21,11 @@ stringData:
   cadena-adaptador-se2: "Host=db;Port=5432;Database=adaptador_se2;Username=adaptador_se2_app;Password=adaptador_se2_local"
   bus-evaluacion-danos: evaluacion_danos_local
   bus-adaptador-se2: adaptador_se2_local
+  adaptador-se6-app: adaptador_se6_local
+  cadena-adaptador-se6-dueno: "Host=db;Port=5432;Database=adaptadores;Username=postgres;Password=postgres_local"
+  cadena-adaptador-se6: "Host=db;Port=5432;Database=adaptadores;Username=adaptador_se6_app;Password=adaptador_se6_local"
+  bus-adaptador-se6: adaptador_se6_local
+  amqp-adaptador-se6: "amqp://adaptador-se6:adaptador_se6_local@bus.plataforma.svc.cluster.local:5672/%2F"
   adaptador-se7-app: adaptador_se7_local
   cadena-adaptador-se7-dueno: "Host=db;Port=5432;Database=adaptadores;Username=postgres;Password=postgres_local"
   cadena-adaptador-se7: "Host=db;Port=5432;Database=adaptadores;Username=adaptador_se7_app;Password=adaptador_se7_local"

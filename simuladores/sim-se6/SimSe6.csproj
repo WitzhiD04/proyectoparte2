@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!--
+    Simulador de SE-6, el sistema financiero externo (DA-11). Es "el otro sistema": no referencia nada de la plataforma
+    y tiene su propio formato (cuentas de proyecto, lotes y movimientos financieros). Guarda su estado en memoria. Lo
+    usan el compose (QA-01) y la prueba de integración del adaptador de SE-6 (WebApplicationFactory).
+  -->
+  <PropertyGroup>
+    <RootNamespace>SimSe6</RootNamespace>
+  </PropertyGroup>
+</Project>

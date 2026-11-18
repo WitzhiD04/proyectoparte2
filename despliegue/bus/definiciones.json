@@ -60,6 +60,13 @@
       "limits": {}
     },
     {
+      "name": "adaptador-se6",
+      "password_hash": "Y901xBdBJlWQ9PGuGJt/TCmdz2n/yr9e5Wub9KtPAckWvk+4",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": [],
+      "limits": {}
+    },
+    {
       "name": "adaptador-se7",
       "password_hash": "R9dTzgs0DdaIF2l+ycerv2JXoHtjCz4QPeGIIySwDFkwBMrf",
       "hashing_algorithm": "rabbit_password_hashing_sha256",
@@ -149,6 +156,13 @@
       "configure": "^$",
       "write": "^$",
       "read": "^(q\\.auditoria)$"
+    },
+    {
+      "user": "adaptador-se6",
+      "vhost": "/",
+      "configure": "^$",
+      "write": "^(plataforma\\.eventos)$",
+      "read": "^(q\\.salida\\.se6)$"
     },
     {
       "user": "adaptador-se7",
@@ -344,6 +358,26 @@
     },
     {
       "name": "dlq.auditoria",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "q.salida.se6",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "plataforma.dlx",
+        "x-dead-letter-routing-key": "q.salida.se6"
+      }
+    },
+    {
+      "name": "dlq.salida.se6",
       "vhost": "/",
       "durable": true,
       "auto_delete": false,
@@ -751,6 +785,38 @@
       "destination": "q.auditoria",
       "destination_type": "queue",
       "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.dlx",
+      "vhost": "/",
+      "destination": "dlq.salida.se6",
+      "destination_type": "queue",
+      "routing_key": "q.salida.se6",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.salida.se6",
+      "destination_type": "queue",
+      "routing_key": "ev18.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.salida.se6",
+      "destination_type": "queue",
+      "routing_key": "ev19.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.salida.se6",
+      "destination_type": "queue",
+      "routing_key": "ev20.#",
       "arguments": {}
     },
     {
