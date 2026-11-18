@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
-import { EvolucionActivo, EvolucionDesastre, FiltroDanos, MapaDanos, MapaZonas, Respuesta, TableroDesastres } from './modelos-mapa';
+import { EvolucionActivo, EvolucionDesastre, EvolucionZona, FiltroDanos, MapaDanos, MapaZonas, Respuesta, TableroDesastres } from './modelos-mapa';
 
 /** Lecturas del mapa: Consulta de Daños (coropleta y activos) y Consulta (desastres y sus zonas). */
 @Injectable({ providedIn: 'root' })
@@ -36,6 +36,10 @@ export class ApiMapa {
 
   evolucionDesastre(id: string, en?: string): Observable<Respuesta<EvolucionDesastre>> {
     return this.leer(`consulta/desastres/${id}/evolucion`, en ? new HttpParams({ fromObject: { en } }) : undefined);
+  }
+
+  evolucionZona(codigo: string, desastre: string): Observable<Respuesta<EvolucionZona>> {
+    return this.leer(`consulta-danos/zonas/${codigo}/evolucion`, new HttpParams({ fromObject: { desastre } }));
   }
 
   evolucionActivo(id: string): Observable<Respuesta<EvolucionActivo>> {

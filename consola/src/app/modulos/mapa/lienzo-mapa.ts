@@ -6,7 +6,7 @@ import { ActivoMapa, NIVELES, NombreCapa, ZonaDano, ZonaDibujo } from './modelos
 
 /** Lo que la pantalla necesita del mapa. Leaflet queda detrás de esta interfaz. */
 export interface LienzoMapa {
-  montar(elemento: HTMLElement, alElegirActivo: (idActivo: string) => void): void;
+  montar(elemento: HTMLElement, alElegirActivo: (idActivo: string) => void, alElegirZona: (codigo: string) => void): void;
   pintarCoropleta(zonas: readonly ZonaDano[]): void;
   pintarActivos(activos: readonly ActivoMapa[]): void;
   pintarZona(vigente: ZonaDibujo | null, anteriores: readonly ZonaDibujo[]): void;
@@ -44,7 +44,7 @@ function globoZona({ properties: z }: ZonaDano): HTMLElement {
   const niveles = NIVELES.filter((n) => z.distribucion[n] > 0).map((n) => `${NOMBRE_NIVEL[n]}: ${z.distribucion[n]}`);
   const conflictos = z.conConflicto > 0 ? [`Con conflicto pendiente: ${z.conConflicto}`] : [];
   const indice = z.indiceDano === null ? 'sin dato' : numero(z.indiceDano);
-  return globo(z.nombre ?? z.codigoMunicipio, [`Índice de daño: ${indice}`, `Activos: ${z.activos}`, ...niveles, ...conflictos]);
+  return globo(z.nombre ?? z.codigoMunicipio, [`Índice de daño: ${indice}`, `Activos: ${z.activos}`, ...niveles, ...conflictos, 'Clic para ver su evolución']);
 }
 
 function globoActivo({ properties: a }: ActivoMapa): HTMLElement {
@@ -60,6 +60,7 @@ export class LienzoLeaflet implements LienzoMapa {
   private mapa: L.Map | null = null;
   private observador: ResizeObserver | null = null;
   private alElegirActivo: (idActivo: string) => void = () => undefined;
+  private alElegirZona: (codigo: string) => void = () => undefined;
   private readonly marcadores = new Map<string, L.CircleMarker>();
   private anillo: L.CircleMarker | null = null;
   private elegido: string | null = null;
@@ -69,8 +70,9 @@ export class LienzoLeaflet implements LienzoMapa {
     activos: L.featureGroup(),
   };
 
-  montar(elemento: HTMLElement, alElegirActivo: (idActivo: string) => void): void {
+  montar(elemento: HTMLElement, alElegirActivo: (idActivo: string) => void, alElegirZona: (codigo: string) => void): void {
     this.alElegirActivo = alElegirActivo;
+    this.alElegirZona = alElegirZona;
     const mapa = L.map(elemento, { renderer: L.canvas({ padding: 0.3, tolerance: 4 }), zoomControl: false }).setView(COLOMBIA, 6);
     L.control.zoom({ zoomInTitle: 'Acercar', zoomOutTitle: 'Alejar' }).addTo(mapa);
     mapa.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>');
@@ -96,6 +98,7 @@ export class LienzoLeaflet implements LienzoMapa {
         style: { color: PAPEL, weight: 1.5, fillColor: colorIndice(zona.properties.indiceDano), fillOpacity: 0.68 },
       })
         .bindTooltip(() => globoZona(zona), { sticky: true })
+        .on('click', () => this.alElegirZona(zona.properties.codigoMunicipio))
         .addTo(this.capas.coropleta);
     }
     this.ordenar();

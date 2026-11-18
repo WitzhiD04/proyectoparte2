@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { leerError } from '../../nucleo/api';
 import { ApiEvaluaciones } from './api-evaluaciones';
 import { DECISIONES, compararVersiones, fechaExacta, nombreDecision, razonNoDisponible } from './formato-evaluaciones';
@@ -50,7 +50,7 @@ import { Conflicto, DecisionConflicto, EleccionVigente, EstadoConflicto } from '
 
     @if (elegido(); as c) {
       <section class="panel" aria-labelledby="titulo-comparacion">
-        <h2 id="titulo-comparacion">{{ nombreTipo(c) }}: {{ referencia(c) }}</h2>
+        <h2 id="titulo-comparacion" #titulo tabindex="-1">{{ nombreTipo(c) }}: {{ referencia(c) }}</h2>
         <p class="regla">{{ c.regla }}</p>
         <div class="tabla-ancha" tabindex="0" role="region" aria-labelledby="titulo-comparacion">
           <table class="comparacion">
@@ -105,6 +105,7 @@ import { Conflicto, DecisionConflicto, EleccionVigente, EstadoConflicto } from '
   `,
   styles: `
     h1 { margin-bottom: 1.25rem; }
+    h2:focus { outline: none; }
     .mandos { display: flex; flex-wrap: wrap; gap: 0.9rem 1.25rem; align-items: end; margin-bottom: 1.25rem; }
     .mandos .campo { margin: 0; min-width: 14rem; }
     td button { padding: 0.2rem 0.55rem; font-size: 0.85rem; }
@@ -130,6 +131,7 @@ import { Conflicto, DecisionConflicto, EleccionVigente, EstadoConflicto } from '
 })
 export class Conflictos {
   private readonly api = inject(ApiEvaluaciones);
+  private readonly titulo = viewChild<ElementRef<HTMLElement>>('titulo');
 
   readonly decisiones = DECISIONES;
   readonly estado = signal<EstadoConflicto>('PENDIENTE');
@@ -157,6 +159,12 @@ export class Conflictos {
   readonly nombreTipo = (c: Conflicto) => (c.tipo === 'VERSION' ? 'Conflicto de versión' : 'Posible duplicado');
 
   constructor() {
+    // La comparación aparece debajo de la lista: el foco lleva hasta ella a quien usa el teclado o un lector de pantalla.
+    effect(() => {
+      if (this.idElegido()) {
+        this.titulo()?.nativeElement.focus();
+      }
+    });
     effect((alLimpiar) => {
       const estado = this.estado();
       this.recargas();

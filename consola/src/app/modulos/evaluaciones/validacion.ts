@@ -231,6 +231,9 @@ export class Validacion {
   }
 
   elegirDesastre(id: string): void {
+    if (id === this.idDesastre()) {
+      return;
+    }
     this.cerrar();
     this.confirmacion.set(null);
     this.decididas.set(new Map());

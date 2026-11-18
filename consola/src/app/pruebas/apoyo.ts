@@ -60,6 +60,7 @@ export async function iniciarSesionComo(oidc: OidcFalso, claims: Record<string, 
 /** Sustituye a Leaflet: jsdom no tiene canvas ni tamaños, y el mapa real se comprueba en el navegador. */
 export class LienzoFalso implements LienzoMapa {
   alElegir: (id: string) => void = () => undefined;
+  alElegirZona: (codigo: string) => void = () => undefined;
   coropleta: readonly ZonaDano[] = [];
   activos: readonly ActivoMapa[] = [];
   zona: ZonaDibujo | null = null;
@@ -69,7 +70,10 @@ export class LienzoFalso implements LienzoMapa {
   encuadres = 0;
   destruido = false;
 
-  montar(_elemento: HTMLElement, alElegirActivo: (id: string) => void): void { this.alElegir = alElegirActivo; }
+  montar(_elemento: HTMLElement, alElegirActivo: (id: string) => void, alElegirZona: (codigo: string) => void): void {
+    this.alElegir = alElegirActivo;
+    this.alElegirZona = alElegirZona;
+  }
   pintarCoropleta(zonas: readonly ZonaDano[]): void { this.coropleta = zonas; }
   pintarActivos(activos: readonly ActivoMapa[]): void { this.activos = activos; }
   pintarZona(vigente: ZonaDibujo | null, anteriores: readonly ZonaDibujo[]): void { this.zona = vigente; this.anteriores = anteriores; }

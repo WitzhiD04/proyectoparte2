@@ -1,4 +1,4 @@
-import { NOMBRE_NIVEL, legible } from '../mapa/formato-mapa';
+import { NOMBRE_NIVEL, legible, nombreOrigen } from '../mapa/formato-mapa';
 import { NivelDano } from '../mapa/modelos-mapa';
 import { Conflicto, DecisionConflicto, VersionEvaluacion } from './modelos-evaluaciones';
 
@@ -96,7 +96,7 @@ export function compararVersiones(conflicto: Conflicto): FilaComparada[] {
     fila('Registrada', de((x) => fechaExacta(x.instante)), fechaExacta(e.instante)),
     fila('Autor', de((x) => x.autor), e.autor),
     fila('Dispositivo', de((x) => x.idDispositivo), e.idDispositivo),
-    fila('Origen', de((x) => legible(x.motivo)), legible(e.motivo)),
+    fila('Origen', de((x) => nombreOrigen(x.motivo)), nombreOrigen(e.motivo)),
   ];
   const conocidas = Object.keys(ETIQUETAS);
   const claves = new Set([...Object.keys(v?.contenido ?? {}), ...Object.keys(e.contenido)]);

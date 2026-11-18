@@ -78,6 +78,31 @@ export interface EvolucionActivo {
   evaluaciones: EvaluacionActivo[];
 }
 
+export interface DiaZona {
+  fecha: string;
+  activos: number;
+  distribucion: Distribucion;
+}
+
+export interface EvaluacionZona {
+  instante: string;
+  idActivo: string;
+  tipoActivo: string;
+  nivelDano: NivelDano;
+  origen: string;
+  estadoValidacion: string | null;
+  autor: string | null;
+  codigoMunicipio: string;
+}
+
+export interface EvolucionZona {
+  zona: { codigo: string; nombre: string | null; tipo: string };
+  idDesastre: string | null;
+  datoAl: string | null;
+  evaluaciones: EvaluacionZona[];
+  porDia: DiaZona[];
+}
+
 // ---------------------------------------------------------------- Consulta (desastres)
 
 export interface FilaDesastre {
