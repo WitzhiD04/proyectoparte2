@@ -45,7 +45,7 @@ indica quién lo hace, dónde y qué captura tomar. Las capturas se guardan en `
 | 21 | b | Consola, detalle del proyecto | Historial de solo inserción con autor e instante (QA-15) | `21-consola-historial.png` |
 | 22 | b | Consola (`alcaldia.armenia`), Consolidado | Consolidado del programa por jurisdicción | `22-consola-consolidado.png` |
 | 23 | Transversal | Navegador | Panel de RabbitMQ (`http://localhost:15672`): colas `q.*` con 3 miembros | `23-bus-colas.png` |
-| 24 | Transversal | Terminal | Salida de `prueba-qa11.py` (198 de 198 rechazados) y del simulador QA-14 por el gateway | `24-medidas-terminal.png` |
+| 24 | Transversal | Terminal | Salida de `prueba-qa11.py` (218 de 218 rechazados) y del simulador QA-14 por el gateway | `24-medidas-terminal.png` |
 
 ## Qué muestra cada paso frente a la arquitectura
 
