@@ -91,3 +91,4 @@ Salieron de los reportes de cada pieza. Recomendación de qué hacer con cada un
 | SE-2 usa su propia base `adaptador_se2` y no `adaptadores` + esquema como dice DA-11 | Paso 2 | Opcional unificar; no cambia ninguna medida |
 | mTLS entre servicios | §7.1 del SAD, P-06 | Declarado como límite del prototipo (TLS en el borde) |
 | Dos regiones (QA-03) | DA-16 | Opcional, al final (ver `cierre-y-medidas.md`) |
+| `p_historial_activo` sin índice por municipio | A4 | Declarado: la evolución por zona recorre la tabla; con los datos de la entrega no se nota. La corrección es un índice por `(codigo_municipio, instante)` en una migración |
