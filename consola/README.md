@@ -38,8 +38,10 @@ npx ng build
 npx ng test --watch=false
 ```
 
-Para ver los cambios en la plataforma, reconstruya solo la consola (el cliente `consola` de Keycloak solo admite
-`http://localhost:8080` como dirección de regreso, así que `ng serve` en el puerto 4200 no puede iniciar sesión):
+El cliente `consola` de Keycloak admite como dirección de regreso `http://localhost:8080` (compose),
+`http://localhost:30080` (k8s) y `http://localhost:4200` (`npm start`, que envía `/v1` al gateway).
+
+Para ver los cambios en la plataforma, reconstruya solo la consola:
 
 ```bash
 docker compose -f despliegue/compose/docker-compose.yml -p plataforma up -d --build --no-deps web
