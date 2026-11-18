@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] | Plataforma de Gestión de Desastres</title>
+    <link rel="stylesheet" href="/tablero-danos/tablero.css" asp-append-version="true" />
+</head>
+<body>
+    <a class="saltar" href="#contenido">Ir al contenido</a>
+    <header class="cabecera">
+        <div class="marca">
+            <span class="franja" aria-hidden="true"></span>
+            <div>
+                <p class="plataforma">Plataforma de Gestión de Desastres</p>
+                <p class="modulo">Tablero de daños</p>
+            </div>
+        </div>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <div class="usuario">
+                <div>
+                    <p class="nombre">@(User.FindFirst("name")?.Value ?? User.Identity.Name)</p>
+                    <p class="rol">@FormatoTablero.Rol(User)</p>
+                </div>
+                <a class="salir" href="/tablero-danos/salir" rel="nofollow">Cerrar sesión</a>
+            </div>
+        }
+    </header>
+    <nav class="navegacion" aria-label="Secciones">
+        <a href="/">Consola</a>
+        <a class="activa" href="/tablero-danos" aria-current="page">Tablero de daños</a>
+    </nav>
+    <main id="contenido">
+        @RenderBody()
+    </main>
+</body>
+</html>

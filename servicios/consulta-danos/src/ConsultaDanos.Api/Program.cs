@@ -1,3 +1,4 @@
+using ConsultaDanos.Api.Tablero;
 using ConsultaDanos.Aplicacion;
 using ConsultaDanos.Dominio;
 using ConsultaDanos.Infraestructura;
@@ -45,8 +46,10 @@ builder.Services.AddScoped<ConsultarConsolidado>();
 builder.Services.AddScoped<ConsultarEvolucion>();
 builder.Services.AddScoped<ConsultarEvolucionZona>();
 builder.Services.AddScoped<ConsultarIndicadores>();
+builder.Services.AgregarTablero(builder.Configuration);
 
 WebApplication app = builder.Build();
+app.UsarTablero();
 app.MapearSalud("consulta-danos");
 
 // Cualquier usuario autenticado consulta (RF-ED-11: autoridad y organismos; la consola también la ve el operador). Sin

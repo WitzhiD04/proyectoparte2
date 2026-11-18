@@ -1,0 +1,168 @@
+@page "/tablero-danos"
+@model ConsultaDanos.Api.Pages.TableroDanos.IndexModel
+@{
+    ViewData["Title"] = "Tablero de daños";
+    var niveles = FormatoTablero.Niveles;
+}
+
+<h1>Tablero de daños</h1>
+
+@foreach (string error in Model.Errores)
+{
+    <p class="aviso error" role="alert">@error</p>
+}
+@if (Model.Degradado)
+{
+    <p class="aviso degradado" role="status">
+        <strong>Datos degradados:</strong> el servicio no pudo actualizar el consolidado y muestra la última respuesta conocida,
+        con datos al @FormatoTablero.Fecha(Model.Consolidado?.DatoAl)
+    </p>
+}
+
+<form class="selector" method="get" action="/tablero-danos">
+    <div>
+        <label for="desastre">Desastre</label>
+        <select id="desastre" name="desastre" required>
+            @foreach (DesastreTablero d in Model.Desastres)
+            {
+                <option value="@d.Id" selected="@(d.Id == Model.IdDesastre)">@d.Nombre@(d.Estado == "CERRADO" ? " (cerrado)" : "")</option>
+            }
+            @if (Model.IdDesastre is Guid id && Model.Desastres.All(d => d.Id != id))
+            {
+                <option value="@id" selected>@Model.NombreDesastre</option>
+            }
+        </select>
+    </div>
+    <button type="submit">Ver desastre</button>
+</form>
+
+@if (Model.Bandeja is { } b)
+{
+    <section class="panel bandeja @(b.Alarma ? "con-alarma" : "sin-alarma")" aria-labelledby="titulo-bandeja">
+        <div class="bandeja-cabeza">
+            <h2 id="titulo-bandeja">Bandeja de revisión</h2>
+            <p class="sello">@(b.Alarma ? "Alarma encendida" : "Sin alarma")</p>
+        </div>
+        @if (b.Alarma)
+        {
+            <p class="motivo">
+                @(b.SuperaTamano ? $"Hay más de {b.Umbrales.Conflictos} conflictos pendientes. " : "")
+                @(b.SuperaAntiguedad ? $"El más antiguo lleva más de {FormatoTablero.Numero(b.Umbrales.Horas)} horas sin resolver." : "")
+            </p>
+        }
+        <dl class="cifras">
+            <div><dt>Conflictos pendientes</dt><dd>@b.ConflictosPendientes</dd></div>
+            <div><dt>El más antiguo</dt><dd>@(b.MasViejoDesde is null ? "Ninguno" : FormatoTablero.Fecha(b.MasViejoDesde))</dd></div>
+            <div><dt>Antigüedad</dt><dd>@(b.AntiguedadHoras is null ? "No aplica" : $"{FormatoTablero.Numero(b.AntiguedadHoras, "0.#")} horas")</dd></div>
+            <div><dt>Umbrales</dt><dd>@b.Umbrales.Conflictos conflictos, @FormatoTablero.Numero(b.Umbrales.Horas) horas</dd></div>
+        </dl>
+        <p class="dato">Dato al @FormatoTablero.Fecha(Model.BandejaAl)</p>
+    </section>
+}
+
+@if (Model.Consolidado is { } c)
+{
+    <p class="resumen">
+        <strong>@Model.NombreDesastre:</strong> @c.Total.Activos activos validados, índice de daño @FormatoTablero.Numero(c.Total.IndiceDano).
+        <span class="dato">Dato al @FormatoTablero.Fecha(c.DatoAl)</span>
+    </p>
+
+    <section class="panel" aria-labelledby="titulo-zonas">
+        <h2 id="titulo-zonas">Zonas en orden de prioridad</h2>
+        @if (c.Zonas.Count == 0)
+        {
+            <p class="vacio">Este desastre todavía no tiene evaluaciones validadas.</p>
+        }
+        else
+        {
+            <div class="tabla-ancha" tabindex="0" role="region" aria-labelledby="titulo-zonas">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col" class="numero">Prioridad</th><th scope="col">Municipio</th><th scope="col">Departamento</th>
+                            <th scope="col" class="numero">Índice de daño</th><th scope="col" class="numero">Críticos graves</th>
+                            @foreach (var n in niveles) { <th scope="col" class="numero">@n.Nombre</th> }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (ZonaVista z in c.Zonas)
+                        {
+                            <tr>
+                                <td class="numero">@z.Prioridad</td>
+                                <th scope="row">@(z.Nombre ?? z.CodigoMunicipio)</th>
+                                <td>@(z.CodigoDepartamento is null ? "Sin dato" : Departamentos.NombreDe(z.CodigoDepartamento) ?? z.CodigoDepartamento)</td>
+                                <td class="numero"><span class="muestra @FormatoTablero.ClaseIndice(z.IndiceDano)"></span>@FormatoTablero.Numero(z.IndiceDano)</td>
+                                <td class="numero @(z.CriticosGraves > 0 ? "destacado" : "")">@z.CriticosGraves</td>
+                                @foreach (var n in niveles) { <td class="numero">@z.Distribucion.GetValueOrDefault(n.Nivel.ToString())</td> }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <section class="panel" aria-labelledby="titulo-tipos">
+        <h2 id="titulo-tipos">Por tipo de activo</h2>
+        <p class="criticos"><strong>Tipos críticos:</strong> @string.Join(", ", c.TiposCriticos.Select(FormatoTablero.Legible))</p>
+        @if (c.PorTipo.Count == 0)
+        {
+            <p class="vacio">Sin activos validados todavía.</p>
+        }
+        else
+        {
+            <div class="tabla-ancha" tabindex="0" role="region" aria-labelledby="titulo-tipos">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Tipo de activo</th><th scope="col">Crítico</th><th scope="col" class="numero">Activos</th>
+                            <th scope="col" class="numero">Índice de daño</th>
+                            @foreach (var n in niveles) { <th scope="col" class="numero">@n.Nombre</th> }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (TipoVista t in c.PorTipo)
+                        {
+                            <tr>
+                                <th scope="row">@(t.Nombre ?? FormatoTablero.Legible(t.TipoActivo))</th>
+                                <td>@(t.Critico ? "Sí" : "No")</td>
+                                <td class="numero">@t.Activos</td>
+                                <td class="numero"><span class="muestra @FormatoTablero.ClaseIndice(t.IndiceDano)"></span>@FormatoTablero.Numero(t.IndiceDano)</td>
+                                @foreach (var n in niveles) { <td class="numero">@t.Distribucion.GetValueOrDefault(n.Nivel.ToString())</td> }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <section class="panel" aria-labelledby="titulo-integraciones">
+        <h2 id="titulo-integraciones">Estado de las integraciones</h2>
+        @if (c.Integraciones.Count == 0)
+        {
+            <p class="vacio">Ningún sistema externo ha informado su estado todavía.</p>
+        }
+        else
+        {
+            <div class="tabla-ancha" tabindex="0" role="region" aria-labelledby="titulo-integraciones">
+                <table>
+                    <thead><tr><th scope="col">Sistema</th><th scope="col">Estado</th><th scope="col">Desde</th><th scope="col" class="numero">Mensajes en cola</th></tr></thead>
+                    <tbody>
+                        @foreach (IntegracionVista i in c.Integraciones)
+                        {
+                            <tr class="@(i.Estado == "ABIERTO" ? "caida" : "")">
+                                <th scope="row">@i.Sistema</th><td>@FormatoTablero.EstadoIntegracion(i.Estado)</td>
+                                <td>@FormatoTablero.Fecha(i.Desde)</td><td class="numero">@i.MensajesEnCola</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+}
+else if (Model.IdDesastre is null && Model.Errores.Count == 0)
+{
+    <p class="vacio">Todavía no hay desastres registrados.</p>
+}
