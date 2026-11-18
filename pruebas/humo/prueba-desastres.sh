@@ -9,7 +9,7 @@ for candidato in python3 python py; do
   if command -v "$candidato" >/dev/null 2>&1 && "$candidato" -c "import json" >/dev/null 2>&1; then PY="$candidato"; break; fi
 done
 [ -n "$PY" ] || { echo "Se necesita Python 3 para leer las respuestas JSON."; exit 2; }
-MODO_IDENTIDAD="${MODO_IDENTIDAD:-encabezados}"
+MODO_IDENTIDAD="${MODO_IDENTIDAD:-jwt}"
 KEYCLOAK_URL="${KEYCLOAK_URL:-http://localhost:8180}"
 
 pedir_token() {

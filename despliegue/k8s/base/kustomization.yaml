@@ -13,6 +13,7 @@ resources:
   - auditoria.yaml
   - consulta-danos.yaml
   - keycloak.yaml
+  - gateway.yaml
 configMapGenerator:
   - name: keycloak-realm
     files:

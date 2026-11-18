@@ -25,11 +25,12 @@ La app móvil de evaluación de daños vive en su propio repositorio (`danos`) y
 | `simuladores/sim-se7` | Simulador de SE-7 con estado y caída simulada para QA-01 ([README](simuladores/sim-se7/README.md)) |
 | `datos/geo` | Capa de municipios que entrega SE-2 |
 | `servicios/auditoria` | Auditoría: registro inmutable de todos los eventos y detección de huecos (AD-21, DA-17) ([README](servicios/auditoria/README.md)) |
-| `consola/` | Consola de coordinación (Angular) |
+| `gateway/` | API Gateway (YARP): catálogo de rutas, JWT, priorización y degradación, correlación ([README](gateway/README.md)) |
+| `consola/` | Consola de coordinación (Angular), servida por nginx detrás del gateway |
 | `despliegue/bus` | Topología del bus declarada al desplegar: exchange, colas por consumidor, políticas y usuarios (DA-03) |
 | `despliegue/compose` | Plataforma en un computador |
 | `despliegue/k8s` | Kubernetes local (Docker Desktop) |
-| `pruebas/humo` | Prueba de humo de punta a punta por la API |
+| `pruebas/humo` | Pruebas de humo de punta a punta por el gateway, QA-11 medido y resolución de nombres del gateway |
 | `herramientas/` | `dotnet.sh`: el SDK de .NET 10 en un contenedor, sin instalarlo |
 
 ## Ejecutar la plataforma
@@ -39,9 +40,14 @@ Requiere Docker Desktop.
 ```bash
 docker compose -f despliegue/compose/docker-compose.yml up -d --build
 bash pruebas/humo/prueba-humo.sh
+bash pruebas/humo/prueba-desastres.sh
+python -I pruebas/humo/prueba-qa11.py
 ```
 
-- Consola: http://localhost:8080
+- Gateway (consola y API): http://localhost:8080 (y 8081, la segunda réplica). La API exige
+  `Authorization: Bearer` con un token de Keycloak; las pruebas de humo lo piden solas.
+- Keycloak: http://localhost:8180 (realm `plataforma`; administración `admin` / `admin_local`). Usuarios de prueba en
+  `docs/encargos/convenciones.md`, con clave usuario + `_local`.
 - Panel de RabbitMQ: http://localhost:15672 (`admin` / `admin_local`). Clúster de 3 nodos; las colas quorum tienen 3 miembros.
 - Panel de MinIO: http://localhost:9001 (`minioadmin` / `minioadmin`)
 
@@ -50,12 +56,11 @@ Las claves son de desarrollo. Para cambiarlas o cambiar los puertos, copie `desp
 también los datos).
 
 Orden de arranque: PostgreSQL → migrador (roles, esquema, datos de prueba) → bus → servicios (2 réplicas de cada
-uno) → consola. Cada servicio solo está listo cuando su base y su topología del bus responden.
+uno) → consola y gateway. Cada servicio solo está listo cuando su base y su topología del bus responden.
 
-> **Nota temporal.** Si reconstruye solo un servicio (`docker compose -p plataforma up -d --build <servicio>`), recree
-> después la entrada `web` (`docker compose -p plataforma up -d --force-recreate web`): nginx se queda con las IP viejas
-> de los contenedores y puede mandar una ruta al servicio equivocado (por ejemplo, `RUTA_DE_OTRO_SERVICIO`). La nota se
-> quita cuando el gateway reemplace a nginx en la API.
+Se puede reconstruir un solo servicio (`docker compose -p plataforma up -d --build <servicio>`) sin tocar nada más: el
+gateway vuelve a resolver los nombres de los servicios cada minuto y encuentra las IP nuevas
+(`pruebas/humo/prueba-resolucion-gateway.sh` lo comprueba).
 
 ## Compilar y probar
 

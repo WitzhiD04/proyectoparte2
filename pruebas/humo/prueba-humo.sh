@@ -3,8 +3,8 @@
 # Desastres, la evaluación entra por la sincronización de Evaluación de Daños y se valida, y Reconstrucción la recibe
 # por eventos (sin siembra); el proyecto recorre su ciclo y, al final, el desastre se puede cerrar (E-07).
 # Uso: bash pruebas/humo/prueba-humo.sh [http://localhost:8080]
-# Identidad (DA-15): MODO_IDENTIDAD=encabezados (por omisión) o jwt, que pide los tokens a Keycloak. Debe coincidir con
-# el IDENTIDAD_MODO con que se levantó compose. Todos los servicios, Reconstrucción incluida, usan la misma identidad.
+# Identidad (DA-15): MODO_IDENTIDAD=jwt (por omisión) pide los tokens a Keycloak; todo pasa por el gateway, que solo
+# acepta el token. MODO_IDENTIDAD=encabezados sirve únicamente contra un servicio sin gateway (IDENTIDAD_MODO=Encabezados).
 set -u
 B="${1:-http://localhost:8080}/v1"
 # Intérprete de Python para leer el JSON. En Windows, "python3" puede ser el acceso directo de la tienda y no un
@@ -14,7 +14,7 @@ for candidato in python3 python py; do
   if command -v "$candidato" >/dev/null 2>&1 && "$candidato" -c "import json" >/dev/null 2>&1; then PY="$candidato"; break; fi
 done
 [ -n "$PY" ] || { echo "Se necesita Python 3 para leer las respuestas JSON."; exit 2; }
-MODO_IDENTIDAD="${MODO_IDENTIDAD:-encabezados}"
+MODO_IDENTIDAD="${MODO_IDENTIDAD:-jwt}"
 KEYCLOAK_URL="${KEYCLOAK_URL:-http://localhost:8180}"
 DISP="humo-$(date +%s)"
 # Usuarios del realm "plataforma" (clave = usuario + "_local"). Las autoridades llevan ámbito y territorio DIVIPOLA

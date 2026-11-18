@@ -527,6 +527,31 @@
         "autoridad"
       ],
       "requiredActions": []
+    },
+    {
+      "username": "ing.gomez",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Ingeniera",
+      "lastName": "Gómez",
+      "email": "ing.gomez@plataforma.local",
+      "attributes": {
+        "organizacion": [
+          "alcaldia-calarca"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ing.gomez_local",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-plataforma",
+        "responsable-proyecto"
+      ],
+      "requiredActions": []
     }
   ]
 }
