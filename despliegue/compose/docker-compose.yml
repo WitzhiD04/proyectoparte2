@@ -209,7 +209,7 @@ services:
       Minio__Endpoint: "archivos:9000"
       Minio__Usuario: ${MINIO_USUARIO:-minioadmin}
       Minio__Clave: ${MINIO_CLAVE:-minioadmin}
-      Identidad__Modo: ${IDENTIDAD_MODO:-Encabezados}
+      Identidad__Modo: ${IDENTIDAD_MODO:-Jwt}
       Identidad__Emisor: ${IDENTIDAD_EMISOR:-http://localhost:8180/realms/plataforma}
       Identidad__Audiencia: ${IDENTIDAD_AUDIENCIA:-gateway}
       Identidad__Metadatos: ${IDENTIDAD_METADATOS:-http://keycloak:8080/realms/plataforma/.well-known/openid-configuration}
@@ -240,7 +240,7 @@ services:
       Bus__Clave: ${BUS_CLAVE_CONSULTA_PROGRAMA:-consulta_programa_local}
       Bus__Productor: consulta-programa
       Bus__Cola: q.consulta-programa
-      Identidad__Modo: ${IDENTIDAD_MODO:-Encabezados}
+      Identidad__Modo: ${IDENTIDAD_MODO:-Jwt}
       Identidad__Emisor: ${IDENTIDAD_EMISOR:-http://localhost:8180/realms/plataforma}
       Identidad__Audiencia: ${IDENTIDAD_AUDIENCIA:-gateway}
       Identidad__Metadatos: ${IDENTIDAD_METADATOS:-http://keycloak:8080/realms/plataforma/.well-known/openid-configuration}
@@ -284,7 +284,7 @@ services:
       Bus__Clave: ${BUS_CLAVE_GESTION_DESASTRES:-gestion_desastres_local}
       Bus__Productor: gestion-desastres
       Bus__Cola: q.gestion-desastres
-      Identidad__Modo: ${IDENTIDAD_MODO:-Encabezados}
+      Identidad__Modo: ${IDENTIDAD_MODO:-Jwt}
       Identidad__Emisor: ${IDENTIDAD_EMISOR:-http://localhost:8180/realms/plataforma}
       Identidad__Audiencia: ${IDENTIDAD_AUDIENCIA:-gateway}
       Identidad__Metadatos: ${IDENTIDAD_METADATOS:-http://keycloak:8080/realms/plataforma/.well-known/openid-configuration}
@@ -341,7 +341,7 @@ services:
       Bus__Clave: ${BUS_CLAVE_CONSULTA:-consulta_local}
       Bus__Productor: consulta
       Bus__Cola: q.consulta
-      Identidad__Modo: ${IDENTIDAD_MODO:-Encabezados}
+      Identidad__Modo: ${IDENTIDAD_MODO:-Jwt}
       Identidad__Emisor: ${IDENTIDAD_EMISOR:-http://localhost:8180/realms/plataforma}
       Identidad__Audiencia: ${IDENTIDAD_AUDIENCIA:-gateway}
       Identidad__Metadatos: ${IDENTIDAD_METADATOS:-http://keycloak:8080/realms/plataforma/.well-known/openid-configuration}
@@ -390,7 +390,7 @@ services:
       Bus__Cola: q.consulta-danos
       ConsultaDanos__UmbralConflictos: ${CONSULTA_DANOS_UMBRAL_CONFLICTOS:-50}
       ConsultaDanos__UmbralHoras: ${CONSULTA_DANOS_UMBRAL_HORAS:-24}
-      Identidad__Modo: ${IDENTIDAD_MODO:-Encabezados}
+      Identidad__Modo: ${IDENTIDAD_MODO:-Jwt}
       Identidad__Emisor: ${IDENTIDAD_EMISOR:-http://localhost:8180/realms/plataforma}
       Identidad__Audiencia: ${IDENTIDAD_AUDIENCIA:-gateway}
       Identidad__Metadatos: ${IDENTIDAD_METADATOS:-http://keycloak:8080/realms/plataforma/.well-known/openid-configuration}
@@ -435,7 +435,7 @@ services:
       Bus__Productor: auditoria
       Bus__Cola: q.auditoria
       Auditoria__PlazoHuecoSegundos: ${AUDITORIA_PLAZO_HUECO_SEGUNDOS:-60}
-      Identidad__Modo: ${IDENTIDAD_MODO:-Encabezados}
+      Identidad__Modo: ${IDENTIDAD_MODO:-Jwt}
       Identidad__Emisor: ${IDENTIDAD_EMISOR:-http://localhost:8180/realms/plataforma}
       Identidad__Audiencia: ${IDENTIDAD_AUDIENCIA:-gateway}
       Identidad__Metadatos: ${IDENTIDAD_METADATOS:-http://keycloak:8080/realms/plataforma/.well-known/openid-configuration}
@@ -485,7 +485,7 @@ services:
       Minio__Usuario: ${MINIO_USUARIO:-minioadmin}
       Minio__Clave: ${MINIO_CLAVE:-minioadmin}
       Minio__Bucket: evaluacion-danos-evidencias
-      Identidad__Modo: ${IDENTIDAD_MODO:-Encabezados}
+      Identidad__Modo: ${IDENTIDAD_MODO:-Jwt}
       Identidad__Emisor: ${IDENTIDAD_EMISOR:-http://localhost:8180/realms/plataforma}
       Identidad__Audiencia: ${IDENTIDAD_AUDIENCIA:-gateway}
       Identidad__Metadatos: ${IDENTIDAD_METADATOS:-http://keycloak:8080/realms/plataforma/.well-known/openid-configuration}
@@ -602,22 +602,37 @@ services:
       retries: 20
     restart: unless-stopped
 
+  # Consola (Angular). nginx solo sirve sus archivos: queda detrás del gateway y no enruta la API.
   web:
     build: ../../consola
+    restart: unless-stopped
+
+  # API Gateway (AD-04, DA-12, DA-15, AD-19; DT-07): única entrada de la consola y de la API, con dos réplicas
+  # (DA-16). Valida el JWT, aplica el rol de cada ruta, prioriza por clase de tráfico y reenvía el mismo token.
+  # Compose no reparte un mismo puerto entre réplicas: cada réplica publica el suyo (8080 y 8081); en Kubernetes las
+  # reparte el Service. Vuelve a resolver los nombres de los servicios cada minuto (VidaConexion), así que reconstruir
+  # un servicio no obliga a recrear el gateway.
+  gateway:
+    image: plataforma/gateway:local
+    build:
+      context: ../..
+      dockerfile: gateway/Dockerfile
+    deploy:
+      replicas: 2
     depends_on:
-      reconstruccion: { condition: service_healthy }
-      consulta-programa: { condition: service_healthy }
-      gestion-desastres: { condition: service_healthy }
-      consulta: { condition: service_healthy }
-      auditoria: { condition: service_healthy }
-      evaluacion-danos: { condition: service_healthy }
-      consulta-danos: { condition: service_healthy }
-    # Si cambia IDENTIDAD_MODO se recrean los servicios; esta variable hace que compose recree también a nginx
-    # después de que estén listos para refrescar las IP internas del DNS.
+      keycloak: { condition: service_healthy }
+      web: { condition: service_started }
     environment:
-      IDENTIDAD_MODO: ${IDENTIDAD_MODO:-Encabezados}
+      Identidad__Emisor: ${IDENTIDAD_EMISOR:-http://localhost:8180/realms/plataforma}
+      Identidad__Audiencia: ${IDENTIDAD_AUDIENCIA:-gateway}
+      Identidad__Metadatos: ${IDENTIDAD_METADATOS:-http://keycloak:8080/realms/plataforma/.well-known/openid-configuration}
     ports:
-      - "${PUERTO_WEB:-8080}:80"
+      - "${PUERTO_WEB:-8080}-${PUERTO_WEB_REPLICA:-8081}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/vivo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     restart: unless-stopped
 
 volumes:

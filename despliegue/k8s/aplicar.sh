@@ -40,6 +40,7 @@ minikube image build -t plataforma/adaptador-se7:local -f adaptadores/adaptador-
 minikube image build -t plataforma/sim-se7:local -f simuladores/sim-se7/Dockerfile "$raiz"
 minikube image build -t plataforma/auditoria:local -f servicios/auditoria/Dockerfile "$raiz"
 minikube image build -t plataforma/consola:local "$raiz/consola"
+minikube image build -t plataforma/gateway:local -f gateway/Dockerfile "$raiz"
 minikube image build -t plataforma/gestion-desastres:local -f servicios/gestion-desastres/Dockerfile "$raiz"
 minikube image build -t plataforma/consulta:local -f servicios/consulta/Dockerfile "$raiz"
 minikube image build -t plataforma/consulta-danos:local -f servicios/consulta-danos/Dockerfile "$raiz"
@@ -78,6 +79,7 @@ k -n plataforma wait --for=condition=complete job/consulta-danos-migrador --time
 k -n plataforma rollout status deployment/consulta-danos --timeout=300s
 k -n plataforma wait --for=condition=complete job/auditoria-migrador --timeout=600s
 k -n plataforma rollout status deployment/auditoria --timeout=300s
+k -n plataforma rollout status deployment/gateway --timeout=300s
 
-echo "Listo. Consola: http://$(minikube ip):30080"
+echo "Listo. Gateway (consola y API): http://$(minikube ip):30080"
 echo "Prueba: bash pruebas/humo/prueba-humo.sh http://$(minikube ip):30080"

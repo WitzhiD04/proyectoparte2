@@ -68,6 +68,11 @@ spec:
           image: plataforma/consulta:local
           imagePullPolicy: IfNotPresent
           env:
+            # Identidad común (DA-15): con el gateway delante, solo vale el JWT (el gateway descarta los X-*).
+            - { name: Identidad__Modo, value: Jwt }
+            - { name: Identidad__Emisor, value: "http://localhost:8180/realms/plataforma" }
+            - { name: Identidad__Audiencia, value: gateway }
+            - { name: Identidad__Metadatos, value: "http://keycloak:8080/realms/plataforma/.well-known/openid-configuration" }
             - { name: Bus__Nodos__0, value: bus }
             - { name: Bus__Usuario, value: consulta }
             - { name: Bus__Productor, value: consulta }

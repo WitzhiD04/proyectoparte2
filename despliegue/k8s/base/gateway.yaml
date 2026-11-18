@@ -1,0 +1,54 @@
+# API Gateway (AD-04, DA-12, DA-15, AD-19; DT-07): única entrada de la consola y de la API. Dos réplicas con PDB
+# (DA-16, AD-24); el Service las reparte y publica la plataforma en http://localhost:30080. El catálogo de rutas va
+# dentro de la imagen (gateway/src/Plataforma.Gateway/rutas.json) y apunta a los Service de cada servicio por nombre.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: gateway }
+  template:
+    metadata:
+      labels: { app: gateway }
+    spec:
+      containers:
+        - name: gateway
+          image: plataforma/gateway:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: Identidad__Emisor, value: "http://localhost:8180/realms/plataforma" }
+            - { name: Identidad__Audiencia, value: gateway }
+            - { name: Identidad__Metadatos, value: "http://keycloak:8080/realms/plataforma/.well-known/openid-configuration" }
+            # Vuelve a resolver el nombre de cada servicio al renovar sus conexiones (pods nuevos, IP nuevas).
+            - { name: Gateway__Conexiones__VidaConexion, value: "00:01:00" }
+          ports: [{ containerPort: 8080 }]
+          readinessProbe:
+            httpGet: { path: /salud/listo, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /salud/vivo, port: 8080 }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { memory: 384Mi }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: gateway
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: gateway }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+spec:
+  type: NodePort
+  selector: { app: gateway }
+  ports: [{ port: 8080, targetPort: 8080, nodePort: 30080 }]

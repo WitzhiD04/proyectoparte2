@@ -1,0 +1,890 @@
+{
+  "ReverseProxy": {
+    "Routes": {
+      "gd-registrar": {
+        "ClusterId": "gestion-desastres",
+        "Match": {
+          "Path": "/v1/desastres",
+          "Methods": [
+            "POST"
+          ]
+        },
+        "Metadata": {
+          "servicio": "gestion-desastres",
+          "roles": "autoridad,organismo",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "gd-desastre": {
+        "ClusterId": "gestion-desastres",
+        "Match": {
+          "Path": "/v1/desastres/{id:guid}",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "gestion-desastres",
+          "roles": "*",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "gd-severidad": {
+        "ClusterId": "gestion-desastres",
+        "Match": {
+          "Path": "/v1/desastres/{id:guid}/severidad",
+          "Methods": [
+            "PATCH"
+          ]
+        },
+        "Metadata": {
+          "servicio": "gestion-desastres",
+          "roles": "autoridad,organismo",
+          "claseTrafico": "consola",
+          "reglaDominio": "organismo-responsable"
+        }
+      },
+      "gd-zona": {
+        "ClusterId": "gestion-desastres",
+        "Match": {
+          "Path": "/v1/desastres/{id:guid}/zona",
+          "Methods": [
+            "PUT"
+          ]
+        },
+        "Metadata": {
+          "servicio": "gestion-desastres",
+          "roles": "autoridad,organismo",
+          "claseTrafico": "consola",
+          "reglaDominio": "organismo-responsable"
+        }
+      },
+      "gd-transiciones": {
+        "ClusterId": "gestion-desastres",
+        "Match": {
+          "Path": "/v1/desastres/{id:guid}/transiciones",
+          "Methods": [
+            "POST"
+          ]
+        },
+        "Metadata": {
+          "servicio": "gestion-desastres",
+          "roles": "autoridad,organismo",
+          "claseTrafico": "consola",
+          "reglaDominio": "organismo-responsable"
+        }
+      },
+      "gd-historial": {
+        "ClusterId": "gestion-desastres",
+        "Match": {
+          "Path": "/v1/desastres/{id:guid}/historial",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "gestion-desastres",
+          "roles": "*",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "gd-organismos": {
+        "ClusterId": "gestion-desastres",
+        "Match": {
+          "Path": "/v1/desastres/{id:guid}/organismos",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "gestion-desastres",
+          "roles": "*",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "gd-organismos-asignar": {
+        "ClusterId": "gestion-desastres",
+        "Match": {
+          "Path": "/v1/desastres/{id:guid}/organismos",
+          "Methods": [
+            "PUT"
+          ]
+        },
+        "Metadata": {
+          "servicio": "gestion-desastres",
+          "roles": "autoridad,organismo",
+          "claseTrafico": "consola",
+          "reglaDominio": "organismo-responsable"
+        }
+      },
+      "gd-tipos": {
+        "ClusterId": "gestion-desastres",
+        "Match": {
+          "Path": "/v1/catalogos/tipos-desastre",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "gestion-desastres",
+          "roles": "*",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "gd-tipos-crear": {
+        "ClusterId": "gestion-desastres",
+        "Match": {
+          "Path": "/v1/catalogos/tipos-desastre",
+          "Methods": [
+            "POST"
+          ]
+        },
+        "Metadata": {
+          "servicio": "gestion-desastres",
+          "roles": "administrador",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "gd-tipos-modificar": {
+        "ClusterId": "gestion-desastres",
+        "Match": {
+          "Path": "/v1/catalogos/tipos-desastre/{codigo}",
+          "Methods": [
+            "PATCH"
+          ]
+        },
+        "Metadata": {
+          "servicio": "gestion-desastres",
+          "roles": "administrador",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "gd-tipos-ciclo": {
+        "ClusterId": "gestion-desastres",
+        "Match": {
+          "Path": "/v1/catalogos/tipos-desastre/{codigo}/ciclo-vida",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "gestion-desastres",
+          "roles": "*",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "gd-perfiles": {
+        "ClusterId": "gestion-desastres",
+        "Match": {
+          "Path": "/v1/catalogos/perfiles-ciclo-vida",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "gestion-desastres",
+          "roles": "*",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "gd-perfiles-crear": {
+        "ClusterId": "gestion-desastres",
+        "Match": {
+          "Path": "/v1/catalogos/perfiles-ciclo-vida",
+          "Methods": [
+            "POST"
+          ]
+        },
+        "Metadata": {
+          "servicio": "gestion-desastres",
+          "roles": "administrador",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "gd-perfiles-modificar": {
+        "ClusterId": "gestion-desastres",
+        "Match": {
+          "Path": "/v1/catalogos/perfiles-ciclo-vida/{codigo}",
+          "Methods": [
+            "PUT"
+          ]
+        },
+        "Metadata": {
+          "servicio": "gestion-desastres",
+          "roles": "administrador",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "gd-perfil-nivel": {
+        "ClusterId": "gestion-desastres",
+        "Match": {
+          "Path": "/v1/catalogos/perfil-por-nivel",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "gestion-desastres",
+          "roles": "*",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "gd-perfil-nivel-modificar": {
+        "ClusterId": "gestion-desastres",
+        "Match": {
+          "Path": "/v1/catalogos/perfil-por-nivel",
+          "Methods": [
+            "PUT"
+          ]
+        },
+        "Metadata": {
+          "servicio": "gestion-desastres",
+          "roles": "administrador",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "ed-descarga": {
+        "ClusterId": "evaluacion-danos",
+        "Match": {
+          "Path": "/v1/descarga",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "evaluacion-danos",
+          "roles": "evaluador",
+          "claseTrafico": "movil",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "ed-sincronizacion": {
+        "ClusterId": "evaluacion-danos",
+        "Match": {
+          "Path": "/v1/sincronizacion/evaluaciones",
+          "Methods": [
+            "POST"
+          ]
+        },
+        "Metadata": {
+          "servicio": "evaluacion-danos",
+          "roles": "evaluador",
+          "claseTrafico": "movil",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "ed-evidencias": {
+        "ClusterId": "evaluacion-danos",
+        "Match": {
+          "Path": "/v1/evidencias/{id:guid}",
+          "Methods": [
+            "PUT"
+          ]
+        },
+        "Metadata": {
+          "servicio": "evaluacion-danos",
+          "roles": "evaluador",
+          "claseTrafico": "movil",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "ed-evaluaciones": {
+        "ClusterId": "evaluacion-danos",
+        "Match": {
+          "Path": "/v1/evaluaciones",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "evaluacion-danos",
+          "roles": "evaluador,operador,autoridad,organismo",
+          "claseTrafico": "movil",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "ed-registrar": {
+        "ClusterId": "evaluacion-danos",
+        "Match": {
+          "Path": "/v1/evaluaciones",
+          "Methods": [
+            "POST"
+          ]
+        },
+        "Metadata": {
+          "servicio": "evaluacion-danos",
+          "roles": "evaluador",
+          "claseTrafico": "movil",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "ed-actualizar": {
+        "ClusterId": "evaluacion-danos",
+        "Match": {
+          "Path": "/v1/evaluaciones/{id:guid}",
+          "Methods": [
+            "PATCH"
+          ]
+        },
+        "Metadata": {
+          "servicio": "evaluacion-danos",
+          "roles": "evaluador,operador",
+          "claseTrafico": "movil",
+          "reglaDominio": "dispositivo-autor"
+        }
+      },
+      "ed-validacion": {
+        "ClusterId": "evaluacion-danos",
+        "Match": {
+          "Path": "/v1/evaluaciones/{id:guid}/validacion",
+          "Methods": [
+            "POST"
+          ]
+        },
+        "Metadata": {
+          "servicio": "evaluacion-danos",
+          "roles": "autoridad,organismo",
+          "claseTrafico": "consola",
+          "reglaDominio": "organizacion-participante"
+        }
+      },
+      "ed-asociacion": {
+        "ClusterId": "evaluacion-danos",
+        "Match": {
+          "Path": "/v1/evaluaciones/{id:guid}/asociacion",
+          "Methods": [
+            "POST"
+          ]
+        },
+        "Metadata": {
+          "servicio": "evaluacion-danos",
+          "roles": "operador,evaluador",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "ed-conflictos": {
+        "ClusterId": "evaluacion-danos",
+        "Match": {
+          "Path": "/v1/conflictos",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "evaluacion-danos",
+          "roles": "operador",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "ed-resolucion": {
+        "ClusterId": "evaluacion-danos",
+        "Match": {
+          "Path": "/v1/conflictos/{id:guid}/resolucion",
+          "Methods": [
+            "POST"
+          ]
+        },
+        "Metadata": {
+          "servicio": "evaluacion-danos",
+          "roles": "operador",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "ed-tipos-activo": {
+        "ClusterId": "evaluacion-danos",
+        "Match": {
+          "Path": "/v1/catalogos/tipos-activo",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "evaluacion-danos",
+          "roles": "*",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "ed-tipos-activo-crear": {
+        "ClusterId": "evaluacion-danos",
+        "Match": {
+          "Path": "/v1/catalogos/tipos-activo",
+          "Methods": [
+            "POST"
+          ]
+        },
+        "Metadata": {
+          "servicio": "evaluacion-danos",
+          "roles": "administrador",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "ed-tipos-activo-modificar": {
+        "ClusterId": "evaluacion-danos",
+        "Match": {
+          "Path": "/v1/catalogos/tipos-activo/{codigo}",
+          "Methods": [
+            "PATCH"
+          ]
+        },
+        "Metadata": {
+          "servicio": "evaluacion-danos",
+          "roles": "administrador",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "ed-mapa-calor": {
+        "ClusterId": "evaluacion-danos",
+        "Match": {
+          "Path": "/v1/mapa-calor",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "evaluacion-danos",
+          "roles": "*",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "cs-desastres": {
+        "ClusterId": "consulta",
+        "Match": {
+          "Path": "/v1/consulta/desastres",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "consulta",
+          "roles": "*",
+          "claseTrafico": "portal",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "cs-desastre": {
+        "ClusterId": "consulta",
+        "Match": {
+          "Path": "/v1/consulta/desastres/{id:guid}",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "consulta",
+          "roles": "*",
+          "claseTrafico": "portal",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "cs-evolucion": {
+        "ClusterId": "consulta",
+        "Match": {
+          "Path": "/v1/consulta/desastres/{id:guid}/evolucion",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "consulta",
+          "roles": "*",
+          "claseTrafico": "portal",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "cs-mapa": {
+        "ClusterId": "consulta",
+        "Match": {
+          "Path": "/v1/consulta/mapa",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "consulta",
+          "roles": "*",
+          "claseTrafico": "portal",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "cs-integraciones": {
+        "ClusterId": "consulta",
+        "Match": {
+          "Path": "/v1/integraciones",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "consulta",
+          "roles": "*",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "cd-mapa": {
+        "ClusterId": "consulta-danos",
+        "Match": {
+          "Path": "/v1/consulta-danos/mapa",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "consulta-danos",
+          "roles": "*",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "cd-consolidado": {
+        "ClusterId": "consulta-danos",
+        "Match": {
+          "Path": "/v1/consulta-danos/consolidado",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "consulta-danos",
+          "roles": "*",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "cd-evolucion": {
+        "ClusterId": "consulta-danos",
+        "Match": {
+          "Path": "/v1/consulta-danos/activos/{id:guid}/evolucion",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "consulta-danos",
+          "roles": "*",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "cd-indicadores": {
+        "ClusterId": "consulta-danos",
+        "Match": {
+          "Path": "/v1/consulta-danos/indicadores-revision",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "consulta-danos",
+          "roles": "*",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "rc-desastres": {
+        "ClusterId": "reconstruccion",
+        "Match": {
+          "Path": "/v1/reconstruccion/desastres",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "reconstruccion",
+          "roles": "autoridad,responsable-proyecto,auditor",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "rc-candidatas": {
+        "ClusterId": "reconstruccion",
+        "Match": {
+          "Path": "/v1/reconstruccion/candidatas",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "reconstruccion",
+          "roles": "autoridad",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "rc-lote": {
+        "ClusterId": "reconstruccion",
+        "Match": {
+          "Path": "/v1/proyectos:lote",
+          "Methods": [
+            "POST"
+          ]
+        },
+        "Metadata": {
+          "servicio": "reconstruccion",
+          "roles": "autoridad",
+          "claseTrafico": "consola",
+          "reglaDominio": "jurisdiccion-territorial"
+        }
+      },
+      "rc-proyectos": {
+        "ClusterId": "reconstruccion",
+        "Match": {
+          "Path": "/v1/proyectos",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "reconstruccion",
+          "roles": "autoridad,responsable-proyecto,auditor",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "rc-proyecto": {
+        "ClusterId": "reconstruccion",
+        "Match": {
+          "Path": "/v1/proyectos/{id:guid}",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "reconstruccion",
+          "roles": "autoridad,responsable-proyecto,auditor",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "rc-presupuesto": {
+        "ClusterId": "reconstruccion",
+        "Match": {
+          "Path": "/v1/proyectos/{id:guid}/presupuesto",
+          "Methods": [
+            "PATCH"
+          ]
+        },
+        "Metadata": {
+          "servicio": "reconstruccion",
+          "roles": "autoridad",
+          "claseTrafico": "consola",
+          "reglaDominio": "jurisdiccion-territorial"
+        }
+      },
+      "rc-responsable": {
+        "ClusterId": "reconstruccion",
+        "Match": {
+          "Path": "/v1/proyectos/{id:guid}/responsable",
+          "Methods": [
+            "PATCH"
+          ]
+        },
+        "Metadata": {
+          "servicio": "reconstruccion",
+          "roles": "autoridad",
+          "claseTrafico": "consola",
+          "reglaDominio": "jurisdiccion-territorial"
+        }
+      },
+      "rc-transiciones": {
+        "ClusterId": "reconstruccion",
+        "Match": {
+          "Path": "/v1/proyectos/{id:guid}/transiciones",
+          "Methods": [
+            "POST"
+          ]
+        },
+        "Metadata": {
+          "servicio": "reconstruccion",
+          "roles": "autoridad,responsable-proyecto",
+          "claseTrafico": "consola",
+          "reglaDominio": "jurisdiccion-o-responsable-asignado"
+        }
+      },
+      "rc-avance": {
+        "ClusterId": "reconstruccion",
+        "Match": {
+          "Path": "/v1/proyectos/{id:guid}/avance",
+          "Methods": [
+            "POST"
+          ]
+        },
+        "Metadata": {
+          "servicio": "reconstruccion",
+          "roles": "responsable-proyecto",
+          "claseTrafico": "consola",
+          "reglaDominio": "responsable-asignado"
+        }
+      },
+      "rc-documentos": {
+        "ClusterId": "reconstruccion",
+        "Match": {
+          "Path": "/v1/proyectos/{id:guid}/documentos",
+          "Methods": [
+            "POST"
+          ]
+        },
+        "Metadata": {
+          "servicio": "reconstruccion",
+          "roles": "responsable-proyecto",
+          "claseTrafico": "consola",
+          "reglaDominio": "responsable-asignado"
+        }
+      },
+      "rc-historial": {
+        "ClusterId": "reconstruccion",
+        "Match": {
+          "Path": "/v1/proyectos/{id:guid}/historial",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "reconstruccion",
+          "roles": "autoridad,auditor",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "cp-consolidado": {
+        "ClusterId": "consulta-programa",
+        "Match": {
+          "Path": "/v1/programa/consolidado",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "consulta-programa",
+          "roles": "autoridad,auditor",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "au-registro": {
+        "ClusterId": "auditoria",
+        "Match": {
+          "Path": "/v1/auditoria",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "auditoria",
+          "roles": "auditor,autoridad",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "au-huecos": {
+        "ClusterId": "auditoria",
+        "Match": {
+          "Path": "/v1/auditoria/huecos",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "auditoria",
+          "roles": "auditor,autoridad",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
+      "consola": {
+        "ClusterId": "web",
+        "Match": {
+          "Path": "/{**ruta}",
+          "Methods": [
+            "GET",
+            "HEAD"
+          ]
+        },
+        "Metadata": {
+          "servicio": "web",
+          "roles": "publico",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      }
+    },
+    "Clusters": {
+      "auditoria": {
+        "Destinations": {
+          "principal": {
+            "Address": "http://auditoria:8080/"
+          }
+        }
+      },
+      "consulta": {
+        "Destinations": {
+          "principal": {
+            "Address": "http://consulta:8080/"
+          }
+        }
+      },
+      "consulta-danos": {
+        "Destinations": {
+          "principal": {
+            "Address": "http://consulta-danos:8080/"
+          }
+        }
+      },
+      "consulta-programa": {
+        "Destinations": {
+          "principal": {
+            "Address": "http://consulta-programa:8080/"
+          }
+        }
+      },
+      "evaluacion-danos": {
+        "Destinations": {
+          "principal": {
+            "Address": "http://evaluacion-danos:8080/"
+          }
+        }
+      },
+      "gestion-desastres": {
+        "Destinations": {
+          "principal": {
+            "Address": "http://gestion-desastres:8080/"
+          }
+        }
+      },
+      "reconstruccion": {
+        "Destinations": {
+          "principal": {
+            "Address": "http://reconstruccion:8080/"
+          }
+        }
+      },
+      "web": {
+        "Destinations": {
+          "principal": {
+            "Address": "http://web:80/"
+          }
+        }
+      }
+    }
+  }
+}
