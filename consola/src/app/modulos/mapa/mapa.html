@@ -1,0 +1,148 @@
+<h1>Mapa de daños</h1>
+
+@for (a of errores(); track a.capa) {
+  <p class="aviso error" role="alert"><strong>{{ a.capa }}:</strong> {{ a.error }}</p>
+}
+@if (desastresDegradados() !== false) {
+  <p class="aviso degradado" role="status">
+    <strong>Lista de desastres:</strong> es la última conocida, con datos al {{ $any(desastresDegradados()) | fechaHora }}
+  </p>
+}
+@for (a of degradadas(); track a.capa) {
+  <p class="aviso degradado" role="status">
+    <strong>{{ a.capa }}:</strong> el servicio no pudo actualizarla y se muestra la última respuesta conocida@if (a.datoAl) {, con datos al {{ a.datoAl | fechaHora }}}
+  </p>
+}
+
+<form class="mandos" (submit)="$event.preventDefault()">
+  <div class="campo">
+    <label for="mapa-desastre">Desastre</label>
+    <select id="mapa-desastre" [disabled]="desastres().length === 0" (change)="elegirDesastre(valorDe($event))">
+      @for (d of desastres(); track d.id) {
+        <option [value]="d.id" [selected]="d.id === idDesastre()">{{ nombreDesastre(d) }}</option>
+      }
+    </select>
+  </div>
+  <div class="campo">
+    <label for="mapa-nivel">Nivel mínimo de daño</label>
+    <select id="mapa-nivel" (change)="nivelMinimo.set(nivelDe($event))">
+      @for (n of niveles; track n) {
+        <option [value]="n" [selected]="n === nivelMinimo()">{{ $first ? 'Todos los niveles' : nombreNivel(n) }}</option>
+      }
+    </select>
+  </div>
+  <label class="marca">
+    <input type="checkbox" [checked]="soloValidadas()" (change)="soloValidadas.set(marcada($event))" />
+    Solo evaluaciones validadas
+  </label>
+</form>
+
+@if (desastres().length === 0 && errores().length === 0) {
+  <p class="vacio">Todavía no hay desastres registrados para mostrar en el mapa.</p>
+}
+
+<div class="tablero">
+  <div #lienzo class="lienzo" role="region" aria-label="Mapa con las capas encendidas"></div>
+
+  <div class="lateral">
+    @if (idActivo(); as id) {
+      <app-panel-activo [idActivo]="id" (cerrar)="idActivo.set(null)" />
+    } @else {
+      <section class="panel" aria-labelledby="titulo-capas">
+        <h2 id="titulo-capas">Capas</h2>
+
+        <div class="capa">
+          <label class="marca">
+            <input type="checkbox" [checked]="visibles().coropleta" (change)="cambiarCapa('coropleta', marcada($event))" />
+            Índice de daño por municipio
+          </label>
+          @if (danos().datos; as d) {
+            <p>
+              {{ cantidad(zonasDano().length, 'municipio') }}@if (d.resumen.indiceDano !== null) {, índice {{ numero(d.resumen.indiceDano) }}}
+            </p>
+            <p class="suave">Dato al {{ d.datoAl | fechaHora }}</p>
+          } @else if (danos().cargando) { <p class="suave">Consultando…</p> }
+        </div>
+
+        <div class="capa">
+          <label class="marca">
+            <input type="checkbox" [checked]="visibles().activos" (change)="cambiarCapa('activos', marcada($event))" />
+            Activos evaluados
+          </label>
+          @if (danos().datos; as d) {
+            <p>{{ cantidad(activos().length, 'activo') }}, {{ d.resumen.conConflicto }} con conflicto pendiente</p>
+            <p class="suave">Dato al {{ d.datoAl | fechaHora }}</p>
+          }
+        </div>
+
+        <div class="capa">
+          <label class="marca">
+            <input type="checkbox" [checked]="visibles().zona" (change)="cambiarCapa('zona', marcada($event))" />
+            Zona del desastre
+          </label>
+          @if (momento(); as m) {
+            <p>{{ textoZona(m.version, m.municipios) }}</p>
+          }
+          @if (datoAlZona(); as dato) { <p class="suave">Dato al {{ dato | fechaHora }}</p> }
+        </div>
+      </section>
+
+      <section class="panel leyenda" aria-labelledby="titulo-leyenda">
+        <h2 id="titulo-leyenda">Leyenda</h2>
+        <ul>
+          @for (n of niveles; track n) {
+            <li><span class="caja" [style.background]="colorNivel(n)"></span>{{ nombreNivel(n) }}</li>
+          }
+        </ul>
+        <p class="suave">Los municipios toman el color del nivel más cercano a su índice, de 0 a 1.</p>
+        <ul>
+          <li><span class="punto"></span>Activo validado</li>
+          <li><span class="punto sin-validar"></span>Activo sin validar</li>
+          <li><span class="punto con-conflicto"></span>Conflicto pendiente</li>
+          <li><span class="linea"></span>Zona del momento elegido</li>
+          <li><span class="linea anterior"></span>Versiones anteriores</li>
+        </ul>
+      </section>
+    }
+  </div>
+</div>
+
+@if (idDesastre()) {
+  <app-barra-tiempo
+    [cambios]="cambios()"
+    [instantes]="instantes()"
+    [versiones]="versiones()"
+    [indice]="indice()"
+    [momento]="momento()"
+    [cargando]="enInstante().cargando"
+    (elegir)="indice.set($event)"
+  />
+}
+
+@if (activos().length > 0) {
+  <details class="panel activos">
+    <summary>Lista de activos ({{ activos().length }})</summary>
+    @if (activos().length > maximoFilas) {
+      <p class="suave">Se muestran los {{ maximoFilas }} de mayor daño. Use los filtros para acotar la lista.</p>
+    }
+    <div class="tabla-ancha">
+      <table>
+        <thead>
+          <tr><th>Activo</th><th>Municipio</th><th>Daño</th><th>Validación</th><th>Conflicto</th><th><span class="oculto">Acción</span></th></tr>
+        </thead>
+        <tbody>
+          @for (a of activosEnTabla(); track a.properties.idActivo) {
+            <tr>
+              <td>{{ legible(a.properties.tipoActivo) }}</td>
+              <td>{{ a.properties.codigoMunicipio }}</td>
+              <td>{{ nombreNivel(a.properties.nivelDano) }}</td>
+              <td>{{ validacion(a.properties.estadoValidacion) }}</td>
+              <td>{{ a.properties.conflictoPendiente ? 'Pendiente' : 'No' }}</td>
+              <td><button type="button" class="secundario" (click)="idActivo.set(a.properties.idActivo)">Ver evolución</button></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+}

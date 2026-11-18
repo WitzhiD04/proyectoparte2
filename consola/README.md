@@ -23,10 +23,44 @@ Los usuarios de prueba están en `docs/encargos/convenciones.md` (clave: usuario
 | Ruta | Módulo | Roles | Estado |
 |---|---|---|---|
 | `/reconstruccion` | Candidatas, proyectos y consolidado | `autoridad`, `responsable-proyecto`, `auditor` | Listo |
-| `/mapa` | Mapa de daños y desastres | todos menos `evaluador` | Vacío (tarea B2) |
+| `/mapa` | Mapa de daños y desastres | todos menos `evaluador` | Listo |
 | `/evaluaciones` | Validación, conflictos y catálogo | `autoridad`, `organismo`, `operador`, `administrador` | Vacío (tarea B3) |
 
 El menú se declara en `nucleo/menu.ts`. Un módulo nuevo es una entrada allí y una ruta en `app.routes.ts`.
+
+## Mapa
+
+Leaflet con el mapa base de OpenStreetMap y tres capas que se encienden y apagan por separado. Se elige el desastre y se
+filtra por nivel mínimo de daño y por evaluaciones validadas.
+
+| Capa | Qué muestra | Ruta |
+|---|---|---|
+| Índice de daño por municipio | Coropleta con el índice de 0 a 1; al pasar el cursor, activos, niveles y conflictos | `GET /v1/consulta-danos/mapa?desastre=&nivelMinimo=&soloValidadas=&puntos=true` |
+| Activos evaluados | Un punto por activo: el color y el tamaño dicen el nivel, el borde continuo que está validado, el punteado que no, y el anillo amarillo que tiene un conflicto pendiente | La misma ruta |
+| Zona del desastre | La zona del momento elegido con línea gruesa y sus versiones anteriores punteadas | `GET /v1/consulta/mapa?soloActivos=false` y `GET /v1/consulta/desastres/{id}/evolucion?en=` |
+
+- Cada capa muestra su `datoAl`. Si la respuesta trae `degradado: true` o `X-Degradado: true`, un aviso dice que es la
+  última conocida.
+- La barra de tiempo tiene una parada por cada instante en que cambió el desastre, se maneja con el teclado y consulta el
+  estado de ese momento al soltarla. Los botones de versión llevan al momento en que cada zona entró en vigor.
+- Al hacer clic en un activo se abre su evolución (`GET /v1/consulta-danos/activos/{id}/evolucion`). La lista de activos,
+  debajo del mapa, abre lo mismo sin usar el ratón.
+- Leaflet queda detrás de `LienzoMapa` (`modulos/mapa/lienzo-mapa.ts`); las pruebas de componentes usan un lienzo falso.
+- Las teselas son del servidor público de OpenStreetMap y llevan su atribución. Ese servidor tiene una
+  [política de uso](https://operations.osmfoundation.org/policies/tiles/) pensada para tráfico bajo: un despliegue real
+  necesita su propio proveedor.
+
+Las tres capas encendidas:
+
+![Mapa con la coropleta, los activos y la zona del desastre](docs/mapa-tres-capas.png)
+
+Evolución de un activo:
+
+![Panel con la evolución de un activo elegido en el mapa](docs/mapa-evolucion-activo.png)
+
+La barra de tiempo en la primera versión de la zona:
+
+![Barra de tiempo en el primer momento del desastre](docs/mapa-barra-tiempo.png)
 
 ## Compilar y probar
 
