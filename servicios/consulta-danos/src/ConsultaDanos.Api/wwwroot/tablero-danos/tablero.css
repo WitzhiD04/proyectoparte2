@@ -1,0 +1,98 @@
+/* Identidad de la consola (consola/src/styles.css y app.css), sin Angular ni frameworks. */
+@font-face { font-family: 'Archivo Variable'; font-style: normal; font-display: swap; font-weight: 100 900; font-stretch: 62% 125%; src: url(fuentes/archivo-latin-wdth-normal.woff2) format('woff2-variations'); }
+@font-face { font-family: 'IBM Plex Sans'; font-style: normal; font-display: swap; font-weight: 400; src: url(fuentes/ibm-plex-sans-latin-400-normal.woff2) format('woff2'); }
+@font-face { font-family: 'IBM Plex Sans'; font-style: normal; font-display: swap; font-weight: 500; src: url(fuentes/ibm-plex-sans-latin-500-normal.woff2) format('woff2'); }
+@font-face { font-family: 'IBM Plex Sans'; font-style: normal; font-display: swap; font-weight: 600; src: url(fuentes/ibm-plex-sans-latin-600-normal.woff2) format('woff2'); }
+
+:root {
+  --plano: #edf0f2;
+  --papel: #ffffff;
+  --tinta: #12313f;
+  --tinta-suave: #4d6470;
+  --linea: #c9d2d8;
+  --senal: #f2b705;
+  --via: #2e7d5b;
+  --oxido: #b3401e;
+  --titulo: 'Archivo Variable', 'Archivo', sans-serif;
+  --texto: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--plano); color: var(--tinta); font-family: var(--texto); font-size: 16px; line-height: 1.5; }
+h1, h2 { font-family: var(--titulo); font-stretch: 75%; font-weight: 700; line-height: 1.1; margin: 0; }
+h1 { font-size: 2.4rem; margin-bottom: 1.25rem; }
+h2 { font-size: 1.5rem; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--senal); outline-offset: 2px; }
+
+button, select { font: inherit; color: inherit; }
+button { background: var(--tinta); color: var(--papel); border: 2px solid var(--tinta); padding: 0.45rem 1rem; font-weight: 600; cursor: pointer; }
+select { width: 100%; background: var(--papel); border: 1px solid var(--tinta-suave); padding: 0.45rem 0.6rem; }
+label { display: block; font-weight: 500; font-size: 0.9rem; margin-bottom: 0.2rem; }
+
+.saltar { position: absolute; left: -999rem; }
+.saltar:focus { left: 1rem; top: 1rem; background: var(--senal); padding: 0.5rem; z-index: 10; }
+
+.cabecera { background: var(--tinta); color: var(--papel); display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: end; justify-content: space-between; padding: 1.1rem clamp(1rem, 4vw, 3rem); }
+.marca { display: flex; gap: 0.9rem; align-items: stretch; }
+.franja { width: 1.1rem; background: repeating-linear-gradient(135deg, var(--senal) 0 0.55rem, var(--tinta) 0.55rem 1.1rem); border: 2px solid var(--senal); }
+.plataforma { margin: 0; font-size: 0.9rem; opacity: 0.8; }
+.modulo { margin: 0; font-family: var(--titulo); font-stretch: 62%; font-weight: 800; font-size: 2.6rem; line-height: 1; }
+.usuario { display: flex; gap: 1rem; align-items: center; }
+.usuario p { margin: 0; line-height: 1.25; }
+.usuario .nombre { font-weight: 600; }
+.usuario .rol { font-size: 0.9rem; opacity: 0.8; }
+.salir { border: 2px solid var(--papel); padding: 0.45rem 1rem; font-weight: 600; text-decoration: none; }
+
+.navegacion { background: var(--papel); border-bottom: 2px solid var(--tinta); display: flex; flex-wrap: wrap; gap: 0.25rem; padding: 0 clamp(0.5rem, 3vw, 2.2rem); }
+.navegacion a { padding: 0.8rem 1.1rem; text-decoration: none; font-weight: 600; border-bottom: 5px solid transparent; margin-bottom: -2px; }
+.navegacion a:hover { border-bottom-color: var(--linea); }
+.navegacion a.activa { border-bottom-color: var(--senal); }
+
+main { max-width: 76rem; margin: 0 auto; padding: 2rem clamp(1rem, 4vw, 3rem) 4rem; }
+
+.selector { display: flex; flex-wrap: wrap; gap: 0.9rem; align-items: end; margin-bottom: 1.25rem; }
+.selector div { flex: 1 1 18rem; }
+
+.panel { background: var(--papel); border-top: 4px solid var(--tinta); padding: 1.25rem; margin-bottom: 1.5rem; }
+.panel > h2 { margin-bottom: 0.9rem; }
+.aviso { padding: 0.7rem 0.9rem; margin: 0 0 1rem; border-left: 6px solid var(--tinta); background: var(--papel); }
+.aviso.error { border-color: var(--oxido); }
+.aviso.degradado { border-color: var(--senal); }
+.vacio { padding: 1.5rem 1rem; margin: 0; text-align: center; color: var(--tinta-suave); }
+.dato { color: var(--tinta-suave); font-size: 0.92rem; }
+.resumen { margin: 0 0 1rem; }
+.criticos { margin: 0 0 0.75rem; }
+
+.bandeja-cabeza { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+.sello { margin: 0; padding: 0.15rem 0.7rem; font-weight: 600; border: 2px solid var(--via); color: var(--via); }
+.con-alarma { border-top-color: var(--oxido); box-shadow: inset 6px 0 0 var(--oxido); }
+.con-alarma .sello { background: var(--oxido); border-color: var(--oxido); color: var(--papel); }
+.motivo { margin: 0 0 0.75rem; color: var(--oxido); font-weight: 600; }
+.cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.75rem 1.5rem; margin: 0 0 0.6rem; }
+.cifras dt { color: var(--tinta-suave); font-size: 0.9rem; }
+.cifras dd { margin: 0; font-family: var(--titulo); font-stretch: 75%; font-weight: 700; font-size: 1.45rem; line-height: 1.2; }
+.bandeja .dato { margin: 0; }
+
+.tabla-ancha { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; background: var(--papel); }
+th, td { text-align: left; padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--linea); vertical-align: top; }
+thead th { font-family: var(--titulo); font-stretch: 75%; font-size: 0.95rem; border-bottom: 2px solid var(--tinta); vertical-align: bottom; }
+tbody th { font-weight: 600; }
+.numero { text-align: right; font-variant-numeric: tabular-nums; }
+.destacado { color: var(--oxido); font-weight: 600; }
+.caida td, .caida th { color: var(--oxido); font-weight: 600; }
+
+/* La misma rampa del mapa: de menos a más daño. */
+.muestra { display: inline-block; width: 0.8rem; height: 0.8rem; margin-right: 0.4rem; border: 1px solid var(--tinta); vertical-align: -0.05rem; }
+.nivel-0 { background: #fde6d9; }
+.nivel-1 { background: #f3a87e; }
+.nivel-2 { background: #dd6430; }
+.nivel-3 { background: #a23315; }
+.nivel-4 { background: #541809; }
+.nivel-vacio { background: var(--linea); }
+
+@media (max-width: 40rem) {
+  .modulo { font-size: 2.1rem; }
+  .selector button { width: 100%; }
+}

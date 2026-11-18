@@ -169,6 +169,73 @@
       ]
     },
     {
+      "clientId": "consulta-danos-tablero",
+      "name": "Tablero de daños (Razor Pages)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "consulta_danos_tablero_local",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true,
+      "redirectUris": [
+        "http://localhost:8080/tablero-danos/signin-oidc",
+        "http://localhost:30080/tablero-danos/signin-oidc"
+      ],
+      "webOrigins": [],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:8080/tablero-danos/signout-callback-oidc##http://localhost:30080/tablero-danos/signout-callback-oidc"
+      },
+      "protocolMappers": [
+        {
+          "name": "audiencia-gateway",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "gateway",
+            "included.custom.audience": "gateway",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "roles-en-id-token",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "name": "ambito",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "ambito",
+            "claim.name": "ambito",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "false",
+            "userinfo.token.claim": "false",
+            "multivalued": "false",
+            "aggregate.attrs": "false"
+          }
+        }
+      ]
+    },
+    {
       "clientId": "movil",
       "name": "Cliente móvil de Evaluación de Daños",
       "enabled": true,
@@ -264,6 +331,11 @@
     }
   ],
   "users": [
+    {
+      "username": "service-account-consulta-danos-tablero",
+      "enabled": true,
+      "serviceAccountClientId": "consulta-danos-tablero"
+    },
     {
       "username": "evaluador.armenia",
       "enabled": true,

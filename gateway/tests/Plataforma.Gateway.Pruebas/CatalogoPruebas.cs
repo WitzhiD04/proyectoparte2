@@ -45,6 +45,18 @@ public class CatalogoPruebas
     }
 
     [Fact]
+    public void El_tablero_entra_sin_token_y_solo_por_GET()
+    {
+        // La sesión del tablero es su cookie (E-41): el gateway no puede exigir un Bearer que el navegador no manda.
+        IConfigurationSection ruta = Leer(RutaCatalogoReal()).GetSection("ReverseProxy:Routes:cd-tablero");
+
+        Assert.Equal("/tablero-danos/{**resto}", ruta["Match:Path"]);
+        Assert.Equal(["GET"], ruta.GetSection("Match:Methods").GetChildren().Select(m => m.Value));
+        Assert.Equal(CatalogoRutas.Publico, ruta["Metadata:roles"]);
+        Assert.Equal("consulta-danos", ruta["ClusterId"]);
+    }
+
+    [Fact]
     public void Una_ruta_de_modificacion_sin_regla_hace_invalido_el_catalogo()
     {
         string archivo = CatalogoDePrueba.Escribir("http://127.0.0.1:1/",

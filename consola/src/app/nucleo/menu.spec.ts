@@ -4,7 +4,7 @@ describe('menú por roles', () => {
   const etiquetas = (...roles: Parameters<typeof menuPara>[0]) => menuPara(roles).map((e) => e.etiqueta);
 
   it('la autoridad ve todo lo de esta entrega', () => {
-    expect(etiquetas('autoridad')).toEqual(['Evaluaciones candidatas', 'Proyectos', 'Consolidado del programa', 'Mapa', 'Evaluaciones']);
+    expect(etiquetas('autoridad')).toEqual(['Evaluaciones candidatas', 'Proyectos', 'Consolidado del programa', 'Mapa', 'Evaluaciones', 'Tablero de daños']);
   });
 
   it('el responsable ve sus proyectos y el mapa, sin candidatas ni consolidado', () => {
@@ -12,11 +12,11 @@ describe('menú por roles', () => {
   });
 
   it('el auditor ve proyectos, consolidado y mapa', () => {
-    expect(etiquetas('auditor')).toEqual(['Proyectos', 'Consolidado del programa', 'Mapa']);
+    expect(etiquetas('auditor')).toEqual(['Proyectos', 'Consolidado del programa', 'Mapa', 'Tablero de daños']);
   });
 
   it('un organismo no ve Reconstrucción', () => {
-    expect(etiquetas('organismo')).toEqual(['Mapa', 'Evaluaciones']);
+    expect(etiquetas('organismo')).toEqual(['Mapa', 'Evaluaciones', 'Tablero de daños']);
   });
 
   it('el evaluador trabaja en la app móvil y no tiene secciones', () => {
@@ -27,6 +27,7 @@ describe('menú por roles', () => {
   it('el inicio es Proyectos para quien opera en Reconstrucción y la primera sección para los demás', () => {
     expect(inicioPara(['autoridad'])).toBe('/reconstruccion/proyectos');
     expect(inicioPara(['organismo'])).toBe('/mapa');
+    expect(inicioPara(['operador'])).toBe('/mapa');
   });
 
   it('reconoce el módulo de una URL', () => {

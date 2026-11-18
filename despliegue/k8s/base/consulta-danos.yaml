@@ -49,6 +49,8 @@ spec:
             - { name: Redis__Conexion, value: "cache:6379" }
             - { name: ConsultaDanos__UmbralConflictos, value: "50" }
             - { name: ConsultaDanos__UmbralHoras, value: "24" }
+            - name: Tablero__ClaveCliente
+              valueFrom: { secretKeyRef: { name: credenciales, key: tablero-cliente } }
             - name: Bus__Clave
               valueFrom: { secretKeyRef: { name: credenciales, key: bus-consulta-danos } }
             - name: ConnectionStrings__ConsultaDanos

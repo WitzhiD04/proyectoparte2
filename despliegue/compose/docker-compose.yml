@@ -398,6 +398,8 @@ services:
       Bus__Cola: q.consulta-danos
       ConsultaDanos__UmbralConflictos: ${CONSULTA_DANOS_UMBRAL_CONFLICTOS:-50}
       ConsultaDanos__UmbralHoras: ${CONSULTA_DANOS_UMBRAL_HORAS:-24}
+      # Tablero Razor (E-41): cliente confidencial de Keycloak, con el mismo valor de realm-plataforma.json.
+      Tablero__ClaveCliente: ${TABLERO_CLAVE_CLIENTE:-consulta_danos_tablero_local}
       Identidad__Modo: ${IDENTIDAD_MODO:-Jwt}
       Identidad__Emisor: ${IDENTIDAD_EMISOR:-http://localhost:8180/realms/plataforma}
       Identidad__Audiencia: ${IDENTIDAD_AUDIENCIA:-gateway}
