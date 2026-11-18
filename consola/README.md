@@ -13,6 +13,8 @@ http://localhost:8080.
   ingreso y, al entrar de nuevo, regresa a donde estaba el usuario.
 - Ante un 403 o un 404, la pantalla muestra el mensaje del servicio.
 - Las guardas y el menú son comodidad de la interfaz: quien autoriza es el gateway y cada servicio.
+- La pantalla donde se escribe la clave es de Keycloak y usa el tema `despliegue/keycloak/temas/plataforma`, con la misma
+  paleta y tipografías de esta consola. Si cambia `src/styles.css`, actualice también su `plataforma.css`.
 
 Los usuarios de prueba están en `docs/encargos/convenciones.md` (clave: usuario + `_local`).
 

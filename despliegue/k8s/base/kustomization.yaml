@@ -18,5 +18,14 @@ configMapGenerator:
   - name: keycloak-realm
     files:
       - realm-plataforma.json=../../keycloak/realm-plataforma.json
+  - name: keycloak-tema
+    files:
+      - theme.properties=../../keycloak/temas/plataforma/login/theme.properties
+      - messages_es.properties=../../keycloak/temas/plataforma/login/messages/messages_es.properties
+      - plataforma.css=../../keycloak/temas/plataforma/login/resources/css/plataforma.css
+      - ibm-plex-sans-latin-400-normal.woff2=../../keycloak/temas/plataforma/login/resources/fonts/ibm-plex-sans-latin-400-normal.woff2
+      - ibm-plex-sans-latin-500-normal.woff2=../../keycloak/temas/plataforma/login/resources/fonts/ibm-plex-sans-latin-500-normal.woff2
+      - ibm-plex-sans-latin-600-normal.woff2=../../keycloak/temas/plataforma/login/resources/fonts/ibm-plex-sans-latin-600-normal.woff2
+      - archivo-latin-wdth-normal.woff2=../../keycloak/temas/plataforma/login/resources/fonts/archivo-latin-wdth-normal.woff2
 generatorOptions:
   disableNameSuffixHash: true

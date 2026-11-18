@@ -164,6 +164,8 @@ services:
       - "${PUERTO_KEYCLOAK:-8180}:8080"
     volumes:
       - ../keycloak/realm-plataforma.json:/opt/keycloak/data/import/realm-plataforma.json:ro
+      # Tema de la pantalla de inicio de sesión, con la identidad visual de la consola.
+      - ../keycloak/temas/plataforma:/opt/keycloak/themes/plataforma:ro
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q 'UP' <&3"]
       interval: 5s

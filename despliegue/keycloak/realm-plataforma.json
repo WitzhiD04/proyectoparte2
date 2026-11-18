@@ -2,6 +2,12 @@
   "id": "plataforma",
   "realm": "plataforma",
   "displayName": "Plataforma para la Gestión de Desastres y Reconstrucción",
+  "loginTheme": "plataforma",
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "es"
+  ],
+  "defaultLocale": "es",
   "enabled": true,
   "sslRequired": "NONE",
   "registrationAllowed": false,

@@ -1,0 +1,113 @@
+/* Pantalla de inicio de sesión con la identidad de la consola: los mismos valores de consola/src/styles.css y app.css. */
+@font-face { font-family: 'Archivo Variable'; font-style: normal; font-display: swap; font-weight: 100 900; font-stretch: 62% 125%; src: url(../fonts/archivo-latin-wdth-normal.woff2) format('woff2-variations'); }
+@font-face { font-family: 'IBM Plex Sans'; font-style: normal; font-display: swap; font-weight: 400; src: url(../fonts/ibm-plex-sans-latin-400-normal.woff2) format('woff2'); }
+@font-face { font-family: 'IBM Plex Sans'; font-style: normal; font-display: swap; font-weight: 500; src: url(../fonts/ibm-plex-sans-latin-500-normal.woff2) format('woff2'); }
+@font-face { font-family: 'IBM Plex Sans'; font-style: normal; font-display: swap; font-weight: 600; src: url(../fonts/ibm-plex-sans-latin-600-normal.woff2) format('woff2'); }
+
+:root {
+  --plano: #edf0f2;
+  --papel: #ffffff;
+  --tinta: #12313f;
+  --tinta-suave: #4d6470;
+  --linea: #c9d2d8;
+  --senal: #f2b705;
+  --oxido: #b3401e;
+  --via: #2e7d5b;
+  --titulo: 'Archivo Variable', 'Archivo', sans-serif;
+  --texto: 'IBM Plex Sans', system-ui, sans-serif;
+
+  --pf-v5-global--FontFamily--text: var(--texto);
+  --pf-v5-global--FontFamily--heading: var(--titulo);
+  --pf-v5-global--Color--100: var(--tinta);
+  --pf-v5-global--Color--200: var(--tinta-suave);
+  --pf-v5-global--link--Color: var(--tinta);
+  --pf-v5-global--link--Color--hover: var(--tinta);
+  --pf-v5-global--BorderRadius--sm: 0;
+  --pf-v5-global--danger-color--100: var(--oxido);
+}
+
+html, .login-pf body { background: var(--plano); height: auto; min-height: 100%; }
+body { color: var(--tinta); font-family: var(--texto); font-size: 16px; line-height: 1.5; }
+
+/* La cabecera ocupa todo el ancho, como en la consola; el formulario va debajo, en un panel. */
+.pf-v5-c-login { display: block; min-height: 100vh; padding: 0; background: var(--plano); }
+.pf-v5-c-login__container { display: block; width: 100%; max-width: none; padding: 0; }
+
+#kc-header.pf-v5-c-login__header {
+  display: flex;
+  gap: 0.9rem;
+  align-items: stretch;
+  margin: 0;
+  padding: 1.1rem clamp(1rem, 4vw, 3rem);
+  background: var(--tinta);
+  color: var(--papel);
+}
+/* Franja de señalización de obra. */
+#kc-header::before {
+  content: '';
+  flex: none;
+  width: 1.1rem;
+  background: repeating-linear-gradient(135deg, var(--senal) 0 0.55rem, var(--tinta) 0.55rem 1.1rem);
+  border: 2px solid var(--senal);
+}
+#kc-header-wrapper { margin: 0; padding: 0; font-size: 1rem; line-height: 1.5; letter-spacing: 0; text-align: left; text-transform: none; color: var(--papel) !important; }
+#kc-header-wrapper .plataforma { display: block; font-size: 0.9rem; opacity: 0.8; }
+#kc-header-wrapper .modulo { display: block; font-family: var(--titulo); font-stretch: 62%; font-weight: 800; font-size: 2.6rem; line-height: 1; }
+
+.pf-v5-c-login__main {
+  width: auto;
+  max-width: 32rem;
+  margin: 3rem auto 2rem;
+  padding: 1.25rem;
+  background: var(--papel);
+  border-top: 4px solid var(--tinta);
+  box-shadow: none;
+}
+@media (max-width: 36rem) { .pf-v5-c-login__main { margin: 1.5rem 1rem; } }
+.pf-v5-c-login__main-header { display: block; padding: 0; border-top: 0; margin-bottom: 0.8rem; }
+.pf-v5-c-login__main-body { padding: 0; }
+.pf-v5-c-login__main-footer, .pf-v5-c-login__main-footer-band { padding-inline: 0; background: transparent; }
+
+#kc-page-title { font-family: var(--titulo); font-stretch: 75%; font-weight: 700; font-size: 2.4rem; line-height: 1.1; color: var(--tinta); }
+
+.pf-v5-c-form { --pf-v5-c-form--GridGap: 0.9rem; }
+.pf-v5-c-form__label, .pf-v5-c-form__label-text { font-weight: 500; font-size: 0.9rem; color: var(--tinta); }
+
+/* Campos: rectos, con borde fino, como los de la consola. */
+.pf-v5-c-form-control { background: var(--papel); border: 1px solid var(--tinta-suave); border-radius: 0; }
+.pf-v5-c-form-control::before, .pf-v5-c-form-control::after { display: none; }
+.pf-v5-c-form-control > input { padding: 0.45rem 0.6rem; color: var(--tinta); font: inherit; }
+.pf-v5-c-form-control:focus-within { outline: 3px solid var(--senal); outline-offset: 2px; }
+.pf-v5-c-form-control > input:focus { outline: 0; }
+.pf-v5-c-form-control.pf-m-error, .pf-v5-c-form-control:has(input[aria-invalid='true']) { border-color: var(--oxido); }
+
+/* Botones. */
+.pf-v5-c-button { border-radius: 0; font-family: var(--texto); font-weight: 600; }
+.pf-v5-c-button::after { display: none; }
+.pf-v5-c-button.pf-m-primary { width: auto; padding: 0.5rem 1rem; background: var(--tinta); border: 2px solid var(--tinta); color: var(--papel); }
+.pf-v5-c-button.pf-m-primary:hover, .pf-v5-c-button.pf-m-primary:active { background: var(--tinta); color: var(--papel); }
+.pf-v5-c-button.pf-m-primary:disabled { opacity: 0.45; }
+.pf-v5-c-button.pf-m-control { background: var(--papel); border: 1px solid var(--tinta-suave); border-left: 0; color: var(--tinta); }
+.pf-v5-c-button:focus-visible, a:focus-visible, input[type='checkbox']:focus-visible { outline: 3px solid var(--senal); outline-offset: 2px; }
+#kc-form-buttons, .pf-v5-c-form__group.pf-m-action { margin-top: 0.3rem; }
+
+a, .pf-v5-c-button.pf-m-link { color: var(--tinta); text-decoration: underline; }
+
+/* Avisos: la misma barra lateral de .aviso. */
+.pf-v5-c-alert {
+  --pf-v5-c-alert--BackgroundColor: var(--papel);
+  --pf-v5-c-alert--BoxShadow: none;
+  --pf-v5-c-alert--BorderTopWidth: 0;
+  padding: 0.7rem 0.9rem;
+  border: 0;
+  border-left: 6px solid var(--tinta);
+  background: var(--papel);
+  box-shadow: none;
+}
+.pf-v5-c-alert.pf-m-inline { --pf-v5-c-alert--m-inline--BackgroundColor: var(--papel); background: var(--papel); }
+.pf-v5-c-alert.pf-m-danger { border-left-color: var(--oxido); }
+.pf-v5-c-alert.pf-m-success { border-left-color: var(--via); }
+.pf-v5-c-alert__icon { display: none; }
+.pf-v5-c-alert__title, .pf-v5-c-alert__title.kc-feedback-text { color: var(--tinta); font-weight: 400; }
+.pf-v5-c-helper-text__item.pf-m-error, .pf-v5-c-helper-text__item-text { color: var(--oxido); }
+.pf-v5-c-helper-text__item-icon { display: none; }
