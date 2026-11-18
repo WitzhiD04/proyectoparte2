@@ -49,7 +49,8 @@ describe('App', () => {
 
   it('arma el menú con los roles del token y ya no tiene selector de perfil', async () => {
     const { html } = await abrir('/reconstruccion/proyectos', comoRol('auditor'));
-    expect(enlaces(html)).toEqual(['Proyectos', 'Consolidado del programa', 'Mapa']);
+    expect(enlaces(html)).toEqual(['Proyectos', 'Consolidado del programa', 'Mapa', 'Tablero de daños']);
+    expect(html.querySelector('nav a[href="/tablero-danos"]')?.textContent).toContain('Tablero de daños');
     expect(html.querySelector('#perfil')).toBeNull();
     expect(html.textContent).not.toContain('Perfil de prueba');
     servidor.expectOne('/v1/reconstruccion/desastres').flush([]);

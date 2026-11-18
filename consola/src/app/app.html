@@ -34,7 +34,11 @@
 @if (sesion.autenticada() && menu().length > 0) {
   <nav class="navegacion" aria-label="Secciones">
     @for (entrada of menu(); track entrada.ruta) {
-      <a [routerLink]="entrada.ruta" routerLinkActive="activa">{{ entrada.etiqueta }}</a>
+      @if (entrada.externa) {
+        <a [href]="entrada.ruta">{{ entrada.etiqueta }}</a>
+      } @else {
+        <a [routerLink]="entrada.ruta" routerLinkActive="activa">{{ entrada.etiqueta }}</a>
+      }
     }
   </nav>
 }
