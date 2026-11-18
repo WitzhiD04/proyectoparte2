@@ -1,7 +1,8 @@
 # Servicio Consulta de Daños
 
 Modelo de lectura de la evaluación de daños (DA-08, AD-34): el mapa de daños por zona, el consolidado con la
-priorización, la evolución de un activo o de una zona y los indicadores de la bandeja de revisión (R-08). Es la ruta de lectura de
+priorización, la evolución de un activo o de una zona, los indicadores de la bandeja de revisión (R-08) y el tablero de
+daños en Razor Pages. Es la ruta de lectura de
 mayor volumen del módulo y está separada de la sincronización (párrafo del CU-3 del SAD): se escala sola, sin escalar a
 Evaluación de Daños (AD-18, QA-05). No lee el almacén de Evaluación de Daños (AD-01): todo llega por eventos.
 
@@ -15,7 +16,7 @@ o como migrador (`migrar`, DT-19).
 | `src/ConsultaDanos.Dominio` | Entidades y reglas | Niveles y `Distribucion`, `IndiceDano`, `Priorizacion`, `EstadoActivo` (reglas de versión de cada aspecto) y `Consolidacion` (incrementos del consolidado), `IndicadoresRevision`, `CodigoZona` y `Departamentos`. Sin paquetes. |
 | `src/ConsultaDanos.Aplicacion` | Casos de uso y puertos | `ActualizarProyecciones` (un método por hecho del bus), `ConsultarMapa`, `ConsultarConsolidado`, `ConsultarEvolucion`, `ConsultarEvolucionZona`, `ConsultarIndicadores`; puertos `IAlmacenProyecciones`, `ILecturasDanos`, `ICacheDanos`, `IInvalidacionMapa`, `IFormatoDanos`. Sin paquetes y sin conocer el bus. |
 | `src/ConsultaDanos.Infraestructura` | Adaptadores | EF Core con PostGIS y su migración, `AlmacenProyeccionesPostgis` (SQL con bloqueos en orden fijo), `LecturasPostgis`, `CacheRedis`, `InterceptorInvalidacion`, `FormatoJson` (GeoJSON), `ManejadorEventosConsultaDanos` (sobre → hecho). Usa `comun/`. |
-| `src/ConsultaDanos.Api` | Adaptador de entrada | `Program.cs`: rutas, identidad con `IIdentidadActual`, parámetros de despliegue. |
+| `src/ConsultaDanos.Api` | Adaptadores de entrada | `Program.cs`: rutas de la API, identidad con `IIdentidadActual`, parámetros de despliegue. `Pages/` y `Tablero/`: el tablero Razor con su sesión. |
 | `tests/ConsultaDanos.Pruebas` | | Índice, priorización, reglas de versión, todos los órdenes de llegada (en memoria), caché y degradación con puertos en memoria, arquitectura. |
 | `tests/ConsultaDanos.Integracion` | | PostGIS, Redis y RabbitMQ reales (Testcontainers) con `despliegue/bus/definiciones.json`. |
 
@@ -52,10 +53,53 @@ el consolidado llevan además `degradado` (y el encabezado `X-Degradado`).
 | GET | `/v1/consulta-danos/activos/{id}/evolucion` | `vigente` y `evaluaciones` (sincronización, actualización, asociación, resolución y validación) en orden de tiempo. 404 si no hay nada del activo |
 | GET | `/v1/consulta-danos/zonas/{codigo}/evolucion?desastre=` | `codigo`: DIVIPOLA de 5 dígitos (municipio) o 2 (departamento), validado contra la capa de municipios; `desastre` es opcional. Devuelve `zona` (`codigo`, `nombre`, `tipo`), `datoAl`, `evaluaciones` en orden de tiempo (activo, tipo, nivel, origen, estado de validación, autor) y `porDia` (`fecha` en hora de Colombia, `activos`, `distribucion`). En `porDia` cada activo cuenta una vez, en su último nivel del día, sin evaluaciones rechazadas. 400 si el código o el desastre no son válidos; 404 si la zona no está en la capa o no tiene evaluaciones |
 | GET | `/v1/consulta-danos/indicadores-revision` | `conflictosPendientes`, `masViejoDesde`, `antiguedadHoras`, umbrales, `superaTamano`, `superaAntiguedad`, `alarma` |
+| GET | `/tablero-danos?desastre=` | Página Razor con sesión propia (no usa el JWT de la API). Ver "Tablero de daños" |
 | GET | `/salud/vivo`, `/salud/listo` | La caché caída deja `listo` en *Degraded* (200) |
 
 Errores: `{ "codigo", "mensaje" }`. 400 parámetro inválido, 401 sin identidad, 404 no existe, 503 ni la base ni la caché
 pueden responder.
+
+## Tablero de daños (Razor Pages)
+
+`/tablero-danos` muestra el consolidado con la priorización y el indicador de la bandeja de revisión: selector de
+desastre, alarma, zonas en orden de prioridad, resumen por tipo de activo, tipos críticos, integraciones, `datoAl` y un
+aviso si la respuesta llega degradada. El curso pide una pantalla en Razor Pages, y esta es esa excepción a la consola
+única de DA-13 (E-41).
+
+**La misma lógica con dos interfaces.** Las páginas son un segundo adaptador de entrada dentro de `ConsultaDanos.Api`.
+`Pages/TableroDanos/Index.cshtml.cs` recibe por inyección `ConsultarConsolidado` y `ConsultarIndicadores`, los mismos casos
+de uso que atienden `/v1/consulta-danos/consolidado` y `/v1/consulta-danos/indicadores-revision`, y los llama en el mismo
+proceso, sin HTTP a su propia API. Dominio y Aplicación no cambiaron: priorización, caché y degradación son una sola, y
+solo varía cómo se presenta el resultado.
+
+| Parte | Dónde | Notas |
+|---|---|---|
+| Páginas y diseño | `Pages/TableroDanos`, `Pages/Shared/_Tablero.cshtml` | HTML servido por el servidor; funciona sin JavaScript y con teclado |
+| Estilos y fuentes | `wwwroot/tablero-danos` | Paleta, cabecera y tipografías de la consola, sin frameworks CSS |
+| Sesión | `Tablero/RegistroTablero.cs` | OpenID Connect con PKCE y cookie `tablero-danos`, limitada a esta ruta |
+| Lista de desastres | `Tablero/DirectorioDesastres.cs` | El nombre es del servicio Consulta: se lee por la red interna con la cuenta de servicio del cliente |
+
+**Inicio de sesión.** Cliente confidencial `consulta-danos-tablero` del realm `plataforma`. Lo ven `autoridad`, `organismo`,
+`operador` y `auditor`; otro rol va a `/tablero-danos/sin-acceso`. Quien ya entró a la consola no vuelve a escribir la clave,
+por el inicio de sesión único de Keycloak.
+
+- El emisor es `http://localhost:8180`, que no existe dentro de los contenedores. Como `Plataforma.Comun.Seguridad`, el
+  servicio lee los metadatos en `http://keycloak:8080`. Con `KC_HOSTNAME_BACKCHANNEL_DYNAMIC`, esos metadatos llevan al
+  navegador a `localhost:8180` y al servidor a `keycloak:8080`, sin reescribir ningún endpoint.
+- El gateway deja pasar la ruta sin token (`roles: publico`, solo `GET`): el navegador no manda un Bearer y la autorización
+  la hace esta página con su cookie. Por eso el regreso de Keycloak usa `response_mode=query`.
+- Las dos réplicas comparten en Redis las llaves que protegen la cookie. Si Redis las pierde, la sesión se rehace con el
+  inicio de sesión único.
+- El cliente se agrega a un Keycloak en marcha con `POST /admin/realms/plataforma/partialImport`, con el cliente y su
+  usuario `service-account-consulta-danos-tablero`. No hay que recrear Keycloak, porque cambiarían sus llaves de firma.
+
+Con `alcaldia.armenia`, que entró antes a la consola:
+
+![Tablero de daños con alcaldia.armenia](docs/tablero-alcaldia-armenia.png)
+
+Con `auditor.1`:
+
+![Tablero de daños con auditor.1](docs/tablero-auditor.png)
 
 ## Decisiones que conviene conocer
 

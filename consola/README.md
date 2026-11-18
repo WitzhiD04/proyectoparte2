@@ -25,6 +25,7 @@ Los usuarios de prueba están en `docs/encargos/convenciones.md` (clave: usuario
 | `/reconstruccion` | Candidatas, proyectos y consolidado | `autoridad`, `responsable-proyecto`, `auditor` | Listo |
 | `/mapa` | Mapa de daños y desastres | todos menos `evaluador` | Listo |
 | `/evaluaciones` | Validación, conflictos y catálogo | `autoridad`, `organismo`, `operador`, `administrador` | Vacío (tarea B3) |
+| `/tablero-danos` | Tablero de daños | `autoridad`, `organismo`, `operador`, `auditor` | Enlace: es Razor Pages en Consulta de Daños (E-41) |
 
 El menú se declara en `nucleo/menu.ts`. Un módulo nuevo es una entrada allí y una ruta en `app.routes.ts`.
 

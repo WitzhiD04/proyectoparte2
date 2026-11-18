@@ -499,3 +499,28 @@ completos, porque son pocos.
   a EV-21 y a `p_municipios`, porque cambia un contrato y una proyección para un dato que casi no cambia.
 - **Costo aceptado:** `p_historial_activo` no tiene índice por municipio, así que cada consulta recorre la tabla. Si el
   historial crece hasta notarse, el arreglo es un índice por `codigo_municipio` e `instante`, con su migración.
+
+### E-41 · Tablero de daños en Razor Pages: excepción a la consola única (DA-13)
+
+- **Texto actual:** DA-13 define una sola consola de coordinación en Angular para los actores de la plataforma.
+- **Texto propuesto:** agregar a DA-13: "Por requisito del curso, el tablero de daños (`/tablero-danos`) se implementa con
+  Razor Pages de ASP.NET Core, dentro de Consulta de Daños. La consola lo enlaza desde su menú."
+- **Tipo:** excepción acotada y aditiva. Las pantallas de la consola y las rutas de la API no cambian.
+- **Por qué no rompe la arquitectura:** las páginas son un segundo adaptador de entrada de `ConsultaDanos.Api` y llaman en
+  el mismo proceso a `ConsultarConsolidado` y `ConsultarIndicadores`, los mismos casos de uso de la API. Dominio y Aplicación
+  no cambian (AD-08).
+- **Cómo se aplica:**
+  - Inicio de sesión OpenID Connect con PKCE y cookie, con el cliente confidencial `consulta-danos-tablero`. Ven el tablero
+    `autoridad`, `organismo`, `operador` y `auditor`.
+  - El catálogo del gateway (DA-12) agrega `cd-tablero`: `GET /tablero-danos/{**resto}`, `roles: publico`,
+    `reglaDominio: ninguna`. Es pública para el gateway porque el navegador trae cookie y no un `Bearer`; la autorización la
+    hace la página.
+  - El catálogo no admite rutas públicas de modificación (R-07). Por eso no se agrega un `POST` para el retorno de OIDC: el
+    código de autorización regresa por `GET` (`response_mode=query`), protegido con PKCE, `state` y `nonce`.
+  - Consulta de Daños no guarda el nombre de los desastres. El selector lo lee del servicio Consulta por la red interna, con
+    la cuenta de servicio del cliente; si no responde, el tablero avisa y sigue atendiendo el desastre de la dirección.
+- **Alternativas descartadas:**
+  - Otra pantalla Angular: no cumple el requisito del curso.
+  - Un proyecto web aparte que llame por HTTP a la API: duplica un despliegue y no demuestra dos interfaces sobre los mismos
+    casos de uso.
+  - Permitir `POST` público en el catálogo: debilita una regla de seguridad para un caso que `GET` resuelve.

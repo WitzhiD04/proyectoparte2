@@ -13,11 +13,14 @@ compose; en k8s, NodePort 30080).
 | Vuelve a resolver los nombres de los servicios (`PooledConnectionLifetime` 1 min) | `Registro.cs` (`Gateway:Conexiones`) | — |
 
 Metadatos de cada ruta: `servicio`, `roles` (roles del realm separados por coma, `*` = cualquier autenticado,
-`publico` = solo la consola), `claseTrafico` (`consola`, `movil`, `portal`) y `reglaDominio` (`ninguna` o el nombre
+`publico` = sin token: la consola y el tablero de daños), `claseTrafico` (`consola`, `movil`, `portal`) y `reglaDominio` (`ninguna` o el nombre
 de la regla de nivel 2 del servicio).
 
 ## Decisiones de implementación
 
+- **`/tablero-danos/{**resto}` es `publico` y solo `GET` (E-41):** es una página con sesión propia. El navegador manda su
+  cookie, no un `Bearer`, y Consulta de Daños autoriza por rol. El catálogo prohíbe rutas públicas de modificación, así que
+  el regreso de OIDC llega por `GET` (`response_mode=query`) y no hizo falta relajar R-07.
 - **Validación del JWT con `ValidadorJwt` de `Plataforma.Comun.Seguridad` en lugar del middleware `JwtBearer` (DT-07, DA-15):**
   el gateway reutiliza exactamente la misma clase `ValidadorJwt` (`JsonWebTokenHandler` + `ConfigurationManager<OpenIdConnectConfiguration>`)
   que usan todos los servicios de dominio. Así se garantiza por construcción que el emisor (`iss`), la audiencia (`aud: gateway`),
