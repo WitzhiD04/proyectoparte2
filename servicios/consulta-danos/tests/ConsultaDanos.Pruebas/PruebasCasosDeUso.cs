@@ -169,6 +169,9 @@ public class PruebasMapa
         public Task<IReadOnlyList<ZonaConsolidada>> ConsolidadoAsync(Guid desastre, CancellationToken ct) => throw new NotImplementedException();
         public Task<IReadOnlyList<IntegracionLeida>> IntegracionesAsync(CancellationToken ct) => throw new NotImplementedException();
         public Task<EvolucionActivo?> EvolucionAsync(Guid idActivo, CancellationToken ct) => throw new NotImplementedException();
+        public Task<string?> NombreMunicipioAsync(string codigo, CancellationToken ct) => throw new NotImplementedException();
+        public Task<bool> DepartamentoEnCapaAsync(string codigo, CancellationToken ct) => throw new NotImplementedException();
+        public Task<IReadOnlyList<EntradaHistorial>> HistorialZonaAsync(string codigo, TipoZona tipo, Guid? desastre, CancellationToken ct) => throw new NotImplementedException();
         public Task<BandejaLeida> BandejaAsync(CancellationToken ct) => throw new NotImplementedException();
     }
 

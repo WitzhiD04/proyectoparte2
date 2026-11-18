@@ -32,6 +32,16 @@ public sealed record Consolidado(Guid IdDesastre, DateTimeOffset? DatoAl, Distri
 public sealed record EvolucionActivo(Guid IdActivo, EstadoActivo Vigente, bool ConflictoPendiente, IReadOnlyList<EntradaHistorial> Entradas,
     DateTimeOffset? DatoAl);
 
+/// <summary>La zona de una evolución (RF-ED-15, E-40): un municipio o un departamento de la capa EV-21.</summary>
+public sealed record ZonaConsultada(string Codigo, TipoZona Tipo, string? Nombre);
+
+/// <summary>Cuántos activos quedaron en cada nivel de daño en un día (UTC), para dibujar la curva de la zona.</summary>
+public sealed record ConteoDia(DateOnly Fecha, Distribucion Distribucion);
+
+/// <summary>La secuencia de evaluaciones de una zona, ordenada por instante, y su agregado por día (RF-ED-15, E-40).</summary>
+public sealed record EvolucionZona(ZonaConsultada Zona, DateTimeOffset? DatoAl, IReadOnlyList<EntradaHistorial> Entradas,
+    IReadOnlyList<ConteoDia> PorDia);
+
 public sealed record BandejaLeida(int Pendientes, DateTimeOffset? MasViejo, DateTimeOffset? DatoAl);
 
 /// <summary>Una respuesta ya serializada, y si es la última conocida porque la base no respondió (CON-6).</summary>
@@ -125,6 +135,16 @@ public interface ILecturasDanos
     Task<IReadOnlyList<ZonaConsolidada>> ConsolidadoAsync(Guid desastre, CancellationToken ct);
     Task<IReadOnlyList<IntegracionLeida>> IntegracionesAsync(CancellationToken ct);
     Task<EvolucionActivo?> EvolucionAsync(Guid idActivo, CancellationToken ct);
+
+    /// <summary>El nombre del municipio en la capa EV-21; nulo si la capa no lo tiene.</summary>
+    Task<string?> NombreMunicipioAsync(string codigo, CancellationToken ct);
+
+    /// <summary>Si la capa EV-21 tiene algún municipio de ese departamento.</summary>
+    Task<bool> DepartamentoEnCapaAsync(string codigo, CancellationToken ct);
+
+    /// <summary>Las entradas de <c>p_historial_activo</c> de la zona, ordenadas por instante.</summary>
+    Task<IReadOnlyList<EntradaHistorial>> HistorialZonaAsync(string codigo, TipoZona tipo, Guid? desastre, CancellationToken ct);
+
     Task<BandejaLeida> BandejaAsync(CancellationToken ct);
 }
 
