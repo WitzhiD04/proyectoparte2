@@ -62,6 +62,9 @@ Se puede reconstruir un solo servicio (`docker compose -p plataforma up -d --bui
 gateway vuelve a resolver los nombres de los servicios cada minuto y encuentra las IP nuevas
 (`pruebas/humo/prueba-resolucion-gateway.sh` lo comprueba).
 
+Si se recrea Keycloak, reinicie también el gateway y los servicios (`docker compose -p plataforma restart`): guardan en
+caché las llaves de firma y rechazarían los tokens nuevos hasta por una hora.
+
 ## Compilar y probar
 
 No hace falta instalar el SDK: `herramientas/dotnet.sh` lo ejecuta en un contenedor (con acceso a Docker para

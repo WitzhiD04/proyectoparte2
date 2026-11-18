@@ -27,6 +27,7 @@ de humo.
 | Consulta de Daños | `servicios/consulta-danos` | Mapa de tres capas, priorización, R-08 |
 | Reconstrucción por eventos | `servicios/reconstruccion` | DA-01 y el escenario E de punta a punta |
 | Auditoría | `servicios/auditoria` | QA-13, QA-15, R-02 |
+| Adaptador de SE-6, simulador y KEDA | `adaptadores/adaptador-se6`, `simuladores/sim-se6` | DA-11 y E-10: salida por lotes de EV-18, EV-19 y EV-20 financiero hacia SE-6, cortacircuitos con EV-23 y reintento sin pérdida; QA-01 con SE-6 verificado en pruebas de integración y en compose |
 | Adaptador de SE-7, simulador y KEDA | `adaptadores/adaptador-se7`, `simuladores/sim-se7` | QA-01 con SE-7 |
 | Contrato de Notificación (EV-07, 28 y 29) | `comun/` | E-37 |
 | Keycloak (realm `plataforma`) y adaptador JWT de `IIdentidadActual` | `despliegue/keycloak`, `comun/Plataforma.Comun.Seguridad` | DA-15: con `IDENTIDAD_MODO=Jwt` los servicios validan el token y rechazan los `X-*` (401); la prueba de humo de desastres pasa con tokens |
@@ -65,7 +66,7 @@ gateway → consola con login → mapa → SE-6 → evolución por zona → eval
 | 3 | `reconstruccion-identidad.md` | 1 | **Hecho** |
 | 4 | `consola.md` | 1 (y 2 para el recorrido final) | Puede empezar en cuanto exista Keycloak |
 | 5 | `notificacion-se8.md` | — | **Fuera de esta entrega**: es de Gestión de Desastres; se declara como límite del prototipo |
-| 6 | `adaptador-se6.md` | — | Independiente |
+| 6 | `adaptador-se6.md` | — | **Hecho** |
 | 7 | `../../pruebas/ENCARGO-carga-y-caos.md` | Compose arriba | Scripts k6 y de caos |
 | 8 | `cierre-y-medidas.md` | Todos | Tabla de medidas, k8s en Minikube y documentación |
 
@@ -92,3 +93,4 @@ Salieron de los reportes de cada pieza. Recomendación de qué hacer con cada un
 | mTLS entre servicios | §7.1 del SAD, P-06 | Declarado como límite del prototipo (TLS en el borde) |
 | Dos regiones (QA-03) | DA-16 | Opcional, al final (ver `cierre-y-medidas.md`) |
 | `p_historial_activo` sin índice por municipio | A4 | Declarado: la evolución por zona recorre la tabla; con los datos de la entrega no se nota. La corrección es un índice por `(codigo_municipio, instante)` en una migración |
+| El validador JWT no recarga las llaves si Keycloak las cambia | B1 | Declarado: reiniciar los servicios tras recrear Keycloak; la corrección es volver a pedir la configuración ante una llave desconocida |
