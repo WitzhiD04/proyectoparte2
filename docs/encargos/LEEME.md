@@ -32,6 +32,7 @@ de humo.
 | Keycloak (realm `plataforma`) y adaptador JWT de `IIdentidadActual` | `despliegue/keycloak`, `comun/Plataforma.Comun.Seguridad` | DA-15: con `IDENTIDAD_MODO=Jwt` los servicios validan el token y rechazan los `X-*` (401); la prueba de humo de desastres pasa con tokens |
 | Reconstrucción con identidad común y jurisdicción | `servicios/reconstruccion` | DA-15: Reconstrucción y la Consulta del Programa usan `IIdentidadActual`. DA-14: alcance `Nacional`, aprobación por territorio DIVIPOLA y consolidado por jurisdicción; la prueba de humo del escenario E pasa con encabezados y con tokens |
 | Jurisdicción en lecturas, creación y acciones de la autoridad | `servicios/reconstruccion`, E-39 | Cuadro 3 del SRS: la autoridad solo ve candidatas, proyectos, detalle, historial y consolidado de su jurisdicción; un lote con evaluaciones ajenas da 403 y no crea ninguno; detalle, historial, asignar, aprobar y cancelar dan 404 fuera de ella (aprobar conserva el 403 para quien lo ve pero no lo aprueba). Prueba de humo con Calarcá en los dos modos |
+| API Gateway (YARP), catálogo de rutas, priorización, correlación y QA-11 | `gateway/`, `pruebas/humo/prueba-qa11.py` | AD-04, DA-12 (55 rutas, R-07 al arrancar), DA-15 (JWT nivel 1 y reenvío sin `X-*`), DA-20 (`traceparent` y `X-Id-Correlacion`), AD-19 y DA-16 (priorización por clase con degradación de `/v1/consulta*`), QA-11 medido al 100 % (198/198 rechazados) y renovación de conexiones (`PooledConnectionLifetime`) |
 | App móvil con OIDC | repositorio `danos`, rama `gemini-app-oidc` | H-70 a H-72. Falta correr su prueba instrumentada contra Keycloak (emulador con `adb reverse tcp:8180 tcp:8180`) |
 
 ## Alcance de esta entrega y reparto (fijado el 2026-11-17)
@@ -59,7 +60,7 @@ gateway → consola con login → mapa → SE-6 → evolución por zona → eval
 | # | Encargo | Depende de | Notas |
 |---|---|---|---|
 | 1 | `keycloak-jwt.md` | — | **Hecho** |
-| 2 | `gateway.md` | 1 | Lo más grande que queda. Habilita QA-11 medido, AD-19 y los rechazos a Auditoría |
+| 2 | `gateway.md` | 1 | **Hecho** (recortado: sin rechazos a Auditoría) |
 | 3 | `reconstruccion-identidad.md` | 1 | **Hecho** |
 | 4 | `consola.md` | 1 (y 2 para el recorrido final) | Puede empezar en cuanto exista Keycloak |
 | 5 | `notificacion-se8.md` | — | **Fuera de esta entrega**: es de Gestión de Desastres; se declara como límite del prototipo |
