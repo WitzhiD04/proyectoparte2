@@ -2,11 +2,11 @@ import { Component, OnInit, computed, inject, input, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
-import { LineaEstados } from '../componentes/linea-estados';
-import { Api, leerError } from '../nucleo/api';
-import { FechaHoraPipe, PesosPipe } from '../nucleo/formato';
-import { ErrorApi, Historial, NOMBRE_ESTADO, Proyecto } from '../nucleo/modelos';
-import { Sesion } from '../nucleo/sesion';
+import { LineaEstados } from '../../../componentes/linea-estados';
+import { Api, leerError } from '../../../nucleo/api';
+import { FechaHoraPipe, PesosPipe } from '../../../nucleo/formato';
+import { ErrorApi, Historial, NOMBRE_ESTADO, Proyecto } from '../../../nucleo/modelos';
+import { Sesion } from '../../../nucleo/sesion';
 
 const NOMBRE_CAMBIO: Record<string, string> = {
   Creacion: 'Creación', Presupuesto: 'Presupuesto', Fuente: 'Fuente de financiación', Responsable: 'Responsable',
@@ -40,9 +40,13 @@ export class DetalleProyecto implements OnInit {
   });
   protected readonly esMiProyecto = computed(() => {
     const p = this.proyecto();
-    return !!p && this.sesion.esResponsable() && p.responsable === this.sesion.perfil().usuario;
+    return !!p && this.sesion.esResponsable() && p.responsable === this.sesion.usuario();
   });
   protected readonly veHistorial = computed(() => !this.sesion.esResponsable());
+  protected readonly aprobador = computed(() => {
+    const alcance = this.proyecto()?.alcance;
+    return alcance === 'Municipal' ? 'local del municipio' : alcance === 'Regional' ? 'regional del departamento' : 'nacional';
+  });
 
   // Formularios
   protected presupuesto: number | null = null;
@@ -63,7 +67,12 @@ export class DetalleProyecto implements OnInit {
 
   ngOnInit(): void {
     this.api.proyecto(this.id()).subscribe({
-      next: (p) => { this.proyecto.set(p); this.cargarHistorial(); },
+      next: (p) => {
+        this.proyecto.set(p);
+        // Al abrir un proyecto por enlace, la cabecera muestra su desastre.
+        this.sesion.idDesastre.set(p.idDesastre);
+        this.cargarHistorial();
+      },
       error: (r) => this.error.set(leerError(r)),
     });
   }

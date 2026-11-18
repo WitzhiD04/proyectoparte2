@@ -1,33 +1,23 @@
-import { HttpClient, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
 import { Observable } from 'rxjs';
-import { Candidata, Consolidado, Desastre, ErrorApi, Historial, Proyecto, Rol } from './modelos';
-import { Sesion } from './sesion';
+import { Candidata, Consolidado, Desastre, ErrorApi, Historial, Proyecto } from './modelos';
 
-/** Agrega a cada petición el usuario, el rol y el ámbito del perfil actual. */
-export const identidadInterceptor: HttpInterceptorFn = (peticion, siguiente) => {
-  const perfil = inject(Sesion).perfil();
-  let encabezados = peticion.headers.set('X-Usuario', perfil.usuario).set('X-Rol', perfil.rol);
-  if (perfil.ambito) {
-    encabezados = encabezados.set('X-Ambito', perfil.ambito);
-  }
-  return siguiente(peticion.clone({ headers: encabezados }));
-};
-
-/** Solo deja entrar a una pantalla a los roles indicados; a los demás los lleva a la lista de proyectos. */
-export function soloRoles(...roles: Rol[]): CanActivateFn {
-  return () => {
-    const sesion = inject(Sesion);
-    return roles.includes(sesion.perfil().rol) ? true : inject(Router).createUrlTree(['/proyectos']);
-  };
-}
-
-/** Convierte una respuesta de error del servidor en algo que la pantalla puede mostrar. */
+/**
+ * Convierte una respuesta de error en algo que la pantalla puede mostrar. El mensaje es el del servicio: ante un 403 la
+ * consola no esconde la regla que se incumplió.
+ */
 export function leerError(respuesta: HttpErrorResponse): ErrorApi {
-  const cuerpo = respuesta.error as ErrorApi | null;
+  const cuerpo = respuesta.error as (ErrorApi & { error?: string }) | null;
   if (cuerpo && typeof cuerpo === 'object' && cuerpo.mensaje) {
     return cuerpo;
+  }
+  // Evaluación de Daños responde { error: "..." }.
+  if (cuerpo && typeof cuerpo === 'object' && cuerpo.error) {
+    return { codigo: `HTTP_${respuesta.status}`, mensaje: cuerpo.error };
+  }
+  if (respuesta.status === 403) {
+    return { codigo: 'NO_AUTORIZADO', mensaje: 'Su usuario no tiene permiso para esta operación.' };
   }
   return { codigo: 'SIN_CONEXION', mensaje: 'No se pudo completar la operación. Revise que el servicio esté en marcha e intente de nuevo.' };
 }

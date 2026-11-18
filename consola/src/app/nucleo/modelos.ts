@@ -1,13 +1,6 @@
 export type Rol = 'Autoridad' | 'Responsable' | 'Auditor';
 export type Estado = 'Formulado' | 'Aprobado' | 'EnEjecucion' | 'Finalizado' | 'Cancelado';
 
-export interface Perfil {
-  usuario: string;
-  nombre: string;
-  rol: Rol;
-  ambito?: 'Local' | 'Regional' | 'Nacional';
-}
-
 export interface Desastre { id: string; nombre: string; estado: string; enReconstruccion: boolean; }
 
 export interface Candidata {

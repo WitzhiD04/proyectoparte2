@@ -1,8 +1,8 @@
 import { Component, effect, inject, signal } from '@angular/core';
-import { Api, leerError } from '../nucleo/api';
-import { PesosPipe } from '../nucleo/formato';
-import { Consolidado, ErrorApi, Estado, NOMBRE_ESTADO } from '../nucleo/modelos';
-import { Sesion } from '../nucleo/sesion';
+import { Api, leerError } from '../../../nucleo/api';
+import { PesosPipe } from '../../../nucleo/formato';
+import { Consolidado, ErrorApi, Estado, NOMBRE_ESTADO } from '../../../nucleo/modelos';
+import { Sesion } from '../../../nucleo/sesion';
 
 /** CU-11: consolidado del programa de un desastre. Lo sirve el servicio de Consulta del Programa. */
 @Component({

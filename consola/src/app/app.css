@@ -17,9 +17,15 @@
 .plataforma { margin: 0; font-size: 0.9rem; opacity: 0.8; }
 .modulo { margin: 0; font-family: var(--titulo); font-stretch: 62%; font-weight: 800; font-size: 2.6rem; line-height: 1; }
 
-.selectores { display: flex; flex-wrap: wrap; gap: 1rem; }
+.selectores { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; align-items: end; }
 .selectores label { color: var(--papel); opacity: 0.85; }
 .selectores select { min-width: 15rem; border-color: var(--papel); color: var(--tinta); }
+
+.usuario { display: flex; gap: 1rem; align-items: center; }
+.usuario p { margin: 0; line-height: 1.25; }
+.usuario .nombre { font-weight: 600; }
+.usuario .rol { font-size: 0.9rem; opacity: 0.8; }
+.salir { background: transparent; border-color: var(--papel); color: var(--papel); }
 
 .navegacion { background: var(--papel); border-bottom: 2px solid var(--tinta); display: flex; flex-wrap: wrap; padding: 0 clamp(1rem, 4vw, 3rem); }
 .navegacion a { padding: 0.8rem 1.1rem; text-decoration: none; font-weight: 600; border-bottom: 5px solid transparent; margin-bottom: -2px; }
