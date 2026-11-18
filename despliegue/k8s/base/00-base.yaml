@@ -50,6 +50,7 @@ stringData:
   cadena-consulta-danos-dueno: "Host=db;Port=5432;Database=consulta_danos;Username=postgres;Password=postgres_local"
   cadena-consulta-danos: "Host=db;Port=5432;Database=consulta_danos;Username=consulta_danos_app;Password=consulta_danos_local"
   bus-consulta-danos: consulta_danos_local
+  tablero-cliente: consulta_danos_tablero_local
   minio-usuario: minioadmin
   minio-clave: minioadmin
   keycloak-admin: admin_local

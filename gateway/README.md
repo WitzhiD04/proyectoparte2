@@ -5,7 +5,7 @@ compose; en k8s, NodePort 30080).
 
 | Pieza | Dónde | Decisión |
 |---|---|---|
-| Catálogo de rutas (56 rutas; 25 de modificación, 12 con regla de dominio) | `src/Plataforma.Gateway/rutas.json` | DA-12, E-09 |
+| Catálogo de rutas (57 rutas; 25 de modificación, 12 con regla de dominio) | `src/Plataforma.Gateway/rutas.json` | DA-12, E-09 |
 | No arranca si una ruta de modificación no declara `reglaDominio` | `Catalogo/CatalogoRutas.cs` | R-07 |
 | Valida el JWT (mismo validador que los servicios), aplica el rol de la ruta (401/403), reenvía el mismo token y descarta los `X-*` de identidad | `Seguridad/AutorizacionNivel1.cs`, `Registro.cs` | DA-15 |
 | `traceparent` y `X-Id-Correlacion` en cada petición | `Correlacion/Correlacion.cs` | DA-20 |

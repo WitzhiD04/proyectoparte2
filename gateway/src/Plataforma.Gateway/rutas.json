@@ -601,6 +601,21 @@
           "reglaDominio": "ninguna"
         }
       },
+      "cd-tablero": {
+        "ClusterId": "consulta-danos",
+        "Match": {
+          "Path": "/tablero-danos/{**resto}",
+          "Methods": [
+            "GET"
+          ]
+        },
+        "Metadata": {
+          "servicio": "consulta-danos",
+          "roles": "publico",
+          "claseTrafico": "consola",
+          "reglaDominio": "ninguna"
+        }
+      },
       "cd-indicadores": {
         "ClusterId": "consulta-danos",
         "Match": {

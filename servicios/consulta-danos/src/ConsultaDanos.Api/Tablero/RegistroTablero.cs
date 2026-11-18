@@ -102,9 +102,11 @@ public static class RegistroTablero
                 o.Scope.Add("profile");
                 o.TokenValidationParameters.NameClaimType = "preferred_username";
                 o.TokenValidationParameters.RoleClaimType = ClaimRoles;
-                // Por omisión son SameSite=None, que el navegador descarta en http.
+                // Por omisión son SameSite=None y Secure, que el navegador puede descartar en http.
                 o.CorrelationCookie.SameSite = SameSiteMode.Lax;
+                o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
                 o.NonceCookie.SameSite = SameSiteMode.Lax;
+                o.NonceCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
                 o.Events.OnRedirectToIdentityProviderForSignOut = contexto =>
                 {
                     // El id_token no se guarda en la cookie: Keycloak identifica el cliente por este parámetro.
