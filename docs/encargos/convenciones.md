@@ -133,7 +133,7 @@ La autorización de nivel 2 (reglas que dependen de datos del dominio, AD-22) va
   - Identidad en el token: `preferred_username` → usuario; `realm_access.roles` → roles; `organizacion`, `ambito`, `territorio`.
   - Usuarios de prueba (clave = nombre de usuario + `_local`): `evaluador.armenia` (evaluador, organizacion `alcaldia-armenia`),
     `ungrd.operador` (autoridad, `ungrd`, NACIONAL), `bomberos.operador` (organismo, `bomberos`), `operador.danos` (operador),
-    `admin.catalogo` (administrador), `auditor.1` (auditor), `ing.perez` (responsable-proyecto),
+    `admin.catalogo` (administrador), `auditor.1` (auditor), `ing.perez` (responsable-proyecto), `ing.gomez` (responsable-proyecto),
     `alcaldia.armenia` (autoridad, LOCAL, territorio `63001`), `alcaldia.calarca` (autoridad, LOCAL, `63130`) y
     `gobernacion.quindio` (autoridad, REGIONAL, `63`).
 - **Gateway (YARP)** publicado en el puerto **8080** del host: es la única entrada (consola y API). Las rutas de la API

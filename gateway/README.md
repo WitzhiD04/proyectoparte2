@@ -47,8 +47,9 @@ de la regla de nivel 2 del servicio).
 
 ## QA-11 (medido el 2026-11-17)
 
-198 intentos de modificación por actores no autorizados sobre las 12 rutas con regla de dominio: 141 rechazados por el
-gateway (nivel 1) y 57 por el servicio (nivel 2). 0 datos modificados.
+198 intentos de modificación por actores no autorizados sobre las 12 rutas con regla de dominio: **198 de 198 rechazados
+(100,0 %)** — 141 por el gateway (nivel 1, `403`) y 57 por el servicio (nivel 2, 52 con `403` y 5 con `404` fuera de
+jurisdicción según E-39). Falsos negativos: 0. Datos modificados: 0.
 
 ### Resumen por ruta del catálogo
 
@@ -58,7 +59,7 @@ gateway (nivel 1) y 57 por el servicio (nivel 2). 0 datos modificados.
 | ed-validacion | 18 | 403: 18 |
 | gd-organismos-asignar | 10 | 403: 10 |
 | gd-severidad | 20 | 403: 20 |
-| gd-transiciones | 20 | 403: 16, **409: 4** |
+| gd-transiciones | 20 | 403: 20 |
 | gd-zona | 10 | 403: 10 |
 | rc-avance | 20 | 403: 20 |
 | rc-documentos | 10 | 403: 10 |
@@ -66,12 +67,6 @@ gateway (nivel 1) y 57 por el servicio (nivel 2). 0 datos modificados.
 | rc-presupuesto | 16 | 403: 14, 404: 2 |
 | rc-responsable | 8 | 403: 7, 404: 1 |
 | rc-transiciones | 38 | 403: 36, 404: 2 |
-
-**Pendiente en Gestión de Desastres:** los 4 casos 409 son de organismos no responsables que piden una transición que
-no existe desde el estado actual. `Desastre.CambiarEstado` revisa la tabla de transiciones antes que
-`ExigirResponsable`, así que responde `TRANSICION_NO_PERMITIDA` y revela el estado del evento (QA-11 d). No se modifica
-nada, pero no es un rechazo de autorización. Corrección propuesta: llamar a `ExigirResponsable` (salvo en la
-reapertura) antes de buscar la transición.
 
 ### Tabla completa ruta → código (198 intentos)
 
@@ -108,7 +103,7 @@ reapertura) antes de buscar la transición.
 | `/v1/desastres/{id:guid}/zona` | PUT | organismo-responsable | geometria, fuente | alcaldia.calarca | 403 | servicio (2) |
 | `/v1/desastres/{id:guid}/zona` | PUT | organismo-responsable | geometria, fuente | gobernacion.quindio | 403 | servicio (2) |
 | `/v1/desastres/{id:guid}/transiciones` | POST | organismo-responsable | CERRADO | bomberos.operador | 403 | servicio (2) |
-| `/v1/desastres/{id:guid}/transiciones` | POST | organismo-responsable | EN_ATENCION | bomberos.operador | 409 | servicio (2) |
+| `/v1/desastres/{id:guid}/transiciones` | POST | organismo-responsable | EN_ATENCION | bomberos.operador | 403 | servicio (2) |
 | `/v1/desastres/{id:guid}/transiciones` | POST | organismo-responsable | CERRADO | evaluador.armenia | 403 | gateway (1) |
 | `/v1/desastres/{id:guid}/transiciones` | POST | organismo-responsable | EN_ATENCION | evaluador.armenia | 403 | gateway (1) |
 | `/v1/desastres/{id:guid}/transiciones` | POST | organismo-responsable | CERRADO | operador.danos | 403 | gateway (1) |
@@ -122,11 +117,11 @@ reapertura) antes de buscar la transición.
 | `/v1/desastres/{id:guid}/transiciones` | POST | organismo-responsable | CERRADO | ing.gomez | 403 | gateway (1) |
 | `/v1/desastres/{id:guid}/transiciones` | POST | organismo-responsable | EN_ATENCION | ing.gomez | 403 | gateway (1) |
 | `/v1/desastres/{id:guid}/transiciones` | POST | organismo-responsable | CERRADO | alcaldia.armenia | 403 | servicio (2) |
-| `/v1/desastres/{id:guid}/transiciones` | POST | organismo-responsable | EN_ATENCION | alcaldia.armenia | 409 | servicio (2) |
+| `/v1/desastres/{id:guid}/transiciones` | POST | organismo-responsable | EN_ATENCION | alcaldia.armenia | 403 | servicio (2) |
 | `/v1/desastres/{id:guid}/transiciones` | POST | organismo-responsable | CERRADO | alcaldia.calarca | 403 | servicio (2) |
-| `/v1/desastres/{id:guid}/transiciones` | POST | organismo-responsable | EN_ATENCION | alcaldia.calarca | 409 | servicio (2) |
+| `/v1/desastres/{id:guid}/transiciones` | POST | organismo-responsable | EN_ATENCION | alcaldia.calarca | 403 | servicio (2) |
 | `/v1/desastres/{id:guid}/transiciones` | POST | organismo-responsable | CERRADO | gobernacion.quindio | 403 | servicio (2) |
-| `/v1/desastres/{id:guid}/transiciones` | POST | organismo-responsable | EN_ATENCION | gobernacion.quindio | 409 | servicio (2) |
+| `/v1/desastres/{id:guid}/transiciones` | POST | organismo-responsable | EN_ATENCION | gobernacion.quindio | 403 | servicio (2) |
 | `/v1/desastres/{id:guid}/organismos` | PUT | organismo-responsable | responsable, participantes | bomberos.operador | 403 | servicio (2) |
 | `/v1/desastres/{id:guid}/organismos` | PUT | organismo-responsable | responsable, participantes | evaluador.armenia | 403 | gateway (1) |
 | `/v1/desastres/{id:guid}/organismos` | PUT | organismo-responsable | responsable, participantes | operador.danos | 403 | gateway (1) |

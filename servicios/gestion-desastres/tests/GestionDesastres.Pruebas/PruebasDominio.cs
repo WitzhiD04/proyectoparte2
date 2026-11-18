@@ -127,6 +127,8 @@ public class PruebasOperaciones
         Assert.Throws<NoAutorizadoException>(() => d.Reclasificar(Severidad.Nivel3, "x", Datos.Estandar, Datos.Extendido, Datos.OtroOrganismo, Datos.Ahora));
         Assert.Throws<NoAutorizadoException>(() => d.Delimitar(null, ["66001"], FuenteDelimitacion.EvaluacionCampo, "x", Datos.OtroOrganismo, Datos.Ahora));
         Assert.Throws<NoAutorizadoException>(() => d.CambiarEstado(EstadoDesastre.EnEvaluacion, null, Datos.Estandar, 0, Datos.OtroOrganismo, Datos.Ahora));
+        // QA-11 (d): aunque la transición pedida no exista desde el estado actual, responde NoAutorizadoException y no revela el estado.
+        Assert.Throws<NoAutorizadoException>(() => d.CambiarEstado(EstadoDesastre.EnReconstruccion, null, Datos.Estandar, 0, Datos.OtroOrganismo, Datos.Ahora));
         Assert.Throws<NoAutorizadoException>(() => d.AsignarOrganismos("bomberos", [], "x", Datos.OtroOrganismo, Datos.Ahora));
         Assert.Empty(d.CambiosNuevos);
     }

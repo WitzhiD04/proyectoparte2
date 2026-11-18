@@ -165,13 +165,9 @@ public sealed class Desastre
     public void CambiarEstado(EstadoDesastre destino, string? justificacion, PerfilCicloVida perfilActual, int proyectosNoFinales,
         Actor actor, DateTimeOffset instante)
     {
-        TransicionAdmisible? transicion = TablaTransiciones.Buscar(Estado, destino);
-        if (transicion is null)
-        {
-            throw new ReglaDeNegocioException("TRANSICION_NO_PERMITIDA", $"No existe la transición de {Estado} a {destino} (SRS Cuadro 16).");
-        }
-
-        if (transicion.Condicion == CondicionTransicion.Reapertura)
+        // QA-11 (d): la autorización se revisa antes de la tabla de transiciones para que un organismo no responsable
+        // reciba siempre 403 y nunca 409 revelando el estado actual del desastre.
+        if (Estado == EstadoDesastre.Cerrado)
         {
             // La reapertura no forma parte de ningún perfil: solo la ordena la autoridad nacional, con justificación.
             if (!actor.EsAutoridadNacional)
@@ -182,11 +178,17 @@ public sealed class Desastre
         else
         {
             ExigirResponsable(actor);
-            if (!perfilActual.Admite(Estado, destino))
-            {
-                throw new ReglaDeNegocioException("TRANSICION_NO_PERMITIDA",
-                    $"El perfil {perfilActual.Nombre} no admite la transición de {Estado} a {destino} (RN-2).");
-            }
+        }
+
+        TransicionAdmisible? transicion = TablaTransiciones.Buscar(Estado, destino);
+        if (transicion is null)
+        {
+            throw new ReglaDeNegocioException("TRANSICION_NO_PERMITIDA", $"No existe la transición de {Estado} a {destino} (SRS Cuadro 16).");
+        }
+        if (transicion.Condicion != CondicionTransicion.Reapertura && !perfilActual.Admite(Estado, destino))
+        {
+            throw new ReglaDeNegocioException("TRANSICION_NO_PERMITIDA",
+                $"El perfil {perfilActual.Nombre} no admite la transición de {Estado} a {destino} (RN-2).");
         }
         if (transicion.Condicion is CondicionTransicion.ExigeJustificacion or CondicionTransicion.Reapertura
             || destino == EstadoDesastre.Cerrado)
