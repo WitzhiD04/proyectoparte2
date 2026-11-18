@@ -490,7 +490,7 @@ completos, porque son pocos.
   - La zona existe si está en la capa EV-21. El departamento de cada entrada se resuelve como en el mapa: el de la capa
     y, si el municipio aún no está en ella, los dos primeros dígitos de su código.
   - `datoAl` es el instante de la última entrada devuelta (AD-16): con filtro, la última de ese desastre.
-  - En el agregado, el día es UTC. Cada activo con entradas ese día cuenta una vez, en el último nivel que tuvo ese día.
+  - En el agregado, el día es el de Colombia (UTC-5, sin horario de verano). Cada activo con entradas ese día cuenta una vez, en el último nivel que tuvo ese día.
     Una evaluación rechazada hasta ese día no cuenta, como en el mapa, pero sigue en la secuencia.
   - EV-21 no trae el nombre del departamento, así que sale de una tabla fija en el dominio, con los 33 nombres de
     `datos/geo/municipios-colombia.geojson`. La existencia del departamento se sigue validando contra la capa.

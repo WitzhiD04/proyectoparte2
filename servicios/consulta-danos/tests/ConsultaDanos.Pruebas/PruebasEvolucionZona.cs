@@ -118,14 +118,16 @@ public class PruebasEvolucionZona
     }
 
     [Fact]
-    public async Task El_dia_se_corta_en_UTC_aunque_el_instante_venga_con_otra_zona_horaria()
+    public async Task El_dia_se_corta_a_medianoche_en_hora_de_Colombia()
     {
-        DateTimeOffset nocheEnBogota = new(2026, 11, 16, 20, 0, 0, TimeSpan.FromHours(-5));
-        _lecturas.Historial.Add(Entrada(Guid.NewGuid(), Guid.NewGuid(), NivelDano.LEVE, nocheEnBogota));
+        DateTimeOffset ultimoMinutoDel16 = new(2026, 11, 17, 4, 59, 0, TimeSpan.Zero);
+        DateTimeOffset primerMinutoDel17 = new(2026, 11, 17, 5, 0, 0, TimeSpan.Zero);
+        _lecturas.Historial.Add(Entrada(Guid.NewGuid(), Guid.NewGuid(), NivelDano.LEVE, ultimoMinutoDel16));
+        _lecturas.Historial.Add(Entrada(Guid.NewGuid(), Guid.NewGuid(), NivelDano.GRAVE, primerMinutoDel17));
 
-        ConteoDia dia = Assert.Single((await Caso.EjecutarAsync("63001", null, default))!.PorDia);
+        IReadOnlyList<ConteoDia> dias = (await Caso.EjecutarAsync("63001", null, default))!.PorDia;
 
-        Assert.Equal(new DateOnly(2026, 11, 17), dia.Fecha);
+        Assert.Equal([new DateOnly(2026, 11, 16), new DateOnly(2026, 11, 17)], dias.Select(d => d.Fecha));
     }
 
     [Fact]

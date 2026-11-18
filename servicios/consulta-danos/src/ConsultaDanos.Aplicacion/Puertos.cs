@@ -35,7 +35,7 @@ public sealed record EvolucionActivo(Guid IdActivo, EstadoActivo Vigente, bool C
 /// <summary>La zona de una evolución (RF-ED-15, E-40): un municipio o un departamento de la capa EV-21.</summary>
 public sealed record ZonaConsultada(string Codigo, TipoZona Tipo, string? Nombre);
 
-/// <summary>Cuántos activos quedaron en cada nivel de daño en un día (UTC), para dibujar la curva de la zona.</summary>
+/// <summary>Cuántos activos quedaron en cada nivel de daño en un día (hora de Colombia), para dibujar la curva de la zona.</summary>
 public sealed record ConteoDia(DateOnly Fecha, Distribucion Distribucion);
 
 /// <summary>La secuencia de evaluaciones de una zona, ordenada por instante, y su agregado por día (RF-ED-15, E-40).</summary>

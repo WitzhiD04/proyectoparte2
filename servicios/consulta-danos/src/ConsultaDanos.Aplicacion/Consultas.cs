@@ -214,6 +214,9 @@ public sealed class ConsultarEvolucion
 /// </summary>
 public sealed class ConsultarEvolucionZona
 {
+    /// <summary>Colombia está todo el año en UTC-5: no tiene horario de verano.</summary>
+    private static readonly TimeSpan HoraColombia = TimeSpan.FromHours(-5);
+
     private readonly ILecturasDanos _lecturas;
     public ConsultarEvolucionZona(ILecturasDanos lecturas) { _lecturas = lecturas; }
 
@@ -249,14 +252,14 @@ public sealed class ConsultarEvolucionZona
     }
 
     /// <summary>
-    /// Por cada día (UTC), los activos con alguna entrada ese día, cada uno una sola vez y en el último nivel que tuvo. Una
+    /// Por cada día en hora de Colombia, los activos con alguna entrada ese día, cada uno una sola vez y en el último nivel que tuvo. Una
     /// evaluación rechazada hasta ese día no cuenta: igual que en el mapa, no describe el daño del activo.
     /// </summary>
     private static List<ConteoDia> PorDia(IReadOnlyList<EntradaHistorial> entradas)
     {
         Dictionary<Guid, EstadoValidacion> validaciones = [];
         List<ConteoDia> dias = [];
-        foreach (IGrouping<DateOnly, EntradaHistorial> dia in entradas.GroupBy(e => DateOnly.FromDateTime(e.Instante.UtcDateTime)).OrderBy(g => g.Key))
+        foreach (IGrouping<DateOnly, EntradaHistorial> dia in entradas.GroupBy(e => DateOnly.FromDateTime(e.Instante.ToOffset(HoraColombia).DateTime)).OrderBy(g => g.Key))
         {
             foreach (EntradaHistorial e in dia.Where(e => e.Validacion is not null))
             {
