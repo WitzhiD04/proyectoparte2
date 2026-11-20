@@ -19,9 +19,14 @@ implementación cubre los cuatro mínimos de la entrega y lo que ellos necesitan
 | c) Mapa y visualización | `servicios/consulta`, `servicios/consulta-danos`, `adaptadores/adaptador-se2`, módulo `mapa` de la consola |
 | d) Evaluación de daños | `servicios/evaluacion-danos`, módulo `evaluaciones` de la consola |
 
+**Jakarta EE y .NET (CON-9).** El núcleo está en .NET 10 (AD-50). El adaptador de SE-8 está en Jakarta EE 11 sobre
+WildFly 42 (`adaptadores/adaptador-se8-jee`, AD-66): la segunda pila vive en la frontera, donde AD-03 ubica la
+heterogeneidad. Incorporarlo modificó 0 componentes existentes (QA-09).
+
 Transversales: `servicios/auditoria`, Keycloak, el bus de eventos y `comun/`. Quedan fuera de la implementación, como
-diseño: Consolidación, Notificación (SE-8), Gestión de Recursos, Personas Afectadas, Coordinación de Organismos, el
-Portal público, los adaptadores SE-1, SE-3, SE-4, SE-5 y SE-8, y la segunda región.
+diseño: Consolidación, Notificación, Gestión de Recursos, Personas Afectadas, Coordinación de Organismos, el Portal
+público, los adaptadores SE-1, SE-3, SE-4 y SE-5, y la segunda región. Mientras Notificación no exista, el adaptador de
+SE-8 recibe EV-03 y EV-04 como sustituto temporal (límite L-11).
 
 ## Estructura
 
@@ -43,9 +48,11 @@ Portal público, los adaptadores SE-1, SE-3, SE-4, SE-5 y SE-8, y la segunda reg
 | `adaptadores/adaptador-se2` | Adaptador de SE-2: publica la capa de municipios en EV-21 ([README](adaptadores/adaptador-se2/README.md)) |
 | `adaptadores/adaptador-se6` | Adaptador de SE-6: presupuesto y costos hacia el sistema financiero por lotes ([README](adaptadores/adaptador-se6/README.md)) |
 | `adaptadores/adaptador-se7` | Adaptador de SE-7: EV-18 y EV-20 hacia SE-7 desde `q.salida.se7`, EV-24 desde su marca de avance ([README](adaptadores/adaptador-se7/README.md)) |
+| `adaptadores/adaptador-se8-jee` | Adaptador de SE-8 en **Jakarta EE** (WildFly 42, Java 21, Maven): alertas a SE-8 desde `q.salida.se8`, estado de entrega con acuse, EV-23 y EV-29 ([README](adaptadores/adaptador-se8-jee/README.md)) |
 | `simuladores/simulador-qa14` | Simulador de QA-14 (120 evaluaciones, 5 conflictos, lote enviado dos veces) |
 | `simuladores/sim-se6` | Simulador de SE-6 ([README](simuladores/sim-se6/README.md)) |
 | `simuladores/sim-se7` | Simulador de SE-7 con estado y caída simulada para QA-01 ([README](simuladores/sim-se7/README.md)) |
+| `simuladores/sim-se8` | Simulador de SE-8: alertas idempotentes, acuse por aviso y por consulta, caída ([README](simuladores/sim-se8/README.md)) |
 | `datos/geo` | Capa de municipios que entrega SE-2 |
 | `gateway/` | API Gateway (YARP): catálogo de rutas, JWT, priorización y degradación, correlación ([README](gateway/README.md)) |
 | `consola/` | Consola de coordinación (Angular), servida por nginx detrás del gateway ([README](consola/README.md)) |
@@ -65,6 +72,7 @@ docker compose -f despliegue/compose/docker-compose.yml up -d --build
 bash pruebas/humo/prueba-humo.sh
 bash pruebas/humo/prueba-desastres.sh
 python -I pruebas/humo/prueba-qa11.py
+bash pruebas/humo/prueba-se8.sh
 python -I pruebas/medidas/latencias.py
 dotnet run --project simuladores/simulador-qa14 -- --url http://localhost:8080 --keycloak http://localhost:8180
 ```
@@ -110,6 +118,7 @@ Testcontainers).
 
 ```bash
 bash herramientas/dotnet.sh test Plataforma.sln
+mvn -f adaptadores/adaptador-se8-jee/pom.xml verify   # adaptador de SE-8 (Java 21 y Maven; las de integración usan Docker)
 ```
 
 Las pruebas de integración levantan PostgreSQL 18 y RabbitMQ 4.4 reales con la topología de `despliegue/bus`.

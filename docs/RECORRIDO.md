@@ -46,6 +46,7 @@ indica quién lo hace, dónde y qué captura tomar. Las capturas se guardan en `
 | 22 | b | Consola (`alcaldia.armenia`), Consolidado | Consolidado del programa por jurisdicción | `22-consola-consolidado.png` |
 | 23 | Transversal | Navegador | Panel de RabbitMQ (`http://localhost:15672`): colas `q.*` con 3 miembros | `23-bus-colas.png` |
 | 24 | Transversal | Terminal | Salida de `prueba-qa11.py` (218 de 218 rechazados) y del simulador QA-14 por el gateway | `24-medidas-terminal.png` |
+| 25 | Transversal (CON-9) | Terminal | `bash pruebas/humo/prueba-se8.sh`: el desastre del paso 5 (EV-03) produce una alerta que el adaptador de SE-8 en **Jakarta EE** (WildFly) entrega a `sim-se8`. La alerta queda ENTREGADA solo con el acuse. Con SE-8 caído el circuito se abre, Consulta muestra SE-8 abierto (EV-23), los mensajes esperan en `q.salida.se8` y al volver se entregan una sola vez | `25-se8-jakarta-ee.png` |
 
 ## Qué muestra cada paso frente a la arquitectura
 
@@ -57,3 +58,4 @@ indica quién lo hace, dónde y qué captura tomar. Las capturas se guardan en `
 | 14 a 17 | AD-15 a AD-17 (modelo de lectura, `datoAl` y caché de geometrías), AD-34, RF-ED-11, RF-ED-15, RF-GD-17 |
 | 18 a 22 | AD-40 (proyectos por lote), AD-41 (historial de solo inserción), AD-42 (Consulta del Programa), QA-15 |
 | 23 y 24 | AD-02 (broker con colas acotadas), QA-11 y QA-14 medidos |
+| 25 | CON-9 y AD-66 (adaptador en Jakarta EE en la frontera), AD-03 y AD-09 (QA-09: 0 componentes existentes modificados), AD-05, AD-36 y AD-37 (cortacircuitos, cola de salida, EV-23), AD-25 y QA-08 (instancia encendida, entregada solo con acuse), L-11 |

@@ -61,6 +61,7 @@ Fecha: 16 de noviembre de 2026.
 | E-41 | SAD | DA-13 (tablero de daños en Razor Pages) | Excepción acotada | C1 |
 | E-42 | SRS y SAD | RF-GD-02 y Cuadro 15 (registro del desastre en campo con id del cliente, AD-48) | Aditiva | Cierre |
 | E-43 | SAD | Vistas lógica y física (Proveedor de identidad, AD-49) | Aditiva | DA-15 |
+| E-44 | SRS, SAD y ATAM | CON-9, AD-66, L-11, vistas y QA-09 | Aditiva | Restricción nueva del profesor (19-11-2026) |
 
 ---
 
@@ -557,3 +558,32 @@ completos, porque son pocos.
 - **Texto propuesto:** agregar el componente externo "Proveedor de identidad" (OIDC con PKCE) en la vista lógica, su nodo en
   la vista física y la decisión AD-49: el token se valida en el gateway (nivel 1) y en cada microservicio (nivel 2).
 - **Tipo:** aditiva. La tecnología (Keycloak 26) va en AD-58.
+
+### E-44 · CON-9: Jakarta EE y .NET en la solución final; adaptador de SE-8 en Jakarta EE (AD-66)
+
+- **Origen:** restricción que agregó el profesor el 19 de noviembre de 2026, el día de la entrega: "Se debe incluir JEE y
+  .NET en la solución final". Hasta ese día no había nada en Java ni en Jakarta EE.
+- **Texto propuesto (SRS 1.3):** CON-9 "La solución final debe incluir Jakarta EE y .NET". Se cumple en la frontera: el
+  adaptador de SE-8 en Jakarta EE y el núcleo en .NET. No cambia ningún requisito funcional ni escenario. Fila en la Matriz
+  4; QA-08 parcial y QA-09 cumplido en la Matriz 5; límite L-11.
+- **Texto propuesto (SAD 1.3):** decisión de tecnología **AD-66 "Plataforma del adaptador SE-8"**: Jakarta EE 11 sobre
+  WildFly 42.0.0.Final (Java 21), frente a Spring Boot 3 y .NET 10, con el criterio "cumplimiento de CON-9" en la matriz
+  (4,35 frente a 4,00 de .NET y 3,65 de Spring Boot). AD-50 agrega: "El núcleo sigue en .NET aun con CON-9: Jakarta EE se
+  confina a la frontera según AD-03 y AD-66". SE-8 pasa a «implementado» en el alcance, en las cuatro vistas, en el modelo
+  de integración, en los catálogos de eventos y colas y en el Cuadro 15, con la evidencia del `git diff --stat`.
+- **Texto propuesto (ATAM 1.3):** la medida "0 componentes modificados" de QA-09 tiene evidencia implementada. Riesgo
+  nuevo **R-15**: dos pilas que mantener en la frontera.
+- **Límite L-11 (sustituto temporal de Notificación):** sin Notificación, nadie publicaba EV-28 y `q.salida.se8` no
+  recibía nada. Se agregan los enlaces `ev03.#` y `ev04.#` a `q.salida.se8` en `definiciones.json` y en
+  `generar_definiciones.py`. El adaptador, con `Sustituto__Activo=true`, alerta a un único destino de difusión y no publica
+  EV-29 (nadie lo consumiría). Se retira quitando los dos enlaces y apagando la variable.
+- **Tipo:** aditiva. No se agrega ningún evento al catálogo.
+- **Alternativas descartadas:** implementar el adaptador en .NET (no cumple CON-9) o en Spring Boot 3 (no es la plataforma
+  Jakarta EE); escribir un microservicio de núcleo en Java (rompe AD-50 y la reutilización de `comun`); implementar
+  Notificación completa el día de la entrega (fuera de plazo; queda en L-06).
+- **Costo aceptado:** segunda pila en la frontera (R-15). Dos piezas propias en lugar del estándar: un cortacircuitos con la
+  ventana de 30 s y el aviso de apertura para EV-23 (MicroProfile Fault Tolerance no los da) y un EJB `@Singleton` en lugar
+  de MDB (RabbitMQ no tiene resource adapter JCA mantenido).
+- **Implementación:** `adaptadores/adaptador-se8-jee`, `simuladores/sim-se8`, `pruebas/humo/prueba-se8.sh`,
+  `despliegue/k8s/base/adaptador-se8.yaml` y los servicios `adaptador-se8`, `adaptador-se8-migrador` y `sim-se8` del
+  compose. Ningún microservicio, proyecto `Plataforma.Comun.*`, gateway ni adaptador existente cambió.
