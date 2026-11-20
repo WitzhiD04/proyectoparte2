@@ -22,7 +22,7 @@ import plataforma.adaptador.se8.traduccion.TraduccionSe8;
 /**
  * Contrato del adaptador de SE-8 (DA-11, AD-09): EJB sin estado que implementa el equivalente Java de
  * {@code IContratoAdaptador}. Salida: valida el sobre contra el contrato, lo traduce y lo entrega a SE-8 con la
- * resiliencia del Cuadro 10. Entrada: los acuses de SE-8 desde una marca de avance, traducidos a EV-29.
+ * resiliencia del Cuadro 11. Entrada: los acuses de SE-8 desde una marca de avance, traducidos a EV-29.
  *
  * <p>Participa en la transacción de quien lo llama ({@code SUPPORTS}): el EJB que aplica el mensaje es el que la abre.</p>
  */

@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import plataforma.adaptador.se8.Muestras;
 import plataforma.adaptador.se8.RelojManual;
 
-/** Regla del Cuadro 10: abre con ≥ 3 llamadas en 30 s y 100 % de fallo; 15 s abierto antes de la llamada de prueba. */
+/** Regla del Cuadro 11: abre con ≥ 3 llamadas en 30 s y 100 % de fallo; 15 s abierto antes de la llamada de prueba. */
 class CortacircuitosTest {
 
     private RelojManual reloj;

@@ -14,7 +14,7 @@ import plataforma.adaptador.se8.Muestras;
 import plataforma.adaptador.se8.RelojManual;
 import plataforma.adaptador.se8.contrato.SistemaExternoNoDisponibleException;
 
-/** Tiempos y reintentos del Cuadro 10: 3 s por intento, 20 s por operación, 2 reintentos desde 0,5 s. */
+/** Tiempos y reintentos del Cuadro 11: 3 s por intento, 20 s por operación, 2 reintentos desde 0,5 s. */
 class EjecutorResilienteTest {
 
     private RelojManual reloj;

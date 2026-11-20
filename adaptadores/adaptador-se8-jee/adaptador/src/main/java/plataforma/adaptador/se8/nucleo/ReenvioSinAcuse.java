@@ -12,7 +12,7 @@ import plataforma.adaptador.se8.persistencia.Entrega;
 
 /**
  * Reenvío por falta de acuse (QA-08: "si un canal no acusa en 5 s se reintenta y queda pendiente"). Es un mecanismo
- * distinto de la resiliencia de cada llamada (Cuadro 10): aquí SE-8 sí recibió la alerta, pero no la acusó.
+ * distinto de la resiliencia de cada llamada (Cuadro 11): aquí SE-8 sí recibió la alerta, pero no la acusó.
  * <ul>
  * <li>Solo para el modo sustituto (EV-03, EV-04). Con EV-28, el reintento lo decide Notificación, dueña del estado
  *     (AD-13): publica un EV-28 nuevo con el intento siguiente.</li>
