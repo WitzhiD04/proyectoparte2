@@ -21,7 +21,7 @@ crear contenedores de prueba). App: 81 pruebas unitarias y 16 instrumentadas en 
 Keycloak desde el emulador. En compose pasan las pruebas de humo `prueba-humo.sh`, `prueba-desastres.sh` y
 `prueba-qa11.py`.
 
-**Actualización del 19 de noviembre de 2026 (CON-9, E-44).** Se agregó el adaptador de SE-8 en Jakarta EE
+**Actualización (CON-9, E-44).** Se agregó el adaptador de SE-8 en Jakarta EE
 (`adaptadores/adaptador-se8-jee`, WildFly 42, AD-66) sin modificar ningún microservicio, proyecto común, el gateway ni
 otro adaptador. El adaptador de SE-8 pasa 52 pruebas unitarias y 7 de integración, y `prueba-se8.sh` pasa contra el
 compose; las tres pruebas de humo anteriores siguen pasando. La suite de .NET da 1 008 de 1 008. La prueba
