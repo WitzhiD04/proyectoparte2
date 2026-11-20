@@ -105,19 +105,3 @@ public class EvidenciasController(SubirEvidencia evidencias) : ControllerBase
     }
 }
 
-/// <summary>
-/// Puntos [lat, lon, peso] de la evaluación vigente de cada activo (RF-ED-11, AD-16). Se conserva igual que en el
-/// prototipo, junto con la página /mapa, hasta que lo reemplace el servicio de Consulta de Daños
-/// (<c>/v1/consulta-danos/mapa</c>, DA-08, E-09).
-/// </summary>
-[Obsolete("Lo reemplaza Consulta de Daños (/v1/consulta-danos/mapa, DA-08) en el paso 5.")]
-[ApiController]
-[Route("v1/mapa-calor")]
-[RequiereRol]
-public class MapaCalorController(ICasoDeUso<SolicitudMapaCalor, MapaCalorDto> mapa, IIdentidadActual identidad)
-    : ControladorBase(identidad)
-{
-    [HttpGet]
-    public async Task<IActionResult> Obtener([FromQuery] Guid? desastreId, [FromQuery] string? nivelMinimo, CancellationToken cancelar) =>
-        Presentar(await mapa.EjecutarAsync(new SolicitudMapaCalor(desastreId, nivelMinimo), cancelar));
-}

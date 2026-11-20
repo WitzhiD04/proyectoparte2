@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- El adaptador se publica en la raíz: /salud/vivo, /salud/listo, /v1/acuses, /v1/entregas, /v1/integracion. -->
+<jboss-web xmlns="urn:jboss:jboss-web:15.0" version="15.0">
+  <context-root>/</context-root>
+</jboss-web>

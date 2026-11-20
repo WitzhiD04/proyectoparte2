@@ -10,27 +10,65 @@ Documento complementario: [ENMIENDAS_DOCUMENTOS.md](ENMIENDAS_DOCUMENTOS.md), co
 
 ## Estado de la implementación
 
-**Paso 1 (monorepo, contrato de eventos y bus confiable): terminado** en la rama `paso-1-contrato-bus` de `proyectoparte2`, sin commit.
+Actualizado el 18 de noviembre de 2026 (rama `cierre-implementacion` de `proyectoparte2` y de `danos`). Los pasos 1 a 5
+del plan y los encargos de `docs/encargos/LEEME.md` están hechos dentro del alcance de la entrega: a) móvil, registro y
+caracterización de un desastre; b) reconstrucción física; c) mapa y visualización; d) evaluación de daños. El diseño
+completo (12 microservicios, 8 adaptadores, dos regiones) sigue en el SAD; lo que no se implementó se declara abajo.
 
-| Hallazgo | Estado | Cómo |
-|---|---|---|
-| H-30 Sobre canónico | Resuelto | `comun/Plataforma.Comun.Eventos`: sobre con los campos del SAD + `secuenciaProductor`, validado con esquemas JSON |
-| H-31 EV-18/19/20 según el catálogo | Resuelto | `PublicadorHechosBandeja`, con el reparto de E-10 y `costoRegistrado` |
-| H-40 Eventos descartados sin cola | Resuelto | Topología declarada al desplegar (todas las colas del plan acotado existen), `mandatory`, alternate exchange y `q.auditoria` con `#` |
-| H-41 Colas sin límite | Resuelto | Política con `max-length` y `reject-publish`: el evento se queda en la bandeja |
-| H-42 Mensaje envenenado en bucle | Resuelto | Cola de mensajes muertos por consumidor; el consumidor cuenta los intentos (E-32) |
-| H-43 Bus de 1 nodo | Resuelto en compose, escrito para k8s | 3 nodos, 18 de 18 colas con 3 miembros; probado con un nodo caído. En k8s falta activar el clúster local |
-| H-44 Exchange y nombres por módulo | Resuelto | `plataforma.eventos` con claves `evNN.agregado.hecho` |
-| H-22 Marca de tiempo del dato | Resuelto en el consolidado | `ConsolidadoDto.DatoAl`. Las demás consultas, en sus pasos |
-| H-35 Esquema por initdb | Resuelto | Migraciones de EF Core y migrador con el rol dueño. Se eliminó la copia de k8s |
-| H-36 Rol "todo" por omisión | Resuelto | El rol es obligatorio |
-| H-61 Consulta con 1 réplica | Resuelto | 2 réplicas en compose y en k8s, con HPA de 2 a 5 y PDB |
-| H-62 Sondeos que no revisan dependencias | Resuelto | `/salud/vivo` y `/salud/listo` (base de datos y bus) |
-| H-51 Secretos fijos | Parcial | Usuario del bus por servicio con mínimo privilegio y `.env.ejemplo`. Los secretos reales van con el paso del gateway |
-| H-07 Valores de dominio sin canónico | Parcial | Enumeraciones canónicas en el contrato. Danos se adapta en el paso 2 |
-| H-01 Módulos sin conectar | Base lista | Contrato y bus listos. Las conexiones entre módulos se hacen en los pasos 2 a 4 |
+**Verificación.** Suite de .NET: 1 008 pruebas en 19 proyectos, todas en verde (Auditoría y Consulta de integración y
+`Plataforma.Comun.Pruebas` se repitieron por separado porque en la corrida conjunta la API de Docker respondió 500 al
+crear contenedores de prueba). App: 81 pruebas unitarias y 16 instrumentadas en verde, 7 de ellas contra el gateway y
+Keycloak desde el emulador. En compose pasan las pruebas de humo `prueba-humo.sh`, `prueba-desastres.sh` y
+`prueba-qa11.py`.
 
-Verificado: 113 pruebas (53 de `comun`, 45 de Reconstrucción y 15 de integración con PostgreSQL y RabbitMQ reales), la prueba de humo de punta a punta, y dos pruebas de caos (un nodo del bus caído, y la consulta caída durante un ciclo completo, sin perder ningún evento).
+**Actualización del 19 de noviembre de 2026 (CON-9, E-44).** Se agregó el adaptador de SE-8 en Jakarta EE
+(`adaptadores/adaptador-se8-jee`, WildFly 42, AD-66) sin modificar ningún microservicio, proyecto común, el gateway ni
+otro adaptador. El adaptador de SE-8 pasa 52 pruebas unitarias y 7 de integración, y `prueba-se8.sh` pasa contra el
+compose; las tres pruebas de humo anteriores siguen pasando. La suite de .NET da 1 008 de 1 008. La prueba
+`PruebasTableroDanos.Sin_conflictos_de_mas_no_hay_alarma` fijaba el conflicto más antiguo en 2026-11-18 15:44 UTC y fallaba
+desde que esa fecha superó el umbral de 24 horas (también en `fb6bf03`, antes de SE-8). Se corrigió solo la prueba, con un
+`TimeProvider` fijo en `T0`: es la única excepción a "ningún archivo .NET modificado", autorizada aparte, y no toca código
+del servicio.
+
+### Medidas
+
+Corridas en compose en un solo computador (Windows 11, Docker Desktop, unos 30 contenedores y el emulador de Android
+encendido), a través del gateway y con tokens reales de Keycloak. Los números de latencia son de un perfil local y
+varían entre corridas; no reemplazan la prueba de carga con 10 000 usuarios.
+
+| Escenario | Medida del SRS | Cómo se midió | Resultado | ¿Cumple? | Observaciones |
+|---|---|---|---|---|---|
+| QA-14 | 0 pérdidas, 0 sobrescrituras silenciosas, 100 % de conflictos detectados, reenvío sin duplicados, 120 evaluaciones en ≤ 10 min | `simuladores/simulador-qa14 --url <gateway> --keycloak http://localhost:8180` | 115 aplicadas y 5 en conflicto; 0 pérdidas, 0 sobrescrituras, 0 duplicados; resultados idénticos en el reenvío; 120 de 120 fotos; 27,8 s | Sí | Banco de 5 conflictos por corrida; la regla de conflicto tiene además 7 pruebas unitarias y 21 de sincronización |
+| QA-14 (app) | Igual, desde el cliente real | `ContratoServidorTest` en el emulador contra el gateway y Keycloak (`adb reverse tcp:8180 tcp:8180`) | 7 de 7 pruebas en verde: activo nuevo con foto, edición sin red, conflicto entre dos dispositivos, inválida corregida, descarga con tildes, registro de desastre idempotente y rechazo por rol | Sí | Repositorio `danos` |
+| QA-11 | 100 % de intentos de un organismo no responsable rechazados sobre ≥ 200 casos; 0 datos modificados | `pruebas/humo/prueba-qa11.py` | 218 de 218 rechazados (100 %), 0 falsos negativos, 0 datos modificados | Sí en (a) y (b) | Banco de 218 casos sobre las 12 rutas con regla de dominio. La medida (c), registro del intento en Auditoría, no se implementó (L-02) |
+| QA-06 | p95 < 2 s y p99 < 4 s en el punto de entrada; antigüedad del dato ≤ 2 s en el p95; marca de tiempo en el 100 % | `pruebas/medidas/latencias.py` (20 clientes, 300 peticiones por ruta) | Consolidado del desastre: p95 34 ms, p99 47 ms. Mapa de desastres: p95 142 ms, p99 159 ms. Mapa de daños: p95 1 628 ms, p99 1 935 ms. Marca `datoAl` en el 100 %. Antigüedad del dato (30 muestras): p50 652 ms, p95 1 485 ms, máximo 11,8 s | Sí en el perfil local | No medido con 10 000 usuarios (L-04). En una corrida anterior la antigüedad dio p95 de 4,2 s con 10 muestras: depende de la carga de la máquina |
+| QA-07 | p95 < 3 s y p99 < 6 s del registro con los atributos mínimos | `pruebas/medidas/latencias.py` (100 registros, 20 clientes) | p95 1 334 ms, p99 1 353 ms; 100 de 100 con 201 | Sí en el perfil local | La tasa del SRS es 50 registros/min; la prueba envía los 100 en ráfaga |
+| QA-10 | 0 componentes modificados y 0 redespliegues para un tipo nuevo | `GestionDesastres.Integracion` (`Un_tipo_nuevo_se_usa_sin_redesplegar_QA10`) y `EvaluacionDanos.Integracion` (tipo de activo nuevo) | Pasan: el tipo se crea por la API y se usa en el registro siguiente | Sí | |
+| QA-01 | Ninguna función ajena al sistema externo caído se degrada; la caída se refleja en ≤ 30 s; 100 % de lo encolado se procesa al volver | `AdaptadorSe6.Integracion` (12) y `AdaptadorSe7.Integracion` (14) con los simuladores | Pasan: cortacircuitos, EV-23 y reintento sin pérdida | Sí en pruebas de integración | El escalado de 0 a N con KEDA no se verificó en Kubernetes (L-05) |
+| QA-04 | El fallo de un componente interno no se propaga; 0 eventos perdidos | `Plataforma.Comun.Pruebas` (71, con PostgreSQL y RabbitMQ reales) | Pasan: consumidor detenido sin pérdida, mensaje envenenado apartado, cola llena sin descarte | Sí en pruebas de integración | |
+| QA-13 | 100 % de las operaciones producen entrada; 0 entradas modificables | `Auditoria.Integracion` (53) | Pasan | Sí en (a) y (b) | La medida (d), rastro de 10 000 entradas en < 10 s con k6, no se corrió (L-03) |
+| QA-15 | 100 % de los cambios de presupuesto y estado con valor anterior y nuevo; consulta en ≤ 5 s | `Auditoria.Integracion` (`QA15_un_proyecto_con_N_cambios_...`) y `Reconstruccion.Integracion` | Pasan | Sí | |
+| QA-09 | 0 componentes existentes modificados al incorporar un sistema externo | `git diff --stat` del commit que incorporó SE-8 en Jakarta EE (`695a110`) | 89 archivos: 84 nuevos y 5 de despliegue (+16 en `definiciones.json`, +3 −1 en su generador, +69 en el compose, +7 en `aplicar.sh`, +1 en `kustomization.yaml`). 0 líneas en `servicios/`, `comun/`, `gateway/`, `consola/` y en los adaptadores de SE-2, SE-6 y SE-7 | Sí | Consulta muestra SE-8 (EV-23) sin cambios en su código |
+| QA-08 | p95 < 5 s y p99 < 10 s hasta el acuse; sin acuse en 5 s se reintenta y queda pendiente; entregada solo con acuse | `pruebas/humo/prueba-se8.sh` contra `sim-se8` (20 alertas en la caída) | Registro del desastre → alerta ENTREGADA con acuse: 1,8 s. Sin acuse sigue ENVIADA y se reenvía a los 5 s (2 envíos); con el acuse pasa a ENTREGADA en 3,2 s. Caída de SE-8 → circuito abierto: 25,6 s; 20 mensajes en `q.salida.se8`, 0 en la DLQ. Vuelta → cola en 0: 12,9 s; 20 entregadas en 13,6 s, cada una una sola vez. Duplicado: 1 llamada a SE-8 | Parcial | Una muestra, sin percentiles. Notificación no existe: el adaptador recibe EV-03 y EV-04 como sustituto (L-11). Los 25,6 s de apertura se deben a que la ventana de 30 s todavía tenía éxitos anteriores (regla del Cuadro 10; SE-6 dio 27 s) |
+| QA-02, QA-03, QA-05, QA-12 | — | — | No medidos | — | Disponibilidad mensual, dos regiones, 10 000 usuarios y datos personales quedan fuera del alcance implementado (L-01, L-04, L-06) |
+
+### Límites declarados
+
+| ID | Límite | Motivo | Qué haría falta |
+|---|---|---|---|
+| L-01 | Una sola región: no hay enrutador global ni réplica en otra ubicación (AD-26, AD-27, QA-03) | Fuera del alcance de la entrega; el diseño está en el SAD | Overlays `region-a`, `region-b` y `global` en `despliegue/k8s` con CloudNativePG y réplica del bus |
+| L-02 | Los rechazos del gateway y la alarma de la bandeja no se registran en Auditoría (QA-11 c, R-08) | Recorte del encargo del gateway | Evento aditivo de rechazo y su interpretación en Auditoría |
+| L-03 | No hay pruebas de carga con k6 ni de caos (QA-05, QA-06 y QA-13 d) | No se ejecutó el encargo de carga y caos | `pruebas/carga-k6` y `pruebas/caos` según `pruebas/ENCARGO-carga-y-caos.md` |
+| L-04 | Las latencias se midieron con 20 clientes en un computador, no con 10 000 usuarios | Una sola máquina | Carga con k6 en un clúster |
+| L-05 | El despliegue en Kubernetes (Minikube) no se verificó de punta a punta; el inicio de sesión exige reenviar los puertos de la consola y de Keycloak a `localhost` | Tiempo de la entrega | `kubectl port-forward` o un Ingress con el emisor de Keycloak alineado |
+| L-06 | Fuera de la implementación: Consolidación, Notificación (QA-08), Gestión de Recursos, Personas Afectadas (QA-12), Coordinación de Organismos, Portal público y adaptadores SE-1, SE-3, SE-4 y SE-5 | Alcance de la entrega: los cuatro mínimos | Quedan como diseño en el SAD. El adaptador de SE-8 sí está implementado (AD-66) |
+| L-07 | La app de entrega es la variante `debug` (admite `http://`); la variante `release` no tiene una URL HTTPS configurada y Keycloak corre en `start-dev` sin TLS | Entorno de laboratorio | Un despliegue con TLS en el borde (mTLS entre servicios también está declarado como límite) |
+| L-08 | El emisor de los tokens es `http://localhost:8180`: desde el emulador hace falta `adb reverse tcp:8180 tcp:8180`, y un celular físico exige cambiar `KC_HOSTNAME` e `Identidad__Emisor` a la vez | El `iss` del token debe coincidir con el que validan el gateway y los servicios | Un nombre DNS común para Keycloak |
+| L-09 | Pendientes menores: filtro de Auditoría por jurisdicción, `ETag` en la descarga, aviso de activo fusionado al cliente incremental, base única de SE-2, índice de `p_historial_activo` por municipio, recarga de llaves JWT y evaluaciones rechazadas en la consola | Ver `docs/encargos/LEEME.md` | Cada uno está descrito allí con su corrección |
+| L-10 | La app adjunta solo fotos (no documentos) como evidencia, y la evidencia no guarda un autor propio (RF-ED-03 parcial) | Alcance del prototipo | Tipo de evidencia "documento" y autor en la entidad |
+| L-11 | Sustituto temporal de Notificación: los enlaces `ev03.#` y `ev04.#` llevan EV-03 y EV-04 a `q.salida.se8`, y el adaptador de SE-8 (`Sustituto__Activo=true`) alerta a un único destino de difusión. Sin suscripciones ni resolución por ámbito; el estado de entrega se consulta en el adaptador (`GET /v1/entregas`) | Notificación no está implementada y nadie publicaba EV-28 | Implementar Notificación (AD-13), quitar los dos enlaces en `generar_definiciones.py` y poner `Sustituto__Activo=false` |
+
+El recorrido de uso de punta a punta, con la lista de capturas, está en [`docs/RECORRIDO.md`](../RECORRIDO.md).
 
 ---
 

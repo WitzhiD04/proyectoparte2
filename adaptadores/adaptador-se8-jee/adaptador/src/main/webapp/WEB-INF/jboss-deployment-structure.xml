@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Módulos del servidor que el WAR usa y el perfil web no expone por sí solo:
+     el API de Jakarta Messaging (el cliente JMS de RabbitMQ la implementa) y Jackson (validador de esquemas JSON). -->
+<jboss-deployment-structure xmlns="urn:jboss:deployment-structure:1.3">
+  <deployment>
+    <dependencies>
+      <module name="jakarta.jms.api"/>
+      <module name="com.fasterxml.jackson.core.jackson-core"/>
+      <module name="com.fasterxml.jackson.core.jackson-databind"/>
+      <module name="com.fasterxml.jackson.core.jackson-annotations"/>
+      <module name="com.fasterxml.jackson.dataformat.jackson-dataformat-yaml"/>
+      <module name="org.yaml.snakeyaml"/>
+    </dependencies>
+  </deployment>
+</jboss-deployment-structure>

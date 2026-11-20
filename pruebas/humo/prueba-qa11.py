@@ -171,11 +171,15 @@ def casos(d, ev, p, dispositivo):
     no_responsables = todos_menos('ungrd.operador')
     agregar('gd-severidad', 'PATCH', f'/desastres/{d}/severidad', no_responsables,
             [{'severidad': 'NIVEL_4', 'justificacion': 'QA-11'}, {'severidad': 'NIVEL_1', 'justificacion': 'QA-11'}])
-    agregar('gd-zona', 'PUT', f'/desastres/{d}/zona', no_responsables, [zona])
+    # Dos formas de delimitar (polígono y municipios) y dos de reasignar: el banco supera los 200 casos de QA-11 (a).
+    agregar('gd-zona', 'PUT', f'/desastres/{d}/zona', no_responsables,
+            [zona, {'codigosMunicipio': ['63130'], 'fuente': 'SISTEMA_GIS', 'justificacion': 'QA-11'}])
     agregar('gd-transiciones', 'POST', f'/desastres/{d}/transiciones', no_responsables,
             [{'estado': 'CERRADO', 'justificacion': 'QA-11'}, {'estado': 'EN_ATENCION', 'justificacion': 'QA-11'}])
     agregar('gd-organismos-asignar', 'PUT', f'/desastres/{d}/organismos', no_responsables,
-            [{'responsable': 'bomberos', 'participantes': [], 'justificacion': 'QA-11'}])
+            [{'responsable': 'bomberos', 'participantes': [], 'justificacion': 'QA-11'},
+             {'responsable': 'ungrd', 'participantes': [{'organismo': 'bomberos', 'responsabilidad': 'Rescate'}],
+              'justificacion': 'QA-11'}])
     # Evaluación de Daños: la evaluación la actualiza el dispositivo que la registró (o un operador); la valida un
     # organismo que participa en el desastre.
     cambios = [{'nivelDano': 'LEVE'}, {'descripcion': 'Cambiada por QA-11'}]

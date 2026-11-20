@@ -25,7 +25,7 @@ public sealed class PresentadorHttp<T> : IPuertoSalida<T>
     {
         // 409: la acción no cabe en el estado actual o chocó con otro cambio. 422: el dato enviado incumple una regla.
         bool conflicto = codigo is "TRANSICION_NO_PERMITIDA" or "CONFLICTO" or "DESASTRE_CERRADO" or "PROYECTOS_ABIERTOS"
-            or "TIPO_EXISTE" or "PERFIL_EXISTE" or "PERFIL_EN_USO";
+            or "TIPO_EXISTE" or "PERFIL_EXISTE" or "ID_EXISTE" or "PERFIL_EN_USO";
         Resultado = new ObjectResult(new ErrorHttp(codigo, mensaje))
             { StatusCode = conflicto ? StatusCodes.Status409Conflict : StatusCodes.Status422UnprocessableEntity };
     }

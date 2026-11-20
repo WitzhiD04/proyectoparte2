@@ -9,6 +9,7 @@ resources:
   - adaptador-se2.yaml
   - adaptador-se6.yaml
   - adaptador-se7.yaml
+  - adaptador-se8.yaml
   - gestion-desastres.yaml
   - consulta.yaml
   - auditoria.yaml

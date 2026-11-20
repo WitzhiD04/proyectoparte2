@@ -40,6 +40,9 @@ minikube image build -t plataforma/adaptador-se6:local -f adaptadores/adaptador-
 minikube image build -t plataforma/sim-se6:local -f simuladores/sim-se6/Dockerfile "$raiz"
 minikube image build -t plataforma/adaptador-se7:local -f adaptadores/adaptador-se7/Dockerfile "$raiz"
 minikube image build -t plataforma/sim-se7:local -f simuladores/sim-se7/Dockerfile "$raiz"
+minikube image build -t plataforma/adaptador-se8:local --build-opt=target=adaptador -f adaptadores/adaptador-se8-jee/Dockerfile "$raiz"
+minikube image build -t plataforma/adaptador-se8-migrador:local --build-opt=target=migrador -f adaptadores/adaptador-se8-jee/Dockerfile "$raiz"
+minikube image build -t plataforma/sim-se8:local -f simuladores/sim-se8/Dockerfile "$raiz"
 minikube image build -t plataforma/auditoria:local -f servicios/auditoria/Dockerfile "$raiz"
 minikube image build -t plataforma/consola:local "$raiz/consola"
 minikube image build -t plataforma/gateway:local -f gateway/Dockerfile "$raiz"
@@ -74,6 +77,10 @@ k -n plataforma rollout status deployment/sim-se7 --timeout=300s
 k -n plataforma wait --for=condition=complete job/adaptador-se7-migrador --timeout=600s
 # Los adaptadores de SE-7 los escala KEDA (pueden estar en cero): se comprueba que sus ScaledObject estén listos.
 k -n plataforma wait --for=condition=Ready scaledobject/adaptador-se7-salida scaledobject/adaptador-se7-entrada --timeout=180s
+# Adaptador de SE-8 (Jakarta EE): KEDA lo mantiene con al menos una réplica (AD-25, QA-08).
+k -n plataforma rollout status deployment/sim-se8 --timeout=300s
+k -n plataforma wait --for=condition=complete job/adaptador-se8-migrador --timeout=600s
+k -n plataforma rollout status deployment/adaptador-se8 --timeout=600s
 k -n plataforma wait --for=condition=complete job/evaluacion-danos-migrador --timeout=600s
 k -n plataforma rollout status deployment/evaluacion-danos --timeout=300s
 k -n plataforma wait --for=condition=complete job/gestion-desastres-migrador --timeout=600s

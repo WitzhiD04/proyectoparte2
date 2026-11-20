@@ -114,22 +114,3 @@ public record EvaluacionDetalleDto(
 
 public record ResolucionDto(Guid IdConflicto, DecisionConflicto Decision, EvaluacionDetalleDto Vigente);
 
-// ---------- Mapa de calor (obsoleto: lo reemplaza Consulta de Daños, DA-08) ----------
-
-public record PuntoCalorDto(
-    Guid ActivoId,
-    string TipoActivoCodigo,
-    double Lat,
-    double Lon,
-    NivelDano Nivel,
-    double Peso,
-    bool EnConflicto);
-
-public record MapaCalorDto(
-    Guid DesastreId,
-    NivelDano NivelMinimo,
-    DateTime? InstanteDato,
-    DateTime InstanteServidor,
-    int ConflictosPendientes,
-    Dictionary<string, int> ConteoPorNivel,
-    List<PuntoCalorDto> Puntos);

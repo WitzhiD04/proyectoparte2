@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>plataforma.adaptadores</groupId>
+    <artifactId>adaptador-se8-jee</artifactId>
+    <version>1.0.0</version>
+  </parent>
+  <artifactId>adaptador-se8</artifactId>
+  <packaging>war</packaging>
+  <name>Adaptador de SE-8 (WAR para WildFly)</name>
+
+  <properties>
+    <!-- Única fuente de los esquemas del contrato: los de Plataforma.Comun.Eventos. Se copian al WAR, no se duplican. -->
+    <esquemas.dir>${project.basedir}/../../../comun/Plataforma.Comun.Eventos/Esquemas</esquemas.dir>
+    <bus.definiciones>${project.basedir}/../../../despliegue/bus</bus.definiciones>
+  </properties>
+
+  <dependencies>
+    <!-- Las da el servidor (WildFly 42, Jakarta EE 11) -->
+    <dependency>
+      <groupId>jakarta.platform</groupId>
+      <artifactId>jakarta.jakartaee-api</artifactId>
+      <version>${jakartaee.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.microprofile.config</groupId>
+      <artifactId>microprofile-config-api</artifactId>
+      <version>${mp-config.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
+      <version>${jackson.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Empaquetadas en el WAR -->
+    <dependency>
+      <!-- Cliente Jakarta Messaging de RabbitMQ: destinos AMQP sobre las colas y el exchange existentes (DA-03) -->
+      <groupId>com.rabbitmq.jms</groupId>
+      <artifactId>rabbitmq-jms</artifactId>
+      <version>${rabbitmq-jms.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>jakarta.jms</groupId>
+          <artifactId>jakarta.jms-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <!-- Validación del sobre y los datos contra los esquemas JSON 2020-12 del contrato (DT-17) -->
+      <groupId>com.networknt</groupId>
+      <artifactId>json-schema-validator</artifactId>
+      <version>${json-schema.version}</version>
+    </dependency>
+
+    <!-- Pruebas -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-junit-jupiter</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-rabbitmq</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-postgresql</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-core</artifactId>
+      <version>${hibernate.version}</version>
+      <!-- Proveedor JPA de WildFly: provided en el WAR; en las pruebas de integración corre fuera del servidor -->
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>${postgresql.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>plataforma.adaptadores</groupId>
+      <artifactId>migrador-se8</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${slf4j.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>adaptador-se8</finalName>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>${esquemas.dir}</directory>
+        <targetPath>esquemas</targetPath>
+        <includes><include>*.json</include></includes>
+      </resource>
+    </resources>
+    <testResources>
+      <testResource>
+        <directory>src/test/resources</directory>
+      </testResource>
+      <testResource>
+        <!-- La topología real del bus para las pruebas de integración (cola quorum, delivery-limit 5, DLX, permisos) -->
+        <directory>${bus.definiciones}</directory>
+        <targetPath>bus</targetPath>
+        <includes>
+          <include>definiciones.json</include>
+          <include>rabbitmq-un-nodo.conf</include>
+        </includes>
+      </testResource>
+    </testResources>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <configuration>
+          <failOnMissingWebXml>false</failOnMissingWebXml>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>

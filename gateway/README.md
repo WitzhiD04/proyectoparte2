@@ -5,7 +5,7 @@ compose; en k8s, NodePort 30080).
 
 | Pieza | Dónde | Decisión |
 |---|---|---|
-| Catálogo de rutas (57 rutas; 25 de modificación, 12 con regla de dominio) | `src/Plataforma.Gateway/rutas.json` | DA-12, E-09 |
+| Catálogo de rutas (56 rutas; 25 de modificación, 12 con regla de dominio) | `src/Plataforma.Gateway/rutas.json` | DA-12, E-09 |
 | No arranca si una ruta de modificación no declara `reglaDominio` | `Catalogo/CatalogoRutas.cs` | R-07 |
 | Valida el JWT (mismo validador que los servicios), aplica el rol de la ruta (401/403), reenvía el mismo token y descarta los `X-*` de identidad | `Seguridad/AutorizacionNivel1.cs`, `Registro.cs` | DA-15 |
 | `traceparent` y `X-Id-Correlacion` en cada petición | `Correlacion/Correlacion.cs` | DA-20 |
@@ -48,11 +48,12 @@ de la regla de nivel 2 del servicio).
 - `bash pruebas/humo/prueba-resolucion-gateway.sh`: reconstruye un servicio con IP nuevas y comprueba que el gateway lo
   encuentra sin recrearse.
 
-## QA-11 (medido el 2026-11-17)
+## QA-11 (medido el 2026-11-18)
 
-198 intentos de modificación por actores no autorizados sobre las 12 rutas con regla de dominio: **198 de 198 rechazados
-(100,0 %)** — 141 por el gateway (nivel 1, `403`) y 57 por el servicio (nivel 2, 52 con `403` y 5 con `404` fuera de
-jurisdicción según E-39). Falsos negativos: 0. Datos modificados: 0.
+218 intentos de modificación por actores no autorizados sobre las 12 rutas con regla de dominio: **218 de 218 rechazados
+(100,0 %)**, 213 con `403` y 5 con `404` fuera de jurisdicción según E-39. Falsos negativos: 0. Datos modificados: 0. El
+banco supera los 200 casos que pide el SRS: la corrida del 2026-11-17 tenía 198 y la del 18 agrega una segunda forma de
+delimitar (`gd-zona` por municipios) y de reasignar organismos (`gd-organismos-asignar`).
 
 ### Resumen por ruta del catálogo
 
@@ -60,10 +61,10 @@ jurisdicción según E-39). Falsos negativos: 0. Datos modificados: 0.
 |---|---|---|
 | ed-actualizar | 20 | 403: 20 |
 | ed-validacion | 18 | 403: 18 |
-| gd-organismos-asignar | 10 | 403: 10 |
+| gd-organismos-asignar | 20 | 403: 20 |
 | gd-severidad | 20 | 403: 20 |
 | gd-transiciones | 20 | 403: 20 |
-| gd-zona | 10 | 403: 10 |
+| gd-zona | 20 | 403: 20 |
 | rc-avance | 20 | 403: 20 |
 | rc-documentos | 10 | 403: 10 |
 | rc-lote | 8 | 403: 8 |
@@ -71,7 +72,7 @@ jurisdicción según E-39). Falsos negativos: 0. Datos modificados: 0.
 | rc-responsable | 8 | 403: 7, 404: 1 |
 | rc-transiciones | 38 | 403: 36, 404: 2 |
 
-### Tabla completa ruta → código (198 intentos)
+### Tabla completa ruta → código (corrida del 2026-11-17, 198 intentos, con el nivel que rechazó)
 
 | Ruta | Método | Regla de dominio | Operación | Actor | Código | Rechazó |
 |---|---|---|---|---|---|---|

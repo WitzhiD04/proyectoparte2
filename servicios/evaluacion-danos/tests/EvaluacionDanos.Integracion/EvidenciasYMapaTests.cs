@@ -80,48 +80,6 @@ public class EvidenciasYMapaTests(Entorno api)
         Assert.Equal(HttpStatusCode.RequestEntityTooLarge, respuesta.StatusCode);
     }
 
-    [Fact]
-    public async Task Mapa_de_calor_pinta_la_evaluacion_vigente_de_cada_activo()
-    {
-        var activoId = Entorno.TomarActivoSembrado();
-        var desastre = Entorno.DesastreDeslizamiento;
-        var vigente = Crear(activoId, 1, nivel: "GRAVE", desastreId: desastre);
-        var enConflicto = Crear(activoId, 1, nivel: "SIN_DANO", desastreId: desastre);
-        await Entorno.Sincronizar(api.Cliente("calor-A"), Lote("calor-A", vigente));
-        await Entorno.Sincronizar(api.Cliente("calor-B"), Lote("calor-B", enConflicto));
-
-        var mapa = await api.Cliente("consola").GetFromJsonAsync<MapaCalorDto>(
-            $"/v1/mapa-calor?desastreId={desastre}", JsonEvaluacion.Opciones);
-
-        var punto = Assert.Single(mapa!.Puntos, p => p.ActivoId == activoId);
-        Assert.Equal(NivelDano.GRAVE, punto.Nivel);
-        Assert.Equal(0.75, punto.Peso);
-        Assert.True(punto.EnConflicto);
-        Assert.NotNull(mapa.InstanteDato);
-        Assert.True(mapa.ConflictosPendientes >= 1);
-
-        var soloDestruccion = await api.Cliente("consola").GetFromJsonAsync<MapaCalorDto>(
-            $"/v1/mapa-calor?desastreId={desastre}&nivelMinimo=DESTRUCCION_TOTAL", JsonEvaluacion.Opciones);
-        Assert.DoesNotContain(soloDestruccion!.Puntos, p => p.ActivoId == activoId);
-    }
-
-    [Fact]
-    public async Task Mapa_de_calor_sin_desastre_responde_400()
-    {
-        var respuesta = await api.Cliente("consola").GetAsync("/v1/mapa-calor");
-        Assert.Equal(HttpStatusCode.BadRequest, respuesta.StatusCode);
-    }
-
-    [Fact]
-    public async Task La_pagina_del_mapa_carga()
-    {
-        var respuesta = await api.CreateClient().GetAsync("/mapa");
-        var html = await respuesta.Content.ReadAsStringAsync();
-        Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
-        Assert.Contains("leaflet-heat", html);
-        Assert.Contains("Inundación río Bogotá", html);
-    }
-
     private static async Task<HttpResponseMessage> Subir(HttpClient cliente, Guid evidenciaId, byte[] foto)
     {
         using var contenido = new MultipartFormDataContent();

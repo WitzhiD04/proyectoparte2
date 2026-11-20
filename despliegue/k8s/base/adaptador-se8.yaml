@@ -1,0 +1,161 @@
+# Adaptador de SE-8, comunicación y notificación, en Jakarta EE sobre WildFly 42 (AD-66, CON-9), con KEDA (DT-10).
+#   - sim-se8: el simulador de SE-8 (una réplica, estado en memoria). Acusa cada alerta y avisa al adaptador.
+#   - adaptador-se8-migrador: base propia adaptador_se8, rol adaptador_se8_app y tablas (Flyway).
+#   - adaptador-se8: el WAR en WildFly. Consume q.salida.se8, entrega a SE-8 y recibe el acuse por POST /v1/acuses.
+# A diferencia de SE-6 y SE-7, KEDA no lo baja a cero: AD-25 exige una instancia encendida para QA-08 (minReplicaCount 1).
+# El Service del adaptador es solo de la red del clúster (ClusterIP): el gateway no tiene ruta hacia él.
+# Las claves van en un Secret propio para no modificar 00-base.yaml (QA-09: incorporar SE-8 solo agrega archivos).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: credenciales-se8
+stringData:
+  adaptador-se8-app: adaptador_se8_local
+  cadena-adaptador-se8-dueno: "Host=db;Port=5432;Database=adaptador_se8;Username=postgres;Password=postgres_local"
+  cadena-adaptador-se8: "Host=db;Port=5432;Database=adaptador_se8;Username=adaptador_se8_app;Password=adaptador_se8_local"
+  bus-adaptador-se8: adaptador_se8_local
+  # KEDA mide q.salida.se8 con el usuario del adaptador. Nombre completo del servicio: el operador está en otro namespace.
+  amqp-adaptador-se8: "amqp://adaptador-se8:adaptador_se8_local@bus.plataforma.svc.cluster.local:5672/%2F"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sim-se8
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: sim-se8 }
+  template:
+    metadata:
+      labels: { app: sim-se8 }
+    spec:
+      containers:
+        - name: simulador
+          image: plataforma/sim-se8:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: Simulador__UrlAcuse, value: "http://adaptador-se8:8080/v1/acuses" }
+            - { name: Simulador__RetrasoAcuseMs, value: "300" }
+            - { name: Simulador__RetrasoLentoMs, value: "10000" }
+          ports: [{ containerPort: 8080 }]
+          readinessProbe:
+            httpGet: { path: /salud/vivo, port: 8080 }
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 20m, memory: 64Mi }
+            limits: { memory: 192Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sim-se8
+spec:
+  selector: { app: sim-se8 }
+  ports: [{ port: 8080 }]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: adaptador-se8-migrador
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrador
+          image: plataforma/adaptador-se8-migrador:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: ConnectionStrings__AdaptadorSe8Dueno
+              valueFrom: { secretKeyRef: { name: credenciales-se8, key: cadena-adaptador-se8-dueno } }
+            - name: Migracion__ClaveAdaptadorSe8App
+              valueFrom: { secretKeyRef: { name: credenciales-se8, key: adaptador-se8-app } }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: adaptador-se8
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: adaptador-se8 }
+  template:
+    metadata:
+      labels: { app: adaptador-se8 }
+    spec:
+      # Al detenerse, el consumidor cierra su sesión JMS: el mensaje en curso vuelve a la cola sin confirmarse.
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: adaptador
+          image: plataforma/adaptador-se8:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: Bus__Nodos__0, value: bus }
+            - { name: Bus__Usuario, value: adaptador-se8 }
+            - { name: Bus__Productor, value: adaptador-se8 }
+            - name: Bus__Clave
+              valueFrom: { secretKeyRef: { name: credenciales-se8, key: bus-adaptador-se8 } }
+            - name: ConnectionStrings__AdaptadorSe8
+              valueFrom: { secretKeyRef: { name: credenciales-se8, key: cadena-adaptador-se8 } }
+            - { name: Se8__Url, value: "http://sim-se8:8080/" }
+            # Modo sustituto de Notificación (L-11). Retirarlo: quitar ev03 y ev04 de q.salida.se8 y poner "false".
+            - { name: Sustituto__Activo, value: "true" }
+          ports: [{ containerPort: 8080 }]
+          startupProbe:
+            httpGet: { path: /salud/vivo, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            httpGet: { path: /salud/listo, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /salud/vivo, port: 8080 }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 384Mi }
+            limits: { memory: 640Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: adaptador-se8
+spec:
+  type: ClusterIP
+  selector: { app: adaptador-se8 }
+  ports: [{ port: 8080 }]
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: bus-adaptador-se8
+spec:
+  secretTargetRef:
+    - parameter: host
+      name: credenciales-se8
+      key: amqp-adaptador-se8
+---
+# Escala por los mensajes listos de q.salida.se8, de 1 a 2 réplicas. minReplicaCount 1 por QA-08 (AD-25): la entrega de
+# una alerta no espera el arranque de WildFly. Dos réplicas son seguras: consumo idempotente (llave primaria), relevo
+# con bloqueo del contador, reenvío con FOR UPDATE SKIP LOCKED y conciliación con bloqueo de la marca.
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: adaptador-se8
+spec:
+  scaleTargetRef:
+    name: adaptador-se8
+  minReplicaCount: 1
+  maxReplicaCount: 2
+  pollingInterval: 10
+  cooldownPeriod: 120
+  triggers:
+    - type: rabbitmq
+      metadata:
+        protocol: amqp
+        queueName: q.salida.se8
+        mode: QueueLength
+        value: "20"
+      authenticationRef:
+        name: bus-adaptador-se8

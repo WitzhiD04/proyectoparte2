@@ -39,10 +39,6 @@ builder.Services
     // Si el JSON llega mal formado se responde 400 con { "error": "..." }, como el resto de errores.
     .ConfigureApiBehaviorOptions(o => o.InvalidModelStateResponseFactory = contexto =>
         new BadRequestObjectResult(new ErrorDto(PrimerError(contexto.ModelState))));
-builder.Services.AddRazorPages();
-// Que Razor no convierta las tildes en entidades (&#xF3;); sigue escapando <, >, & y comillas.
-builder.Services.Configure<Microsoft.Extensions.WebEncoders.WebEncoderOptions>(o =>
-    o.TextEncoderSettings = new System.Text.Encodings.Web.TextEncoderSettings(System.Text.Unicode.UnicodeRanges.All));
 // La descarga previa puede ser grande y el evaluador tiene poca conectividad (DA-19).
 builder.Services.AddResponseCompression();
 
@@ -58,8 +54,6 @@ builder.Services.AddScoped<SubirEvidencia>();
 builder.Services.AddScoped<ICasoDeUso<SolicitudDescarga, DescargaDto>, ConsultarDescarga>();
 builder.Services.AddScoped<ICasoDeUso<string, List<ConflictoDto>>, ConsultarConflictos>();
 builder.Services.AddScoped<ICasoDeUso<string?, List<EvaluacionResumenDto>>, ConsultarEvaluacionesDeDispositivo>();
-builder.Services.AddScoped<ICasoDeUso<bool, List<DesastreDto>>, ConsultarDesastres>();
-builder.Services.AddScoped<ICasoDeUso<SolicitudMapaCalor, MapaCalorDto>, ConsultarMapaCalor>();
 builder.Services.AddScoped<ICasoDeUso<SolicitudRegistro, ResultadoOperacionDto>, RegistrarEvaluacion>();
 builder.Services.AddScoped<ICasoDeUso<SolicitudActualizacion, EvaluacionDetalleDto>, ActualizarEvaluacion>();
 builder.Services.AddScoped<ICasoDeUso<SolicitudAsociacion, EvaluacionDetalleDto>, AsociarEvaluacion>();
@@ -75,14 +69,12 @@ builder.Services.AddScoped<CargarCapaGeografica>();
 WebApplication app = builder.Build();
 
 app.UseResponseCompression();
-app.UseStaticFiles();
 
 // /salud/vivo y /salud/listo (base, bus y capa de municipios), para el sondeo de las réplicas (AD-24).
 app.MapearSalud("evaluacion-danos");
 // La app móvil prueba la conexión con /salud y busca "estado" en la respuesta: se conserva.
 app.MapGet("/salud", () => Results.Ok(new { estado = "ok", instante = DateTime.UtcNow }));
 app.MapControllers();
-app.MapRazorPages();
 await app.RunAsync();
 return 0;
 
