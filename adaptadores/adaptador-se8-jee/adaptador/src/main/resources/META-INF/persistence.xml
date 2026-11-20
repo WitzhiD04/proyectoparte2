@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Jakarta Persistence sobre la base adaptador_se8 (esquema se8), con el rol de mínimo privilegio adaptador_se8_app.
+     El esquema lo crea el migrador (Flyway): Hibernate no genera ni valida DDL. -->
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence" version="3.2">
+  <persistence-unit name="adaptador-se8" transaction-type="JTA">
+    <jta-data-source>java:jboss/datasources/AdaptadorSe8</jta-data-source>
+    <class>plataforma.adaptador.se8.persistencia.Entrega</class>
+    <class>plataforma.adaptador.se8.persistencia.MensajeProcesado</class>
+    <class>plataforma.adaptador.se8.persistencia.IntentoConsumo</class>
+    <class>plataforma.adaptador.se8.persistencia.FilaBandeja</class>
+    <class>plataforma.adaptador.se8.persistencia.MarcaAvance</class>
+    <class>plataforma.adaptador.se8.persistencia.EstadoIntegracionFila</class>
+    <exclude-unlisted-classes>true</exclude-unlisted-classes>
+    <properties>
+      <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
+      <property name="hibernate.jdbc.time_zone" value="UTC"/>
+    </properties>
+  </persistence-unit>
+</persistence>

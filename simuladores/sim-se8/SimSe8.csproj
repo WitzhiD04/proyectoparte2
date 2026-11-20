@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!--
+    Simulador de SE-8, el sistema externo de comunicación y notificación (AD-66, QA-08). Es "el otro sistema": no
+    referencia nada de la plataforma y tiene su propio formato (alertas con referencia externa, medio y prioridad).
+    Guarda su estado en memoria. Lo usan el compose y la prueba de humo pruebas/humo/prueba-se8.sh.
+    No se agrega a Plataforma.sln: incorporar SE-8 no modifica ningún archivo existente (QA-09).
+  -->
+  <PropertyGroup>
+    <RootNamespace>SimSe8</RootNamespace>
+  </PropertyGroup>
+</Project>

@@ -892,6 +892,22 @@
       "arguments": {}
     },
     {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.salida.se8",
+      "destination_type": "queue",
+      "routing_key": "ev03.#",
+      "arguments": {}
+    },
+    {
+      "source": "plataforma.eventos",
+      "vhost": "/",
+      "destination": "q.salida.se8",
+      "destination_type": "queue",
+      "routing_key": "ev04.#",
+      "arguments": {}
+    },
+    {
       "source": "plataforma.dlx",
       "vhost": "/",
       "destination": "dlq.sin-ruta",

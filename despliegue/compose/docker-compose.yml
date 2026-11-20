@@ -675,6 +675,75 @@ services:
       retries: 20
     restart: unless-stopped
 
+  # Simulador de SE-8 (comunicación y notificación, AD-66). Recibe alertas, las acusa y avisa el acuse al adaptador por
+  # la red interna. Caída para la prueba de SE-8:
+  #   docker compose -f despliegue/compose/docker-compose.yml exec sim-se8 curl -s -X POST localhost:8080/admin/caida -H 'Content-Type: application/json' -d '{"modo":"on"}'
+  # (on, off, lento o sin-acuse).
+  sim-se8:
+    image: plataforma/sim-se8:local
+    build:
+      context: ../..
+      dockerfile: simuladores/sim-se8/Dockerfile
+    environment:
+      Simulador__UrlAcuse: "http://adaptador-se8:8080/v1/acuses"
+      Simulador__RetrasoAcuseMs: "300"
+      Simulador__RetrasoLentoMs: "10000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/vivo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  # Adaptador de SE-8 en Jakarta EE (AD-66, CON-9). Migrador de su base propia adaptador_se8 (Flyway) con el rol de
+  # mínimo privilegio adaptador_se8_app.
+  adaptador-se8-migrador:
+    image: plataforma/adaptador-se8-migrador:local
+    build:
+      context: ../..
+      dockerfile: adaptadores/adaptador-se8-jee/Dockerfile
+      target: migrador
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      ConnectionStrings__AdaptadorSe8Dueno: "Host=db;Port=5432;Database=adaptador_se8;Username=postgres;Password=${POSTGRES_CLAVE:-postgres_local}"
+      Migracion__ClaveAdaptadorSe8App: ${ADAPTADOR_SE8_APP_CLAVE:-adaptador_se8_local}
+    restart: "no"
+
+  # WildFly 42 con el WAR del adaptador: consume q.salida.se8 (EV-28 y, en modo sustituto de Notificación, EV-03 y EV-04;
+  # L-11), entrega a SE-8 con timeout, reintento y cortacircuitos (Cuadro 10) y publica EV-23 y EV-29 por su bandeja.
+  # Una réplica, siempre encendida: AD-25 exige una instancia encendida para QA-08 (en Kubernetes, KEDA con mínimo 1).
+  # El acuse de SE-8 entra por POST /v1/acuses, ruta solo de esta red interna: el gateway no la enruta.
+  adaptador-se8:
+    image: plataforma/adaptador-se8:local
+    build:
+      context: ../..
+      dockerfile: adaptadores/adaptador-se8-jee/Dockerfile
+      target: adaptador
+    depends_on:
+      adaptador-se8-migrador: { condition: service_completed_successfully }
+      sim-se8: { condition: service_healthy }
+      bus1: { condition: service_healthy }
+      bus2: { condition: service_healthy }
+      bus3: { condition: service_healthy }
+    environment:
+      ConnectionStrings__AdaptadorSe8: "Host=db;Port=5432;Database=adaptador_se8;Username=adaptador_se8_app;Password=${ADAPTADOR_SE8_APP_CLAVE:-adaptador_se8_local}"
+      Bus__Nodos__0: bus1
+      Bus__Nodos__1: bus2
+      Bus__Nodos__2: bus3
+      Bus__Usuario: adaptador-se8
+      Bus__Clave: ${BUS_CLAVE_ADAPTADOR_SE8:-adaptador_se8_local}
+      Bus__Productor: adaptador-se8
+      Se8__Url: "http://sim-se8:8080/"
+      Sustituto__Activo: ${ADAPTADOR_SE8_SUSTITUTO:-true}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/salud/listo"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 40s
+    restart: unless-stopped
+
   # Consola (Angular). nginx solo sirve sus archivos: queda detrás del gateway y no enruta la API.
   web:
     build: ../../consola

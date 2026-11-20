@@ -1,0 +1,2 @@
+# Salida de Maven del adaptador de SE-8 (la .gitignore raíz es de .NET y no se modifica).
+target/

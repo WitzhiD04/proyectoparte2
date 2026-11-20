@@ -1,0 +1,17 @@
+# Configuración de WildFly 42 para el adaptador de SE-8 (se aplica al construir la imagen, con el servidor embebido).
+embed-server --server-config=standalone.xml --std-out=echo
+
+# Controlador JDBC de PostgreSQL (módulo org.postgresql copiado en la imagen).
+/subsystem=datasources/jdbc-driver=postgresql:add(driver-name=postgresql, driver-module-name=org.postgresql, driver-xa-datasource-class-name=org.postgresql.xa.PGXADataSource)
+
+# Datasource JTA de la base adaptador_se8 con el rol adaptador_se8_app. Los valores salen del entorno al arrancar:
+# entrada.sh los traduce de ConnectionStrings__AdaptadorSe8 (misma variable y formato que un adaptador .NET).
+data-source add --name=AdaptadorSe8 --jndi-name=java:jboss/datasources/AdaptadorSe8 --driver-name=postgresql --connection-url=${env.SE8_BD_URL} --user-name=${env.SE8_BD_USUARIO} --password=${env.SE8_BD_CLAVE} --min-pool-size=1 --max-pool-size=10 --validate-on-match=true --background-validation=false --valid-connection-checker-class-name=org.jboss.jca.adapters.jdbc.extensions.postgres.PostgreSQLValidConnectionChecker --exception-sorter-class-name=org.jboss.jca.adapters.jdbc.extensions.postgres.PostgreSQLExceptionSorter
+
+# El adaptador se publica en "/": se quita la página de bienvenida del servidor.
+/subsystem=undertow/server=default-server/host=default-host/location=\/:remove
+
+# Registro en la consola del contenedor, en una línea por evento.
+/subsystem=logging/console-handler=CONSOLE:write-attribute(name=level, value=INFO)
+
+stop-embedded-server

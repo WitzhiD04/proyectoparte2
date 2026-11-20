@@ -33,7 +33,9 @@ COLAS = {
     "q.salida.se7": ["ev18", "ev20"],
     # Notificación (AD-13, RF-GD-06, RF-GD-15): desastre creado, severidad cambiada y acuses de SE-8 (E-37).
     "q.notificacion": ["ev03", "ev04", "ev29"],
-    "q.salida.se8": ["ev28"],
+    # ev03 y ev04: sustituto temporal de Notificación (L-11, AD-66). El adaptador de SE-8 en Jakarta EE alerta a SE-8 con
+    # cada desastre creado o cambio de nivel. Se quitan cuando exista Notificación (y Sustituto__Activo=false).
+    "q.salida.se8": ["ev28", "ev03", "ev04"],
 }
 
 # Usuario de cada servicio: qué cola lee y si publica en el exchange. Nadie puede configurar topología.
