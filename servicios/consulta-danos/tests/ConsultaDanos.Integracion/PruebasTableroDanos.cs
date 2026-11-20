@@ -32,6 +32,12 @@ public class PruebasTableroDanos
     private static readonly Guid Desastre = Guid.Parse("103ecf6b-35c9-4116-a4fd-c01209793dab");
     private const string RutaTablero = "/tablero-danos";
 
+    /// <summary>Reloj que siempre devuelve el mismo instante.</summary>
+    private sealed class RelojFijo(DateTimeOffset instante) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => instante;
+    }
+
     private sealed class Puertos
     {
         public LecturasFalsas Lecturas { get; } = new();
@@ -59,6 +65,9 @@ public class PruebasTableroDanos
                 s.AddSingleton<ICacheDanos>(puertos.Cache);
                 s.RemoveAll<IDirectorioDesastres>();
                 s.AddSingleton<IDirectorioDesastres>(puertos.Directorio);
+                // Reloj fijo en T0: la antigüedad de la bandeja (T0 - 3 h) no debe depender del día en que corre la prueba.
+                s.RemoveAll<TimeProvider>();
+                s.AddSingleton<TimeProvider>(new RelojFijo(T0));
                 // Los metadatos de Keycloak en memoria: la redirección se arma sin red.
                 s.PostConfigure<OpenIdConnectOptions>(RegistroTablero.EsquemaOidc, o =>
                 {

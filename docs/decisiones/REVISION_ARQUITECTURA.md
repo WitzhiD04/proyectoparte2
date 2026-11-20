@@ -24,10 +24,11 @@ Keycloak desde el emulador. En compose pasan las pruebas de humo `prueba-humo.sh
 **Actualización del 19 de noviembre de 2026 (CON-9, E-44).** Se agregó el adaptador de SE-8 en Jakarta EE
 (`adaptadores/adaptador-se8-jee`, WildFly 42, AD-66) sin modificar ningún microservicio, proyecto común, el gateway ni
 otro adaptador. El adaptador de SE-8 pasa 52 pruebas unitarias y 7 de integración, y `prueba-se8.sh` pasa contra el
-compose; las tres pruebas de humo anteriores siguen pasando. La suite de .NET da 1 007 de 1 008: la prueba
-`PruebasTableroDanos.Sin_conflictos_de_mas_no_hay_alarma` fija el conflicto más antiguo en 2026-11-18 15:44 UTC y falla
-desde que esa fecha supera el umbral de 24 horas de la alarma. Falla igual en el commit anterior a SE-8 (`fb6bf03`).
-Corregirla exige cambiar la prueba de Consulta de Daños, que esta tarea no toca.
+compose; las tres pruebas de humo anteriores siguen pasando. La suite de .NET da 1 008 de 1 008. La prueba
+`PruebasTableroDanos.Sin_conflictos_de_mas_no_hay_alarma` fijaba el conflicto más antiguo en 2026-11-18 15:44 UTC y fallaba
+desde que esa fecha superó el umbral de 24 horas (también en `fb6bf03`, antes de SE-8). Se corrigió solo la prueba, con un
+`TimeProvider` fijo en `T0`: es la única excepción a "ningún archivo .NET modificado", autorizada aparte, y no toca código
+del servicio.
 
 ### Medidas
 
