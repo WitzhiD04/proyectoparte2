@@ -62,7 +62,7 @@ class ConsumoSe8IT {
 
     private static final String COLA = "q.salida.se8";
     private static final String DLQ = "dlq.salida.se8";
-    /** El Cuadro 10, con la apertura acortada a 2 s para que la prueba no espere 15 s. */
+    /** El Cuadro 11, con la apertura acortada a 2 s para que la prueba no espere 15 s. */
     private static final OpcionesResiliencia RESILIENCIA = new OpcionesResiliencia(3, 20, 2, 0.1, 3, 1.0, 30, 2);
 
     private final Entorno entorno = new Entorno();

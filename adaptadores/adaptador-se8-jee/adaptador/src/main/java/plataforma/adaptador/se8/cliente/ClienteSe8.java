@@ -6,7 +6,7 @@ import plataforma.adaptador.se8.resiliencia.EjecutorResiliente;
 import plataforma.adaptador.se8.traduccion.AlertaSe8;
 
 /**
- * Cliente de SE-8 con la resiliencia del Cuadro 10. Todas sus operaciones son idempotentes (PUT con referencia, GET), así
+ * Cliente de SE-8 con la resiliencia del Cuadro 11. Todas sus operaciones son idempotentes (PUT con referencia, GET), así
  * que se reintentan. Sin base ni bus.
  */
 public final class ClienteSe8 {

@@ -2,7 +2,7 @@
 
 Integra la plataforma con SE-8 (Cuadro 14 del SAD). Es el único componente en Java: cumple **CON-9** ("la solución
 final debe incluir Jakarta EE y .NET") en la frontera, donde AD-03 ubica la heterogeneidad tecnológica. El núcleo sigue
-en .NET (AD-50). Decisión: **AD-66** del SAD. Incorporarlo modificó **0 componentes existentes** (QA-09, Cuadro 15):
+en .NET (AD-50). Decisión: **AD-66** del SAD. Incorporarlo modificó **0 componentes existentes** (QA-09, Cuadro 16):
 solo se agregaron archivos, más dos enlaces de bus y la configuración de despliegue.
 
 | | |
@@ -32,7 +32,7 @@ Dos piezas propias, explicadas en AD-66 ("Compromiso aceptado"):
   RabbitMQ no tiene uno mantenido. El consumo usa igual la API estándar (`Connection`, `Session` transaccional,
   `MessageConsumer`). Lo único propio es quién arranca el hilo.
 - **Cortacircuitos propio en lugar de MicroProfile Fault Tolerance.** `@CircuitBreaker` mide una ventana de N llamadas,
-  no la ventana de 30 s del Cuadro 10, y no avisa la apertura, que hace falta para publicar EV-23.
+  no la ventana de 30 s del Cuadro 11, y no avisa la apertura, que hace falta para publicar EV-23.
 
 ## Qué hace
 
@@ -45,7 +45,7 @@ Dos piezas propias, explicadas en AD-66 ("Compromiso aceptado"):
 2. **Traducción.** EV-28 (de Notificación) da una alerta por destinatario e intento, con clave
    `notificacion:<id>:<intento>`. En **modo sustituto** (L-11), EV-03 y EV-04 dan una alerta al destino de difusión con
    el ámbito del nivel (SRS Cuadro 18), con clave `sustituto:<claveIdempotencia>`.
-3. **Entrega a SE-8.** `PUT /v1/alertas/{referencia}` (idempotente). Resiliencia del Cuadro 10: 3 s por intento,
+3. **Entrega a SE-8.** `PUT /v1/alertas/{referencia}` (idempotente). Resiliencia del Cuadro 11: 3 s por intento,
    20 s por operación y 2 reintentos con espera exponencial desde 0,5 s. Se reintentan solo operaciones idempotentes.
    El cortacircuitos se abre con 3 o más llamadas en 30 s y 100 % de fallo, y queda 15 s abierto antes de la prueba.
    Con el circuito abierto, el consumo se pausa: los mensajes esperan en la cola y nada va a la DLQ.

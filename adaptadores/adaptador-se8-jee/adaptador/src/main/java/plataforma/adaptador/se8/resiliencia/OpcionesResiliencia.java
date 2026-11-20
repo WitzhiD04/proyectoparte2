@@ -3,7 +3,7 @@ package plataforma.adaptador.se8.resiliencia;
 import java.time.Duration;
 
 /**
- * Valores de la resiliencia hacia SE-8 (Cuadro 10 del SAD, AD-05, AD-37). Mismos nombres y valores por omisión que
+ * Valores de la resiliencia hacia SE-8 (Cuadro 11 del SAD, AD-05, AD-37). Mismos nombres y valores por omisión que
  * {@code OpcionesResiliencia} de los adaptadores .NET (variables {@code Resiliencia__*}).
  */
 public record OpcionesResiliencia(
